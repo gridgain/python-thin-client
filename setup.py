@@ -70,7 +70,7 @@ with open('README.md', 'r', encoding='utf-8') as readme_file:
 
 setuptools.setup(
     name='pygridgain',
-    version='0.3.4',
+    version='1.0.0',
     python_requires='>={}.{}'.format(*PYTHON_REQUIRED),
     author='Dmitry Melnichuk',
     author_email='dmitry.melnichuk@nobitlost.com',
