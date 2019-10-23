@@ -14,4 +14,4 @@ This directory contains the following example files:
 
 For the explanation of the examples please refer to the
 [Examples of usage](https://pygridgain.readthedocs.io/en/latest/examples.html)
-section of the `pyignite` documentation.
+section of the `pygridgain` documentation.
