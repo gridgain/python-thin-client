@@ -35,7 +35,7 @@ __all__ = [
 
 class ObjectArrayObject(GridGainDataType):
     """
-    Array of Ignite objects of any consistent type. Its Python representation
+    Array of GridGain objects of any consistent type. Its Python representation
     is tuple(type_id, iterable of any type). The only type ID that makes sense
     in Python client is :py:attr:`~OBJECT`, that corresponds directly to
     the root object type in Java type hierarchy (`java.lang.Object`).
@@ -187,10 +187,10 @@ class CollectionObject(GridGainDataType):
     Represented as tuple(hint, iterable of any type) in Python. Hints are:
 
     * :py:attr:`~pygridgain.datatypes.complex.CollectionObject.USER_SET` −
-      a set of unique Ignite thin data objects. The exact Java type of a set
+      a set of unique GridGain thin data objects. The exact Java type of a set
       is undefined,
     * :py:attr:`~pygridgain.datatypes.complex.CollectionObject.USER_COL` −
-      a collection of Ignite thin data objects. The exact Java type
+      a collection of GridGain thin data objects. The exact Java type
       of a collection is undefined,
     * :py:attr:`~pygridgain.datatypes.complex.CollectionObject.ARR_LIST` −
       represents the `java.util.ArrayList` type,
