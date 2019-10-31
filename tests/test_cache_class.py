@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+
 from collections import OrderedDict
 from decimal import Decimal
 
 import pytest
 
-from pygridgain import GenericObjectMeta
-from pygridgain.datatypes import (
+from pyignite import GenericObjectMeta
+from pyignite.datatypes import (
     BoolObject, DecimalObject, FloatObject, IntObject, String,
 )
-from pygridgain.datatypes.prop_codes import *
-from pygridgain.exceptions import CacheError
+from pyignite.datatypes.prop_codes import *
+from pyignite.exceptions import CacheError
 
 
 def test_cache_create(client):

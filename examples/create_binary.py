@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+
 from collections import OrderedDict
 
-from pygridgain import Client, GenericObjectMeta
-from pygridgain.datatypes import DoubleObject, IntObject, String
-from pygridgain.datatypes.prop_codes import *
+from pyignite import Client, GenericObjectMeta
+from pyignite.datatypes import DoubleObject, IntObject, String
+from pyignite.datatypes.prop_codes import *
 
 client = Client()
 client.connect('127.0.0.1', 10800)
@@ -95,7 +94,7 @@ print(*result)
 # DROP_QUERY = 'DROP TABLE Student'
 # client.sql(DROP_QUERY)
 #
-# pygridgain.exceptions.SQLError: class org.apache.ignite.IgniteCheckedException:
+# pyignite.exceptions.SQLError: class org.apache.ignite.IgniteCheckedException:
 # Only cache created with CREATE TABLE may be removed with DROP TABLE
 # [cacheName=SQL_PUBLIC_STUDENT]
 

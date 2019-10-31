@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from pygridgain import Client
-from pygridgain.datatypes import CharObject, ShortObject
+
+from pyignite import Client
+from pyignite.datatypes import CharObject, ShortObject
 
 client = Client()
 client.connect('127.0.0.1', 10800)

@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,19 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from pygridgain.api import *
-from pygridgain.datatypes.prop_codes import *
+
+from pyignite.api import *
+from pyignite.datatypes.prop_codes import *
 
 
 def test_get_configuration(client):
 
-    conn = client.random_node
-
-    result = cache_get_or_create(conn, 'my_unique_cache')
+    result = cache_get_or_create(client, 'my_unique_cache')
     assert result.status == 0
 
-    result = cache_get_configuration(conn, 'my_unique_cache')
+    result = cache_get_configuration(client, 'my_unique_cache')
     assert result.status == 0
     assert result.value[PROP_NAME] == 'my_unique_cache'
 
@@ -32,9 +29,8 @@ def test_get_configuration(client):
 def test_create_with_config(client):
 
     cache_name = 'my_very_unique_name'
-    conn = client.random_node
 
-    result = cache_create_with_config(conn, {
+    result = cache_create_with_config(client, {
         PROP_NAME: cache_name,
         PROP_CACHE_KEY_CONFIGURATION: [
             {
@@ -45,10 +41,10 @@ def test_create_with_config(client):
     })
     assert result.status == 0
 
-    result = cache_get_names(conn)
+    result = cache_get_names(client)
     assert cache_name in result.value
 
-    result = cache_create_with_config(conn, {
+    result = cache_create_with_config(client, {
         PROP_NAME: cache_name,
     })
     assert result.status != 0
@@ -57,9 +53,8 @@ def test_create_with_config(client):
 def test_get_or_create_with_config(client):
 
     cache_name = 'my_very_unique_name'
-    conn = client.random_node
 
-    result = cache_get_or_create_with_config(conn, {
+    result = cache_get_or_create_with_config(client, {
         PROP_NAME: cache_name,
         PROP_CACHE_KEY_CONFIGURATION: [
             {
@@ -70,10 +65,10 @@ def test_get_or_create_with_config(client):
     })
     assert result.status == 0
 
-    result = cache_get_names(conn)
+    result = cache_get_names(client)
     assert cache_name in result.value
 
-    result = cache_get_or_create_with_config(conn, {
+    result = cache_get_or_create_with_config(client, {
         PROP_NAME: cache_name,
     })
     assert result.status == 0

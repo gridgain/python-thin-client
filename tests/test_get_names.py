@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,19 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from pygridgain.api import cache_create, cache_get_names
+
+from pyignite.api import cache_create, cache_get_names
 
 
 def test_get_names(client):
 
-    conn = client.random_node
-
     bucket_names = ['my_bucket', 'my_bucket_2', 'my_bucket_3']
     for name in bucket_names:
-        cache_create(conn, name)
+        cache_create(client, name)
 
-    result = cache_get_names(conn)
+    result = cache_get_names(client)
     assert result.status == 0
     assert type(result.value) == list
     assert len(result.value) >= len(bucket_names)

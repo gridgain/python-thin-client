@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+
 from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 
-from pygridgain import Client, GenericObjectMeta
-from pygridgain.datatypes import (
+from pyignite import Client, GenericObjectMeta
+from pyignite.datatypes import (
     BoolObject, DateObject, DecimalObject, LongObject, String,
 )
 

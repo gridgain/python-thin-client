@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,14 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from pygridgain.api import (
+
+from pyignite.api import (
     sql_fields, sql_fields_cursor_get_page,
     cache_get_or_create, sql, sql_cursor_get_page,
     cache_get_configuration,
 )
-from pygridgain.datatypes.prop_codes import *
-from pygridgain.utils import entity_id, unwrap_binary
+from pyignite.datatypes.prop_codes import *
+from pyignite.utils import entity_id, unwrap_binary
 
 initial_data = [
         ('John', 'Doe', 5),
@@ -47,13 +46,11 @@ page_size = 4
 
 def test_sql(client):
 
-    conn = client.random_node
-
     # cleanup
     client.sql(drop_query)
 
     result = sql_fields(
-        conn,
+        client,
         'PUBLIC',
         create_query,
         page_size,
@@ -64,7 +61,7 @@ def test_sql(client):
     for i, data_line in enumerate(initial_data, start=1):
         fname, lname, grade = data_line
         result = sql_fields(
-            conn,
+            client,
             'PUBLIC',
             insert_query,
             page_size,
@@ -73,12 +70,12 @@ def test_sql(client):
         )
         assert result.status == 0, result.message
 
-    result = cache_get_configuration(conn, 'SQL_PUBLIC_STUDENT')
+    result = cache_get_configuration(client, 'SQL_PUBLIC_STUDENT')
     assert result.status == 0, result.message
 
     binary_type_name = result.value[PROP_QUERY_ENTITIES][0]['value_type_name']
     result = sql(
-        conn,
+        client,
         'SQL_PUBLIC_STUDENT',
         binary_type_name,
         'TRUE',
@@ -95,7 +92,7 @@ def test_sql(client):
     cursor = result.value['cursor']
 
     while result.value['more']:
-        result = sql_cursor_get_page(conn, cursor)
+        result = sql_cursor_get_page(client, cursor)
         assert result.status == 0, result.message
 
         for wrapped_object in result.value['data'].values():
@@ -103,19 +100,17 @@ def test_sql(client):
             assert data.type_id == entity_id(binary_type_name)
 
     # repeat cleanup
-    result = sql_fields(conn, 'PUBLIC', drop_query, page_size)
+    result = sql_fields(client, 'PUBLIC', drop_query, page_size)
     assert result.status == 0
 
 
 def test_sql_fields(client):
 
-    conn = client.random_node
-
     # cleanup
     client.sql(drop_query)
 
     result = sql_fields(
-        conn,
+        client,
         'PUBLIC',
         create_query,
         page_size,
@@ -126,7 +121,7 @@ def test_sql_fields(client):
     for i, data_line in enumerate(initial_data, start=1):
         fname, lname, grade = data_line
         result = sql_fields(
-            conn,
+            client,
             'PUBLIC',
             insert_query,
             page_size,
@@ -136,7 +131,7 @@ def test_sql_fields(client):
         assert result.status == 0, result.message
 
     result = sql_fields(
-        conn,
+        client,
         'PUBLIC',
         select_query,
         page_size,
@@ -148,11 +143,11 @@ def test_sql_fields(client):
 
     cursor = result.value['cursor']
 
-    result = sql_fields_cursor_get_page(conn, cursor, field_count=4)
+    result = sql_fields_cursor_get_page(client, cursor, field_count=4)
     assert result.status == 0
     assert len(result.value['data']) == len(initial_data) - page_size
     assert result.value['more'] is False
 
     # repeat cleanup
-    result = sql_fields(conn, 'PUBLIC', drop_query, page_size)
+    result = sql_fields(client, 'PUBLIC', drop_query, page_size)
     assert result.status == 0

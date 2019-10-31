@@ -12,8 +12,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-Welcome to GridGain Community Edition binary client Python API documentation!
-=============================================================================
+Welcome to Apache Ignite binary client Python API documentation!
+================================================================
 
 .. toctree::
    :maxdepth: 2

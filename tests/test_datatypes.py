@@ -1,4 +1,3 @@
-#
 # Copyright 2019 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
@@ -12,17 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from collections import OrderedDict
-import ctypes
+
 from datetime import datetime, timedelta
 import decimal
 import pytest
 import uuid
 
-from pygridgain.api.key_value import cache_get, cache_put
-from pygridgain.datatypes import *
-from pygridgain.utils import unsigned
+from pyignite.api.key_value import cache_get, cache_put
+from pyignite.datatypes import *
 
 
 @pytest.mark.parametrize(
@@ -50,9 +46,7 @@ from pygridgain.utils import unsigned
 
         # arrays of integers
         ([1, 2, 3, 5], None),
-        (b'buzz', ByteArrayObject),
-        (bytearray([7, 8, 8, 11]), None),
-        (bytearray([7, 8, 8, 11]), ByteArrayObject),
+        ([1, 2, 3, 5], ByteArrayObject),
         ([1, 2, 3, 5], ShortArrayObject),
         ([1, 2, 3, 5], IntArrayObject),
 
@@ -119,54 +113,24 @@ from pygridgain.utils import unsigned
         ((-1, [(6001, 1), (6002, 2), (6003, 3)]), BinaryEnumArrayObject),
 
         # object array
-        ((ObjectArrayObject.OBJECT, [1, 2, decimal.Decimal('3')]), ObjectArrayObject),
+        ((-1, [1, 2, decimal.Decimal('3')]), None),
 
         # collection
-        ((CollectionObject.LINKED_LIST, [1, 2, 3]), None),
+        ((3, [1, 2, 3]), CollectionObject),
 
         # map
-        ((MapObject.HASH_MAP, {'key': 4, 5: 6.0}), None),
-        ((MapObject.LINKED_HASH_MAP, OrderedDict([('key', 4), (5, 6.0)])), None),
+        ((1, {'key': 4, 5: 6.0}), None),
+        ((2, {'key': 4, 5: 6.0}), None),
     ]
 )
 def test_put_get_data(client, cache, value, value_hint):
 
-    conn = client.random_node
-
-    result = cache_put(conn, cache, 'my_key', value, value_hint=value_hint)
+    result = cache_put(client, cache, 'my_key', value, value_hint=value_hint)
     assert result.status == 0
 
-    result = cache_get(conn, cache, 'my_key')
+    result = cache_get(client, cache, 'my_key')
     assert result.status == 0
     assert result.value == value
-
-
-@pytest.mark.parametrize(
-    'value',
-    [
-        [1, 2, 3, 5],
-        (7, 8, 13, 18),
-        (-128, -1, 0, 1, 127, 255),
-    ]
-)
-def test_bytearray_from_list_or_tuple(client, cache, value):
-    """
-    ByteArrayObject's pythonic type is `bytearray`, but it should also accept
-    lists or tuples as a content.
-    """
-
-    conn = client.random_node
-
-    result = cache_put(
-        conn, cache, 'my_key', value, value_hint=ByteArrayObject
-    )
-    assert result.status == 0
-
-    result = cache_get(conn, cache, 'my_key')
-    assert result.status == 0
-    assert result.value == bytearray([
-        unsigned(ch, ctypes.c_ubyte) for ch in value
-    ])
 
 
 @pytest.mark.parametrize(
