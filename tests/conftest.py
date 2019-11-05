@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 import argparse
+import os
+import subprocess
 from distutils.util import strtobool
 import ssl
 
@@ -63,6 +65,15 @@ class SSLVersionParser(argparse.Action):
                 'Undefined argument: --ssl-version={}'.format(value)
             )
 
+@pytest.fixture(scope='session')
+def server():
+    # TODO: Pass config with logger
+    home = os.getenv("IGNITE_HOME", "TODO: default here")
+    isWin = os.name == "nt"
+    ignitePath = os.path.join(home, "bin", "ignite") + (".bat" if isWin else ".sh")
+    srv = subprocess.Popen ([ignitePath])
+    yield srv
+    srv.kill()
 
 @pytest.fixture(scope='module')
 def client(
