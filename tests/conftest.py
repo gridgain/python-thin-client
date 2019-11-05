@@ -65,7 +65,7 @@ class SSLVersionParser(argparse.Action):
                 'Undefined argument: --ssl-version={}'.format(value)
             )
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def server():
     # TODO: Pass config with logger
     home = os.getenv("IGNITE_HOME", "TODO: default here")
