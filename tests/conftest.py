@@ -68,10 +68,14 @@ class SSLVersionParser(argparse.Action):
 @pytest.fixture(scope='session', autouse=True)
 def server():
     # TODO: Pass config with logger
-    home = os.getenv("IGNITE_HOME", "TODO: default here")
-    isWin = os.name == "nt"
-    ignitePath = os.path.join(home, "bin", "ignite") + (".bat" if isWin else ".sh")
-    srv = subprocess.Popen ([ignitePath])
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    ignite_dir = os.path.join(test_dir, "..", "..", "ignite")
+    ignite_home = os.getenv("IGNITE_HOME", ignite_dir)
+    is_win = os.name == "nt"
+    ignite_path = os.path.join(ignite_home, "bin", "ignite") + (".bat" if is_win else ".sh")
+    print(ignite_path)
+    srv = subprocess.Popen ([ignite_path])
+    # TODO: Wait for connection to establish
     yield srv
     srv.kill()
 
