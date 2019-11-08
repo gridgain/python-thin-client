@@ -66,9 +66,8 @@ class SSLVersionParser(argparse.Action):
 
 @pytest.fixture(scope='session', autouse=True)
 def server():
-    # TODO: Pass config with logger
     ignite_path = get_ignite_runner()
-    srv = subprocess.Popen ([ignite_path])
+    srv = subprocess.Popen([ignite_path], get_ignite_config_path())
     wait_for_condition(try_connect_client, error="Failed to start Ignite: timeout while trying to connect")
     yield srv
     srv.kill()
