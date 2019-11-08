@@ -14,16 +14,15 @@
 # limitations under the License.
 #
 import argparse
-import os
 import subprocess
 from distutils.util import strtobool
 import ssl
 
 import pytest
 
-from pygridgain import Client
 from pygridgain.constants import *
 from pygridgain.api import cache_create, cache_get_names, cache_destroy
+from tests.util import *
 
 
 class BoolParser(argparse.Action):
@@ -68,14 +67,9 @@ class SSLVersionParser(argparse.Action):
 @pytest.fixture(scope='session', autouse=True)
 def server():
     # TODO: Pass config with logger
-    test_dir = os.path.dirname(os.path.realpath(__file__))
-    ignite_dir = os.path.join(test_dir, "..", "..", "ignite")
-    ignite_home = os.getenv("IGNITE_HOME", ignite_dir)
-    is_win = os.name == "nt"
-    ignite_path = os.path.join(ignite_home, "bin", "ignite") + (".bat" if is_win else ".sh")
-    print(ignite_path)
+    ignite_path = get_ignite_runner()
     srv = subprocess.Popen ([ignite_path])
-    # TODO: Wait for connection to establish
+    wait_for_condition(try_connect_client, error="Failed to start Ignite: timeout while trying to connect")
     yield srv
     srv.kill()
 

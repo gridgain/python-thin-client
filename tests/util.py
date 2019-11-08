@@ -16,11 +16,25 @@
 import os
 import time
 
+from pygridgain import Client
+from pygridgain.exceptions import ReconnectError
 
-def wait_for_condition(condition, interval=0.1, timeout=5):
+
+def wait_for_condition(condition, interval=0.1, timeout=10, error=None):
     start = time.time()
-    while not condition() and time.time() - start < timeout:
+    res = condition()
+
+    while not res and time.time() - start < timeout:
         time.sleep(interval)
+        res = condition()
+
+    if res:
+        return True
+
+    if error is not None:
+        raise Exception(error)
+
+    return False
 
 
 def is_win():
@@ -47,3 +61,13 @@ def get_ignite_runner():
             return runner
 
     raise Exception("Ignite not found.")
+
+
+def try_connect_client():
+    cli = Client()
+    try:
+        cli.connect()
+        cli.close()
+        return True
+    except ReconnectError:
+        return False
