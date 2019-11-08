@@ -41,13 +41,16 @@ def is_win():
     return os.name == "nt"
 
 
+def get_test_dir():
+    return os.path.dirname(os.path.realpath(__file__))
+
+
 def get_ignite_dirs():
     ignite_home = os.getenv("IGNITE_HOME")
     if ignite_home is not None:
         yield ignite_home
 
-    test_dir = os.path.dirname(os.path.realpath(__file__))
-    proj_dir = os.path.join(test_dir, "..", "..")
+    proj_dir = os.path.join(get_test_dir(), "..", "..")
     yield os.path.join(proj_dir, "ignite")
     yield os.path.join(proj_dir, "incubator_ignite")
 
@@ -61,6 +64,10 @@ def get_ignite_runner():
             return runner
 
     raise Exception("Ignite not found.")
+
+
+def get_ignite_config_path():
+    return os.path.join(get_test_dir(), "ignite-config.xml")
 
 
 def try_connect_client():
