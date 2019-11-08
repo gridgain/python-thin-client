@@ -66,11 +66,15 @@ class SSLVersionParser(argparse.Action):
 
 @pytest.fixture(scope='session', autouse=True)
 def server():
-    srv = subprocess.Popen([get_ignite_runner(), get_ignite_config_path()])
+    runner = get_ignite_runner()
+    print("Starting Ignite server node from: ", runner)
+    srv = subprocess.Popen([runner, get_ignite_config_path()])
     try:
         wait_for_condition(try_connect_client, error="Failed to start Ignite: timeout while trying to connect")
         yield srv
     finally:
+        # TODO: This is a PID of shell script. Does not kill the node on Windows
+        print("Terminating Ignite server ", srv.pid)
         srv.kill()
 
 @pytest.fixture(scope='module')
