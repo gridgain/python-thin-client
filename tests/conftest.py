@@ -66,11 +66,12 @@ class SSLVersionParser(argparse.Action):
 
 @pytest.fixture(scope='session', autouse=True)
 def server():
-    ignite_path = get_ignite_runner()
-    srv = subprocess.Popen([ignite_path], get_ignite_config_path())
-    wait_for_condition(try_connect_client, error="Failed to start Ignite: timeout while trying to connect")
-    yield srv
-    srv.kill()
+    srv = subprocess.Popen([get_ignite_runner(), get_ignite_config_path()])
+    try:
+        wait_for_condition(try_connect_client, error="Failed to start Ignite: timeout while trying to connect")
+        yield srv
+    finally:
+        srv.kill()
 
 @pytest.fixture(scope='module')
 def client(
