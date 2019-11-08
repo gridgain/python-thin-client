@@ -72,6 +72,10 @@ def get_ignite_config_path():
     return os.path.join(get_test_dir(), "config", "ignite-config.xml")
 
 
+def get_jul_config_path():
+    return os.path.join(get_test_dir(), "config", "java.util.logging.properties")
+
+
 def try_connect_client():
     cli = Client()
     try:
