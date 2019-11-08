@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import argparse
-import subprocess
 from distutils.util import strtobool
 import ssl
 

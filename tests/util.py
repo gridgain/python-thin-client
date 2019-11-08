@@ -15,6 +15,7 @@
 #
 import os
 import signal
+import subprocess
 import time
 
 from pygridgain import Client
@@ -83,6 +84,6 @@ def try_connect_client():
 
 def kill_process_tree(pid):
     if is_windows():
-        os.kill(pid, signal.SIGTERM)
+        subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
     else:
         os.killpg(os.getpgid(pid), signal.SIGKILL)
