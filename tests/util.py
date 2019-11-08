@@ -39,3 +39,11 @@ def get_ignite_dirs():
 
 
 def get_ignite_runner():
+    ext = ".bat" if is_win() else ".sh"
+    for ignite_dir in get_ignite_dirs():
+        runner = os.path.join(ignite_dir, "bin", "ignite" + ext)
+        print("Probing Ignite runner at '{0}'...".format(runner))
+        if os.path.exists(runner):
+            return runner
+
+    raise Exception("Ignite not found.")
