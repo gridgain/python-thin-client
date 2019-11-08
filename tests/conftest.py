@@ -66,7 +66,7 @@ class SSLVersionParser(argparse.Action):
 @pytest.fixture(scope='session', autouse=True)
 def server():
     runner = get_ignite_runner()
-    ignite_cmd = [runner, get_ignite_config_path(), "-J-Djava.util.logging.config.file=" + get_jul_config_path()]
+    ignite_cmd = [runner, "-J-Djava.util.logging.config.file=" + get_jul_config_path(), get_ignite_config_path()]
     print("Starting Ignite server node:", ignite_cmd)
     srv = subprocess.Popen(ignite_cmd)
     try:
