@@ -73,9 +73,8 @@ def server():
         wait_for_condition(try_connect_client, error="Failed to start Ignite: timeout while trying to connect")
         yield srv
     finally:
-        # TODO: This is a PID of shell script. Does not kill the node on Windows
         print("Terminating Ignite server:", srv.pid)
-        srv.kill()
+        kill_process_tree(srv.pid)
 
 @pytest.fixture(scope='module')
 def client(

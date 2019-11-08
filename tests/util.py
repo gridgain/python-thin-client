@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import os
+import signal
 import time
 
 from pygridgain import Client
@@ -37,7 +38,7 @@ def wait_for_condition(condition, interval=0.1, timeout=10, error=None):
     return False
 
 
-def is_win():
+def is_windows():
     return os.name == "nt"
 
 
@@ -56,7 +57,7 @@ def get_ignite_dirs():
 
 
 def get_ignite_runner():
-    ext = ".bat" if is_win() else ".sh"
+    ext = ".bat" if is_windows() else ".sh"
     for ignite_dir in get_ignite_dirs():
         runner = os.path.join(ignite_dir, "bin", "ignite" + ext)
         print("Probing Ignite runner at '{0}'...".format(runner))
@@ -78,3 +79,10 @@ def try_connect_client():
         return True
     except ReconnectError:
         return False
+
+
+def kill_process_tree(pid):
+    if is_windows():
+        os.kill(pid, signal.SIGTERM)
+    else:
+        os.killpg(os.getpgid(pid), signal.SIGKILL)
