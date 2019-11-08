@@ -50,7 +50,7 @@ def get_ignite_dirs():
     if ignite_home is not None:
         yield ignite_home
 
-    proj_dir = os.path.join(get_test_dir(), "..", "..")
+    proj_dir = os.path.abspath(os.path.join(get_test_dir(), "..", ".."))
     yield os.path.join(proj_dir, "ignite")
     yield os.path.join(proj_dir, "incubator_ignite")
 
