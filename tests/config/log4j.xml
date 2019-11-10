@@ -24,26 +24,14 @@
 -->
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
 
-    <!--
-        Logs all ERROR messages to console.
-    -->
-    <appender name="CONSOLE_ERR" class="org.apache.log4j.ConsoleAppender">
-        <!-- Log to STDERR. -->
-        <param name="Target" value="System.err"/>
-
-        <!-- Log from ERROR and higher (change to WARN if needed). -->
-        <param name="Threshold" value="ERROR"/>
-
-        <!-- The default pattern: Date Priority [Category] Message\n -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="Debug"/>
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="[%d{ISO8601}][%-5p][%t][%c{1}] %m%n"/>
         </layout>
     </appender>
 
-    <!--
-        Logs all output to specified file.
-        By default, the logging goes to IGNITE_HOME/work/log folder
-    -->
     <appender name="FILE" class="org.apache.ignite.logger.log4j.Log4jRollingFileAppender">
         <param name="Threshold" value="DEBUG"/>
         <param name="File" value="${IGNITE_HOME}/work/log/ignite.log"/>
@@ -64,7 +52,7 @@
         <!-- Print out all info by default. -->
         <level value="INFO"/>
 
-        <appender-ref ref="CONSOLE_ERR"/>
+        <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>
 </log4j:configuration>
