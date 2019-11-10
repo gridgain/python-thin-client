@@ -33,7 +33,7 @@
                     <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
                         <property name="addresses">
                             <list>
-                                <value>127.0.0.1:47500</value>
+                                <value>127.0.0.1:47500..47502</value>
                             </list>
                         </property>
                     </bean>
@@ -44,7 +44,7 @@
 
         <property name="gridLogger">
             <bean class="org.apache.ignite.logger.log4j.Log4JLogger">
-              <constructor-arg type="java.lang.String" value="config/log4j.xml"/>
+              <constructor-arg type="java.lang.String" value="config/log4j-3.xml"/>
             </bean>
         </property>
     </bean>

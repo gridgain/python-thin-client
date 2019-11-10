@@ -34,7 +34,7 @@
 
     <appender name="FILE" class="org.apache.ignite.logger.log4j.Log4jRollingFileAppender">
         <param name="Threshold" value="DEBUG"/>
-        <param name="File" value="${IGNITE_HOME}/work/log/ignite.log"/>
+        <param name="File" value="logs/ignite-log-1.txt"/>
         <param name="Append" value="true"/>
         <param name="MaxFileSize" value="10MB"/>
         <param name="MaxBackupIndex" value="10"/>

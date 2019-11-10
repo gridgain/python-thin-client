@@ -69,7 +69,7 @@ def get_ignite_runner():
 
 
 def get_ignite_config_path():
-    return os.path.join(get_test_dir(), "config", "ignite-config.xml")
+    return os.path.join(get_test_dir(), "config", "ignite-config-1.xml")
 
 
 def get_jul_config_path():
