@@ -89,12 +89,14 @@ def kill_process_tree(pid):
         os.killpg(os.getpgid(pid), signal.SIGKILL)
 
 
-def start_ignite(idx=1):
+def start_ignite(idx=1, debug=False):
     runner = get_ignite_runner()
 
     env = os.environ.copy()
-    env["JVM_OPTS"] = "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
-                      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
+
+    if debug:
+        env["JVM_OPTS"] = "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
+                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
 
     ignite_cmd = [runner, get_ignite_config_path(idx)]
     print("Starting Ignite server node:", ignite_cmd)
