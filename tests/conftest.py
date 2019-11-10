@@ -69,12 +69,12 @@ def server1():
     yield from start_ignite_gen(1)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session', autouse=True)
 def server2():
     yield from start_ignite_gen(2)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()  # Optional third server
 def server3():
     yield from start_ignite_gen(3)
 
