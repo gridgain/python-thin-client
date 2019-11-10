@@ -72,10 +72,10 @@ def get_ignite_config_path(idx=1):
     return os.path.join(get_test_dir(), "config", "ignite-config-{0}.xml".format(idx))
 
 
-def try_connect_client():
+def try_connect_client(idx=1):
     cli = Client()
     try:
-        cli.connect()
+        cli.connect('localhost', 10800 + idx)
         cli.close()
         return True
     except ReconnectError:
@@ -101,7 +101,7 @@ def start_ignite(idx=1):
 
     srv = subprocess.Popen(ignite_cmd, env=env, cwd=get_test_dir())
 
-    started = wait_for_condition(try_connect_client, timeout=10)
+    started = wait_for_condition(lambda: try_connect_client(idx), timeout=10)
     if started:
         return srv
 

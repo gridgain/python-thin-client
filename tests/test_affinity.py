@@ -27,7 +27,7 @@ from pygridgain.datatypes.cache_config import CacheMode
 from pygridgain.datatypes.prop_codes import *
 
 
-def test_get_node_partitions(client):
+def test_get_node_partitions(client, server2):
 
     if client.protocol_version < (1, 4, 0):
         pytest.skip(

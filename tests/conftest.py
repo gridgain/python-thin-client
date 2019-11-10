@@ -69,12 +69,12 @@ def server1():
     yield from start_ignite_gen(1)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def server2():
     yield from start_ignite_gen(2)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def server3():
     yield from start_ignite_gen(3)
 
@@ -128,7 +128,7 @@ def pytest_addoption(parser):
         default=None,
         help=(
             'GridGain binary protocol test server connection string '
-            '(default: "localhost:10800")'
+            '(default: "localhost:10801")'
         )
     )
     parser.addoption(
@@ -221,7 +221,7 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     session_parameters = {
-        'node': ['{host}:{port}'.format(host=DEFAULT_HOST, port=DEFAULT_PORT)],
+        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801)],
         'timeout': None,
         'affinity_aware': False,
         'use_ssl': False,
