@@ -63,26 +63,27 @@ class SSLVersionParser(argparse.Action):
                 'Undefined argument: --ssl-version={}'.format(value)
             )
 
+
 @pytest.fixture(scope='session', autouse=True)
-def server():
-    runner = get_ignite_runner()
+def server1():
+    srv = start_ignite(1)
+    yield srv
+    kill_process_tree(srv.pid)
 
-    env = os.environ.copy()
-    env["JVM_OPTS"] = "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
-                      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 " \
-                      "-Djava.util.logging.config.file=" + get_jul_config_path()
 
-    ignite_cmd = [runner, get_ignite_config_path()]
-    print("Starting Ignite server node:", ignite_cmd)
+@pytest.fixture
+def server2():
+    srv = start_ignite(2)
+    yield srv
+    kill_process_tree(srv.pid)
 
-    srv = subprocess.Popen(ignite_cmd, env=env, cwd=get_test_dir())
 
-    try:
-        wait_for_condition(try_connect_client, timeout=10, error="Failed to start Ignite: timeout while trying to connect")
-        yield srv
-    finally:
-        print("Terminating Ignite server:", srv.pid)
-        kill_process_tree(srv.pid)
+@pytest.fixture
+def server3():
+    srv = start_ignite(3)
+    yield srv
+    kill_process_tree(srv.pid)
+
 
 @pytest.fixture(scope='module')
 def client(

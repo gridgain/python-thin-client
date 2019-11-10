@@ -68,12 +68,8 @@ def get_ignite_runner():
     raise Exception("Ignite not found.")
 
 
-def get_ignite_config_path():
-    return os.path.join(get_test_dir(), "config", "ignite-config-1.xml")
-
-
-def get_jul_config_path():
-    return os.path.join(get_test_dir(), "config", "java.util.logging.properties")
+def get_ignite_config_path(idx=1):
+    return os.path.join(get_test_dir(), "config", "ignite-config-{0}.xml".format(idx))
 
 
 def try_connect_client():
@@ -91,3 +87,23 @@ def kill_process_tree(pid):
         subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
     else:
         os.killpg(os.getpgid(pid), signal.SIGKILL)
+
+
+def start_ignite(idx=1):
+    runner = get_ignite_runner()
+
+    env = os.environ.copy()
+    env["JVM_OPTS"] = "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
+                      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
+
+    ignite_cmd = [runner, get_ignite_config_path(idx)]
+    print("Starting Ignite server node:", ignite_cmd)
+
+    srv = subprocess.Popen(ignite_cmd, env=env, cwd=get_test_dir())
+
+    started = wait_for_condition(try_connect_client, timeout=10)
+    if started:
+        return srv
+
+    kill_process_tree(srv.pid)
+    raise Exception("Failed to start Ignite: timeout while trying to connect")
