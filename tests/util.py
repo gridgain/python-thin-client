@@ -107,3 +107,9 @@ def start_ignite(idx=1):
 
     kill_process_tree(srv.pid)
     raise Exception("Failed to start Ignite: timeout while trying to connect")
+
+
+def start_ignite_gen(idx=1):
+    srv = start_ignite(idx)
+    yield srv
+    kill_process_tree(srv.pid)

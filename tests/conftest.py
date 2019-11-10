@@ -66,23 +66,17 @@ class SSLVersionParser(argparse.Action):
 
 @pytest.fixture(scope='session', autouse=True)
 def server1():
-    srv = start_ignite(1)
-    yield srv
-    kill_process_tree(srv.pid)
+    yield from start_ignite_gen(1)
 
 
 @pytest.fixture
 def server2():
-    srv = start_ignite(2)
-    yield srv
-    kill_process_tree(srv.pid)
+    yield from start_ignite_gen(2)
 
 
 @pytest.fixture
 def server3():
-    srv = start_ignite(3)
-    yield srv
-    kill_process_tree(srv.pid)
+    yield from start_ignite_gen(3)
 
 
 @pytest.fixture(scope='module')
