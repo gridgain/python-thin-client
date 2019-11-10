@@ -41,5 +41,11 @@
                 <property name="socketTimeout" value="300" />
             </bean>
         </property>
+
+        <property name="gridLogger">
+            <bean class="org.apache.ignite.logger.log4j.Log4JLogger">
+              <constructor-arg type="java.lang.String" value="config/log4j.xml"/>
+            </bean>
+        </property>
     </bean>
 </beans>

@@ -75,7 +75,7 @@ def server():
     ignite_cmd = [runner, get_ignite_config_path()]
     print("Starting Ignite server node:", ignite_cmd)
 
-    srv = subprocess.Popen(ignite_cmd, env=env)
+    srv = subprocess.Popen(ignite_cmd, env=env, cwd=get_test_dir())
 
     try:
         wait_for_condition(try_connect_client, timeout=10, error="Failed to start Ignite: timeout while trying to connect")
