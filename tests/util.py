@@ -155,3 +155,6 @@ def get_request_grid_idx(message="Get"):
                 if log == message:
                     return i
     return -1
+
+
+get_request_grid_idx.last_call = datetime.datetime.now()
