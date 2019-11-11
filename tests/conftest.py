@@ -74,7 +74,7 @@ def server2():
     yield from start_ignite_gen(2)
 
 
-@pytest.fixture()  # Optional third server
+@pytest.fixture(scope='session', autouse=True)
 def server3():
     yield from start_ignite_gen(3)
 
@@ -238,7 +238,8 @@ def pytest_addoption(parser):
 def pytest_generate_tests(metafunc):
     session_parameters = {
         'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801),
-                 '{host}:{port}'.format(host='127.0.0.1', port=10802)],
+                 '{host}:{port}'.format(host='127.0.0.1', port=10802),
+                 '{host}:{port}'.format(host='127.0.0.1', port=10803)],
         'timeout': None,
         'affinity_aware': False,
         'use_ssl': False,
