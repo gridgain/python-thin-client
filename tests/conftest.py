@@ -221,9 +221,10 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     session_parameters = {
-        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801)],
+        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801),
+                 '{host}:{port}'.format(host='127.0.0.1', port=10802)],
         'timeout': None,
-        'affinity_aware': False,
+        'affinity_aware': True,
         'use_ssl': False,
         'ssl_keyfile': None,
         'ssl_certfile': None,
