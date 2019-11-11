@@ -28,5 +28,12 @@ def test_cache_get_primitive_key_routes_request_to_primary_node(key, grid_idx, c
 
     # Test
     cache_1.get(key)
-    actual_grid_idx = get_request_grid_idx()
-    assert actual_grid_idx == grid_idx
+    assert get_request_grid_idx() == grid_idx
+
+    cache_1.put(key, key)
+    assert get_request_grid_idx("Put") == grid_idx
+
+    cache_1.replace(key, key + 1)
+    assert get_request_grid_idx("Replace") == grid_idx
+
+
