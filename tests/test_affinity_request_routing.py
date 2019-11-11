@@ -19,7 +19,7 @@ from tests.util import *
 
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
-def test_cache_get_primitive_key_routes_request_to_primary_node(key, grid_idx, client_affinity_aware):
+def test_cache_operation_on_primitive_key_routes_request_to_primary_node(key, grid_idx, client_affinity_aware):
     cache_1 = client_affinity_aware.get_or_create_cache('test_cache_1')
 
     # Warm up affinity map
@@ -35,5 +35,26 @@ def test_cache_get_primitive_key_routes_request_to_primary_node(key, grid_idx, c
 
     cache_1.replace(key, key + 1)
     assert get_request_grid_idx("Replace") == grid_idx
+
+    cache_1.clear_key(key)
+    assert get_request_grid_idx("ClearKey") == grid_idx
+
+    cache_1.contains_key(key)
+    assert get_request_grid_idx("ContainsKey") == grid_idx
+
+    cache_1.get_and_put(key, 3)
+    assert get_request_grid_idx("GetAndPut") == grid_idx
+
+    cache_1.get_and_put_if_absent(key, 4)
+    assert get_request_grid_idx("GetAndPutIfAbsent") == grid_idx
+
+    cache_1.put_if_absent(key, 5)
+    assert get_request_grid_idx("PutIfAbsent") == grid_idx
+
+    cache_1.get_and_remove(key)
+    assert get_request_grid_idx("GetAndRemove") == grid_idx
+
+    cache_1.get_and_replace(key, 6)
+    assert get_request_grid_idx("GetAndReplace") == grid_idx
 
 
