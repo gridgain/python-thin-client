@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import datetime
 import glob
 import os
 import signal
@@ -90,12 +91,6 @@ def kill_process_tree(pid):
         os.killpg(os.getpgid(pid), signal.SIGKILL)
 
 
-def clear_logs(idx=1):
-    logs = os.path.join(get_test_dir(), "logs", "ignite-log-{0}*.txt".format(idx))
-    for f in glob.glob(logs):
-        os.remove(f)
-
-
 def start_ignite(idx=1, debug=False):
     clear_logs(idx)
 
@@ -126,8 +121,30 @@ def start_ignite_gen(idx=1):
     kill_process_tree(srv.pid)
 
 
+def get_log_files(idx=1):
+    logs_pattern = os.path.join(get_test_dir(), "logs", "ignite-log-{0}*.txt".format(idx))
+    return glob.glob(logs_pattern)
+
+
+def clear_logs(idx=1):
+    for f in get_log_files(idx):
+        os.remove(f)
+
+
+def read_log_file(file, skip_before):
+    with open(file) as f:
+        for line in f.read().splitlines():
+            parts = line.split("|")
+            timestamp = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
+            if timestamp > skip_before:
+                yield parts[1]
+
+
 def get_request_grid_idx(message=None):
     last_call = get_request_grid_idx.last_call
-    get_request_grid_idx.last_call = time.time()
+    get_request_grid_idx.last_call = datetime.datetime.now()
+    for i in range(1, 3):
+        for log_file in get_log_files(i):
+            log = read_log_file(log_file, last_call)
     # TODO: Keep track of last call time, filter out earlier messages
     return 1
