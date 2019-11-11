@@ -16,8 +16,8 @@
 from tests.util import *
 
 
-def test_cache_get_primitive_key_routes_request_to_primary_node(client):
-    cache_1 = client.get_or_create_cache('test_cache_1')
+def test_cache_get_primitive_key_routes_request_to_primary_node(client_affinity_aware):
+    cache_1 = client_affinity_aware.get_or_create_cache('test_cache_1')
 
     # Warm up affinity map
     cache_1.put(1, 1)

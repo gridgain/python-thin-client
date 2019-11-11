@@ -111,6 +111,16 @@ def client(
     client.close()
 
 
+@pytest.fixture(scope='module')
+def client_affinity_aware(
+        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+        username, password
+):
+    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
+                      ssl_ciphers, ssl_version, username, password)
+
+
 @pytest.fixture
 def cache(client):
     cache_name = 'my_bucket'
@@ -230,7 +240,7 @@ def pytest_generate_tests(metafunc):
         'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801),
                  '{host}:{port}'.format(host='127.0.0.1', port=10802)],
         'timeout': None,
-        'affinity_aware': True,
+        'affinity_aware': False,
         'use_ssl': False,
         'ssl_keyfile': None,
         'ssl_certfile': None,
@@ -245,6 +255,7 @@ def pytest_generate_tests(metafunc):
     for param_name in session_parameters:
         if param_name in metafunc.fixturenames:
             param = metafunc.config.getoption(param_name)
+            # TODO: This does not work for bool
             if param is None:
                 param = session_parameters[param_name]
             if param_name == 'node' or type(param) is not list:
