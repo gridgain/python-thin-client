@@ -16,6 +16,7 @@
 import datetime
 import glob
 import os
+import re
 import signal
 import subprocess
 import time
@@ -137,14 +138,20 @@ def read_log_file(file, skip_before):
             parts = line.split("|")
             timestamp = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
             if timestamp > skip_before:
-                yield parts[1]
+                # Example: Client request received [reqId=1, addr=/127.0.0.1:51694,
+                # req=org.apache.ignite.internal.processors.platform.client.cache.ClientCachePutRequest@1f33101e]
+                res = re.match("Client request received .*?req=org.apache.ignite.internal.processors."
+                               "platform.client.cache.ClientCache([a-zA-Z]+)Request@", parts[1])
+                if res is not None:
+                    yield res.group(1)
 
 
-def get_request_grid_idx(message=None):
+def get_request_grid_idx(message="Get"):
     last_call = get_request_grid_idx.last_call
     get_request_grid_idx.last_call = datetime.datetime.now()
     for i in range(1, 3):
         for log_file in get_log_files(i):
-            log = read_log_file(log_file, last_call)
-    # TODO: Keep track of last call time, filter out earlier messages
-    return 1
+            for log in read_log_file(log_file, last_call):
+                if log == message:
+                    return i
+    return -1
