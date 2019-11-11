@@ -133,13 +133,14 @@ def clear_logs(idx=1):
 
 
 def read_log_file(file, idx):
-    i = 0
+    i = -1
     with open(file) as f:
-        for line in f.readlines():
+        lines = f.readlines()
+        for line in lines:
+            i += 1
+
             if i < read_log_file.last_line[idx]:
                 continue
-
-            i += 1
 
             if i > read_log_file.last_line[idx]:
                 read_log_file.last_line[idx] = i
