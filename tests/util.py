@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import glob
 import os
 import signal
 import subprocess
@@ -89,7 +90,15 @@ def kill_process_tree(pid):
         os.killpg(os.getpgid(pid), signal.SIGKILL)
 
 
+def clear_logs(idx=1):
+    logs = os.path.join(get_test_dir(), "logs", "ignite-log-{0}*.txt".format(idx))
+    for f in glob.glob(logs):
+        os.remove(f)
+
+
 def start_ignite(idx=1, debug=False):
+    clear_logs(idx)
+
     runner = get_ignite_runner()
 
     env = os.environ.copy()
@@ -115,3 +124,10 @@ def start_ignite_gen(idx=1):
     srv = start_ignite(idx)
     yield srv
     kill_process_tree(srv.pid)
+
+
+def get_request_grid_idx(message=None):
+    last_call = get_request_grid_idx.last_call
+    get_request_grid_idx.last_call = time.time()
+    # TODO: Keep track of last call time, filter out earlier messages
+    return 1
