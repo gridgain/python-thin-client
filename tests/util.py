@@ -136,14 +136,17 @@ def read_log_file(file, skip_before):
     with open(file) as f:
         for line in f.read().splitlines():
             parts = line.split("|")
-            timestamp = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
-            if timestamp > skip_before:
-                # Example: Client request received [reqId=1, addr=/127.0.0.1:51694,
-                # req=org.apache.ignite.internal.processors.platform.client.cache.ClientCachePutRequest@1f33101e]
-                res = re.match("Client request received .*?req=org.apache.ignite.internal.processors."
-                               "platform.client.cache.ClientCache([a-zA-Z]+)Request@", parts[1])
-                if res is not None:
-                    yield res.group(1)
+            try:
+                timestamp = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
+                if timestamp > skip_before:
+                    # Example: Client request received [reqId=1, addr=/127.0.0.1:51694,
+                    # req=org.apache.ignite.internal.processors.platform.client.cache.ClientCachePutRequest@1f33101e]
+                    res = re.match("Client request received .*?req=org.apache.ignite.internal.processors."
+                                   "platform.client.cache.ClientCache([a-zA-Z]+)Request@", parts[1])
+                    if res is not None:
+                        yield res.group(1)
+            except ValueError:
+                continue
 
 
 def get_request_grid_idx(message="Get"):
