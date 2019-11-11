@@ -132,32 +132,34 @@ def clear_logs(idx=1):
         os.remove(f)
 
 
-def read_log_file(file, skip_before):
+def read_log_file(file, idx):
+    i = 0
     with open(file) as f:
-        for line in f.read().splitlines():
-            parts = line.split("|")
-            try:
-                timestamp = datetime.datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
-                if timestamp > skip_before:
-                    # Example: Client request received [reqId=1, addr=/127.0.0.1:51694,
-                    # req=org.apache.ignite.internal.processors.platform.client.cache.ClientCachePutRequest@1f33101e]
-                    res = re.match("Client request received .*?req=org.apache.ignite.internal.processors."
-                                   "platform.client.cache.ClientCache([a-zA-Z]+)Request@", parts[1])
-                    if res is not None:
-                        yield res.group(1)
-            except ValueError:
+        for line in f.readlines():
+            if i < read_log_file.last_line[idx]:
                 continue
+
+            i += 1
+
+            if i > read_log_file.last_line[idx]:
+                read_log_file.last_line[idx] = i
+
+            # Example: Client request received [reqId=1, addr=/127.0.0.1:51694,
+            # req=org.apache.ignite.internal.processors.platform.client.cache.ClientCachePutRequest@1f33101e]
+            res = re.match("Client request received .*?req=org.apache.ignite.internal.processors."
+                           "platform.client.cache.ClientCache([a-zA-Z]+)Request@", line)
+
+            if res is not None:
+                yield res.group(1)
 
 
 def get_request_grid_idx(message="Get"):
-    last_call = get_request_grid_idx.last_call
-    get_request_grid_idx.last_call = datetime.datetime.now()
     for i in range(1, 3):
         for log_file in get_log_files(i):
-            for log in read_log_file(log_file, last_call):
+            for log in read_log_file(log_file, i):
                 if log == message:
                     return i
     return -1
 
 
-get_request_grid_idx.last_call = datetime.datetime.now()
+read_log_file.last_line = [0, 0, 0, 0]

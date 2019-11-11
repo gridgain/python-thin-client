@@ -19,5 +19,6 @@ from tests.util import *
 def test_cache_get_primitive_key_routes_request_to_primary_node(client):
     cache_1 = client.get_or_create_cache('test_cache_1')
     cache_1.put(1, 1)
-    grid_idx = get_request_grid_idx()
+    time.sleep(1)
+    grid_idx = get_request_grid_idx("Put")
     assert grid_idx == 2
