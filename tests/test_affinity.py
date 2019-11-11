@@ -188,6 +188,8 @@ def test_affinity_for_generic_object(client):
     best_node = cache_1.get_best_node(key, key_hint=BinaryObject)
 
     for node in filter(lambda n: n.alive, client._nodes):
+        # TODO: Is cache_local_peek affinity-aware, which defeats the purpose of the test?
+        # Should we jut rewrite the test to determine request target with loggers?
         result = cache_local_peek(
             node, cache_1.cache_id, key, key_hint=BinaryObject,
         )
