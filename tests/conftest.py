@@ -121,6 +121,12 @@ def cache(client):
     cache_destroy(conn, cache_name)
 
 
+@pytest.fixture(autouse=True)
+def log_init():
+    # Init log call timestamp
+    get_request_grid_idx()
+
+
 def pytest_addoption(parser):
     parser.addoption(
         '--node',
