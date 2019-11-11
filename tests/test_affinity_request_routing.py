@@ -57,4 +57,16 @@ def test_cache_operation_on_primitive_key_routes_request_to_primary_node(key, gr
     cache_1.get_and_replace(key, 6)
     assert get_request_grid_idx("GetAndReplace") == grid_idx
 
+    cache_1.remove_key(key)
+    assert get_request_grid_idx("RemoveKey") == grid_idx
+
+    cache_1.remove_if_equals(key, -1)
+    assert get_request_grid_idx("RemoveIfEquals") == grid_idx
+
+    cache_1.replace(key, -1)
+    assert get_request_grid_idx("Replace") == grid_idx
+
+    cache_1.replace_if_equals(key, 10, -10)
+    assert get_request_grid_idx("ReplaceIfEquals") == grid_idx
+
 
