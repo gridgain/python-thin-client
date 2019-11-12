@@ -48,13 +48,26 @@ def test_all_cache_operations_with_affinity_aware_client_on_single_server(reques
     assert cache.get(key) == key2
 
     # GetAndPutIfAbsent
-    cache.get_and_put_if_absent(key, 4)
+    cache.clear_key(key)
+    res = cache.get_and_put_if_absent(key, key)
+    res2 = cache.get_and_put_if_absent(key, key2)
+    assert res is None
+    assert res2 == key
+    assert cache.get(key) == key
 
     # PutIfAbsent
-    cache.put_if_absent(key, 5)
+    cache.clear_key(key)
+    res = cache.put_if_absent(key, key)
+    res2 = cache.put_if_absent(key, key2)
+    assert res
+    assert not res2
+    assert cache.get(key) == key
 
     # GetAndRemove
-    cache.get_and_remove(key)
+    cache.put(key, key)
+    res = cache.get_and_remove(key)
+    assert res == key
+    assert cache.get(key) is None
 
     # GetAndReplace
     cache.get_and_replace(key, 6)
