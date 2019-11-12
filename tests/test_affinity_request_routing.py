@@ -88,7 +88,7 @@ def test_cache_operation_routed_to_new_cluster_node(request):
 
         # Response is correct and comes from the new node
         res = cache.get_and_remove(key)
-        assert res == key + 1
+        assert res == key
         assert get_request_grid_idx("GetAndRemove") == 4
     finally:
         kill_process_tree(srv.pid)
