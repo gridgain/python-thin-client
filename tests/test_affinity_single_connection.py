@@ -18,8 +18,8 @@ import pytest
 from tests.util import get_request_grid_idx
 
 
-def test_all_cache_operations_with_affinity_aware_client_on_single_server(client_affinity_aware_single_server):
-    cache = client_affinity_aware_single_server.get_or_create_cache('test_cache_1')
+def test_all_cache_operations_with_affinity_aware_client_on_single_server(request, client_affinity_aware_single_server):
+    cache = client_affinity_aware_single_server.get_or_create_cache(request.node.name)
     key = 1
     key2 = 2
 
@@ -42,7 +42,10 @@ def test_all_cache_operations_with_affinity_aware_client_on_single_server(client
     assert not cache.contains_key(key2)
 
     # GetAndPut
-    cache.get_and_put(key, 3)
+    cache.put(key, key)
+    res = cache.get_and_put(key, key2)
+    assert res == key
+    assert cache.get(key) == key2
 
     # GetAndPutIfAbsent
     cache.get_and_put_if_absent(key, 4)
