@@ -71,18 +71,19 @@ def test_cache_operation_on_primitive_key_routes_request_to_primary_node(key, gr
 
 
 def test_cache_operation_routed_to_new_cluster_node(request):
-    client = Client()
+    client = Client(affinity_aware=True)
     client.connect([("127.0.0.1", 10801), ("127.0.0.1", 10802), ("127.0.0.1", 10803), ("127.0.0.1", 10804)])
     cache = client.get_or_create_cache(request.node.name)
-    key = 20
+    key = 12
     cache.put(key, key)
-    assert get_request_grid_idx("Put") == 1
+    assert get_request_grid_idx("Put") == 2
 
     srv = start_ignite(4)
+    cache.put(key, key + 1)  # Warm up partition map
     try:
         # Response is correct and comes from the new node
         res = cache.get(key)
-        assert res == key
+        assert res == key + 1
         assert get_request_grid_idx("Get") == 4
     finally:
         kill_process_tree(srv.pid)
