@@ -250,8 +250,7 @@ def pytest_generate_tests(metafunc):
     session_parameters = {
         'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801),
                  '{host}:{port}'.format(host='127.0.0.1', port=10802),
-                 '{host}:{port}'.format(host='127.0.0.1', port=10803),
-                 '{host}:{port}'.format(host='127.0.0.1', port=10804)],
+                 '{host}:{port}'.format(host='127.0.0.1', port=10803)],
         'timeout': None,
         'affinity_aware': False,
         'use_ssl': False,
