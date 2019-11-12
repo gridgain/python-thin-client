@@ -121,6 +121,17 @@ def client_affinity_aware(
                       ssl_ciphers, ssl_version, username, password)
 
 
+@pytest.fixture(scope='module')
+def client_affinity_aware_single_server(
+        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+        username, password
+):
+    node = node[:1]
+    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
+                      ssl_ciphers, ssl_version, username, password)
+
+
 @pytest.fixture
 def cache(client):
     cache_name = 'my_bucket'
