@@ -15,8 +15,7 @@
 #
 import pytest
 
-from pygridgain import Client
-from pygridgain.exceptions import ReconnectError
+from tests.util import *
 
 
 def test_client_with_multiple_bad_servers():
@@ -26,7 +25,16 @@ def test_client_with_multiple_bad_servers():
     assert str(e_info.value) == "Can not connect."
 
 
-def test_client_with_failed_servers():
-    # TODO: Start two servers, do some operation, kill servers, check
-    pass
+def test_client_with_failed_server(request):
+    srv = start_ignite(4)
+    try:
+        client = Client()
+        client.connect([("127.0.0.1", 10804)])
+        cache = client.get_or_create_cache(request.node.name)
+        cache.put(1, 1)
+        kill_process_tree(srv.pid)
+        with pytest.raises(ConnectionResetError):
+            cache.get(1)
+    finally:
+        kill_process_tree(srv.pid)
 
