@@ -15,7 +15,7 @@
 #
 import pytest
 
-from tests.util import get_request_grid_idx
+from tests.util import *
 
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
@@ -70,3 +70,19 @@ def test_cache_operation_on_primitive_key_routes_request_to_primary_node(key, gr
     assert get_request_grid_idx("ReplaceIfEquals") == grid_idx
 
 
+def test_cache_operation_routed_to_new_cluster_node(request):
+    client = Client()
+    client.connect([("127.0.0.1", 10801), ("127.0.0.1", 10802), ("127.0.0.1", 10803), ("127.0.0.1", 10804)])
+    cache = client.get_or_create_cache(request.node.name)
+    key = 20
+    cache.put(key, key)
+    assert get_request_grid_idx("Put") == 1
+
+    srv = start_ignite(4)
+    try:
+        # Response is correct and comes from the new node
+        res = cache.get(key)
+        assert res == key
+        assert get_request_grid_idx("Get") == 4
+    finally:
+        kill_process_tree(srv.pid)

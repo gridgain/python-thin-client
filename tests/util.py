@@ -156,7 +156,7 @@ def read_log_file(file, idx):
 
 def get_request_grid_idx(message="Get"):
     res = -1
-    for i in range(1, 4):
+    for i in range(1, 5):
         for log_file in get_log_files(i):
             for log in read_log_file(log_file, i):
                 if log == message:
@@ -164,4 +164,4 @@ def get_request_grid_idx(message="Get"):
     return res
 
 
-read_log_file.last_line = [0, 0, 0, 0]
+read_log_file.last_line = [0, 0, 0, 0, 0]
