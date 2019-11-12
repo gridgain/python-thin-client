@@ -79,11 +79,12 @@ def test_cache_operation_routed_to_new_cluster_node(request):
     assert get_request_grid_idx("Put") == 2
 
     srv = start_ignite(4)
+    time.sleep(5)  # TODO: Properly wait for rebalance
     cache.put(key, key + 1)  # Warm up partition map
     try:
         # Response is correct and comes from the new node
-        res = cache.get(key)
+        res = cache.get_and_remove(key)
         assert res == key + 1
-        assert get_request_grid_idx("Get") == 4
+        assert get_request_grid_idx("GetAndRemove") == 4
     finally:
         kill_process_tree(srv.pid)
