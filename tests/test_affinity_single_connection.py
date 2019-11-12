@@ -70,16 +70,33 @@ def test_all_cache_operations_with_affinity_aware_client_on_single_server(reques
     assert cache.get(key) is None
 
     # GetAndReplace
-    cache.get_and_replace(key, 6)
+    cache.put(key, key)
+    res = cache.get_and_replace(key, key2)
+    assert res == key
+    assert cache.get(key) == key2
 
     # RemoveKey
+    cache.put(key, key)
     cache.remove_key(key)
+    assert cache.get(key) is None
 
     # RemoveIfEquals
-    cache.remove_if_equals(key, -1)
+    cache.put(key, key)
+    res = cache.remove_if_equals(key, key2)
+    res2 = cache.remove_if_equals(key, key)
+    assert not res
+    assert res2
+    assert cache.get(key) is None
 
     # Replace
-    cache.replace(key, -1)
+    cache.put(key, key)
+    cache.replace(key, key2)
+    assert cache.get(key) == key2
 
     # ReplaceIfEquals
-    cache.replace_if_equals(key, 10, -10)
+    cache.put(key, key)
+    res = cache.replace_if_equals(key, key2, key2)
+    res2 = cache.replace_if_equals(key, key, key2)
+    assert not res
+    assert res2
+    assert cache.get(key) == key2
