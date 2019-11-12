@@ -45,7 +45,7 @@
         <property name="clientConnectorConfiguration">
             <bean class="org.apache.ignite.configuration.ClientConnectorConfiguration">
                 <property name="host" value="127.0.0.1"/>
-                <property name="port" value="10803"/>
+                <property name="port" value="10804"/>
                 <property name="portRange" value="0"/>
             </bean>
         </property>
