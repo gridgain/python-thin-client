@@ -25,3 +25,8 @@ def test_client_with_multiple_bad_servers():
         client.connect([("127.0.0.1", 10900), ("127.0.0.1", 10901)])
     assert str(e_info.value) == "Can not connect."
 
+
+def test_client_with_failed_servers():
+    # TODO: Start two servers, do some operation, kill servers, check
+    pass
+

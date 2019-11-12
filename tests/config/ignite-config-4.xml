@@ -52,7 +52,7 @@
 
         <property name="gridLogger">
             <bean class="org.apache.ignite.logger.log4j.Log4JLogger">
-              <constructor-arg type="java.lang.String" value="config/log4j-3.xml"/>
+              <constructor-arg type="java.lang.String" value="config/log4j-4.xml"/>
             </bean>
         </property>
     </bean>
