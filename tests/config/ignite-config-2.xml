@@ -24,7 +24,7 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.springframework.org/schema/util
         http://www.springframework.org/schema/util/spring-util.xsd">
-    <import resource="queries-schema-default.xml"/>
+    <import resource="ignite-config-base.xml"/>
 
     <bean parent="grid.cfg">
         <property name="clientConnectorConfiguration">
