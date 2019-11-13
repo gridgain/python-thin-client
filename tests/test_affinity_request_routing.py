@@ -15,12 +15,28 @@
 #
 import pytest
 
+from pygridgain.datatypes.cache_config import CacheMode
+from pygridgain.datatypes.prop_codes import *
 from tests.util import *
 
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
-def test_cache_operation_on_primitive_key_routes_request_to_primary_node(key, grid_idx, client_affinity_aware):
-    cache = client_affinity_aware.get_or_create_cache('test_cache_1')
+@pytest.mark.parametrize("backups", [-1, 0, 1, 2, 3])
+def test_cache_operation_on_primitive_key_routes_request_to_primary_node(
+        request, key, grid_idx, backups, client_affinity_aware):
+
+    cache_name = request.node.name + str(backups)
+    cache_mode = CacheMode.PARTITIONED
+
+    if backups < 0:
+        cache_mode = CacheMode.REPLICATED
+        backups = 0
+
+    cache = client_affinity_aware.get_or_create_cache({
+        PROP_NAME: cache_name,
+        PROP_CACHE_MODE: cache_mode,
+        PROP_BACKUPS_NUMBER: backups,
+    })
 
     # Warm up affinity map
     cache.put(key, key)
