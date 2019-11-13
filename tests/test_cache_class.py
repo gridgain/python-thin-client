@@ -23,7 +23,7 @@ from pygridgain.datatypes import (
     BoolObject, DecimalObject, FloatObject, IntObject, String,
 )
 from pygridgain.datatypes.prop_codes import *
-from pygridgain.exceptions import CacheError
+from pygridgain.exceptions import CacheError, ParameterError
 
 
 def test_cache_create(client):
@@ -219,3 +219,18 @@ def test_get_and_put_if_absent(client):
     cache.put('my_key', 43)
     value = cache.get_and_put_if_absent('my_key', 42)
     assert value is 43
+
+
+def test_cache_get_when_does_not_exist(client):
+    cache = client.get_cache('missing-cache')
+    with pytest.raises(CacheError) as e_info:
+        cache.put(1, 1)
+    assert str(e_info.value) == "Cache does not exist [cacheId= 1665146971]"
+
+
+def test_cache_create_none_name(client):
+    with pytest.raises(ParameterError) as e_info:
+        client.create_cache(None)
+    assert str(e_info.value) == "You should supply at least cache name"
+
+
