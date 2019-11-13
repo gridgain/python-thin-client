@@ -70,7 +70,3 @@ Run
 $ cd gridgain/modules/platforms/python
 $ python setup.py pytest
 ```
-
-*NB!* All tests require GridGain node running on localhost:10800.
-If you need to change the connection parameters, see the documentation on
-[testing](https://pygridgain.readthedocs.io/en/latest/readme.html#testing).
