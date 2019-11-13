@@ -38,3 +38,19 @@ def test_client_with_failed_server(request):
     finally:
         kill_process_tree(srv.pid)
 
+
+def test_client_with_recovered_server(request):
+    srv = start_ignite(4)
+    try:
+        client = Client()
+        client.connect([("127.0.0.1", 10804)])
+        cache = client.get_or_create_cache(request.node.name)
+        cache.put(1, 1)
+
+        # Kill and restart server
+        kill_process_tree(srv.pid)
+        srv = start_ignite(4)
+        cache.put(1, 2)
+        assert cache.get(1) == 2
+    finally:
+        kill_process_tree(srv.pid)
