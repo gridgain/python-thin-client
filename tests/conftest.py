@@ -85,30 +85,8 @@ def client(
     ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
-    client = Client(
-        timeout=timeout,
-        affinity_aware=affinity_aware,
-        use_ssl=use_ssl,
-        ssl_keyfile=ssl_keyfile,
-        ssl_certfile=ssl_certfile,
-        ssl_ca_certfile=ssl_ca_certfile,
-        ssl_cert_reqs=ssl_cert_reqs,
-        ssl_ciphers=ssl_ciphers,
-        ssl_version=ssl_version,
-        username=username,
-        password=password,
-    )
-    nodes = []
-    for n in node:
-        host, port = n.split(':')
-        port = int(port)
-        nodes.append((host, port))
-    client.connect(nodes)
-    yield client
-    conn = client.random_node
-    for cache_name in cache_get_names(conn).value:
-        cache_destroy(conn, cache_name)
-    client.close()
+    yield from client0(node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+                       ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
@@ -117,8 +95,8 @@ def client_affinity_aware(
         ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
         username, password
 ):
-    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
-                      ssl_ciphers, ssl_version, username, password)
+    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+                       ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
@@ -146,6 +124,37 @@ def cache(client):
 def log_init():
     # Init log call timestamp
     get_request_grid_idx()
+
+
+def client0(
+    node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile,
+    ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+    username, password,
+):
+    client = Client(
+        timeout=timeout,
+        affinity_aware=affinity_aware,
+        use_ssl=use_ssl,
+        ssl_keyfile=ssl_keyfile,
+        ssl_certfile=ssl_certfile,
+        ssl_ca_certfile=ssl_ca_certfile,
+        ssl_cert_reqs=ssl_cert_reqs,
+        ssl_ciphers=ssl_ciphers,
+        ssl_version=ssl_version,
+        username=username,
+        password=password,
+    )
+    nodes = []
+    for n in node:
+        host, port = n.split(':')
+        port = int(port)
+        nodes.append((host, port))
+    client.connect(nodes)
+    yield client
+    conn = client.random_node
+    for cache_name in cache_get_names(conn).value:
+        cache_destroy(conn, cache_name)
+    client.close()
 
 
 def pytest_addoption(parser):
