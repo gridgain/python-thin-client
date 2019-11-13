@@ -24,21 +24,29 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.springframework.org/schema/util
         http://www.springframework.org/schema/util/spring-util.xsd">
-    <import resource="queries-schema-default.xml"/>
+    <bean id="grid.cfg" abstract="true" class="org.apache.ignite.configuration.IgniteConfiguration">
+        <property name="localHost" value="127.0.0.1"/>
 
-    <bean parent="grid.cfg">
-        <property name="clientConnectorConfiguration">
-            <bean class="org.apache.ignite.configuration.ClientConnectorConfiguration">
-                <property name="host" value="127.0.0.1"/>
-                <property name="port" value="10801"/>
-                <property name="portRange" value="0"/>
+        <property name="discoverySpi">
+            <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <property name="ipFinder">
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
+                        <property name="addresses">
+                            <list>
+                                <value>127.0.0.1:47500..47503</value>
+                            </list>
+                        </property>
+                    </bean>
+                </property>
+                <property name="socketTimeout" value="300" />
             </bean>
         </property>
 
-        <property name="gridLogger">
-            <bean class="org.apache.ignite.logger.log4j.Log4JLogger">
-              <constructor-arg type="java.lang.String" value="config/log4j-1.xml"/>
-            </bean>
-        </property>
+        <bean class="org.apache.ignite.configuration.CacheConfiguration">
+            <property name="name" value="custom-affinity"/>
+            <property name="affinity">
+                <bean class="org.apache.ignite.internal.processors.affinity.LocalAffinityFunction" />
+            </property>
+        </bean>
     </bean>
 </beans>
