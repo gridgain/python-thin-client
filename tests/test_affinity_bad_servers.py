@@ -50,6 +50,12 @@ def test_client_with_recovered_server(request):
         # Kill and restart server
         kill_process_tree(srv.pid)
         srv = start_ignite(4)
+
+        # First request fails
+        with pytest.raises(ConnectionResetError):
+            cache.put(1, 2)
+
+        # Retry succeeds
         cache.put(1, 2)
         assert cache.get(1) == 2
     finally:
