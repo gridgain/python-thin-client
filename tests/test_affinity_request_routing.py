@@ -21,7 +21,7 @@ from tests.util import *
 
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
-@pytest.mark.parametrize("backups", [-1, 0, 1, 2, 3])
+@pytest.mark.parametrize("backups", [0, 1, 2, 3, -1])
 def test_cache_operation_on_primitive_key_routes_request_to_primary_node(
         request, key, grid_idx, backups, client_affinity_aware):
 
