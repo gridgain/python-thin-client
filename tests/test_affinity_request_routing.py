@@ -113,10 +113,16 @@ def test_cache_operation_routed_to_new_cluster_node(request):
 def test_unsupported_affinity_cache_operation_routed_to_random_node(client_affinity_aware):
     cache = client_affinity_aware.get_cache("custom-affinity")
 
-    cache.put(1, 1)
-    idx1 = get_request_grid_idx()
+    key = 1
+    cache.put(key, key)
+    idx1 = get_request_grid_idx("Put")
+    idx2 = idx1
 
-    cache.put(1, 1)
-    idx2 = get_request_grid_idx()
+    # Try 10 times - random node may end up being the same
+    for _ in range(1, 10):
+        cache.put(key, key)
+        idx2 = get_request_grid_idx("Put")
+        if idx2 != idx1:
+            break
 
     assert idx1 != idx2
