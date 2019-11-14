@@ -116,7 +116,7 @@ def test_unsupported_affinity_cache_operation_routed_to_random_node(client_affin
     cache.put(1, 1)
     idx1 = get_request_grid_idx()
 
-    cache.put(1,1)
+    cache.put(1, 1)
     idx2 = get_request_grid_idx()
 
     assert idx1 != idx2
