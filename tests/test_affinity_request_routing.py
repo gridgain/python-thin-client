@@ -82,11 +82,13 @@ def test_cache_operation_on_primitive_key_routes_request_to_primary_node(
     assert get_request_grid_idx("ReplaceIfEquals") == grid_idx
 
 
-def test_cache_operation_on_complex_key_routes_request_to_primary_node(request):
-    pass  # TODO
+@pytest.mark.xfail(reason="Custom key objects are not supported yet")
+def test_cache_operation_on_complex_key_routes_request_to_primary_node():
+    pass
 
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
+@pytest.mark.xfail(strict=True,reason="Custom key objects are not supported yet")
 def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(
         request, client_affinity_aware, key, grid_idx):
     class AffinityTestType1(
