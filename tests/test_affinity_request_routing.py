@@ -78,6 +78,14 @@ def test_cache_operation_on_primitive_key_routes_request_to_primary_node(
     assert get_request_grid_idx("ReplaceIfEquals") == grid_idx
 
 
+def test_cache_operation_on_complex_key_routes_request_to_primary_node(request):
+    pass  # TODO
+
+
+def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(request):
+    pass  # TODO
+
+
 def test_cache_operation_routed_to_new_cluster_node(request):
     client = Client(affinity_aware=True)
     client.connect([("127.0.0.1", 10801), ("127.0.0.1", 10802), ("127.0.0.1", 10803), ("127.0.0.1", 10804)])
