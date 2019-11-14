@@ -306,7 +306,7 @@ can not be used in a Python identifier, for example:
 - `$`, a common case for Scala classes,
 - `+`, internal class name separator in C#,
 
-then `pygridgain` can not maintain this match. In such cases `pyignite` tries
+then `pygridgain` can not maintain this match. In such cases `pygridgain` tries
 to sanitize a type name to derive a “good” dataclass name from it.
 
 If your code needs consistent naming between the server and the client, make
