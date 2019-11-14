@@ -21,20 +21,12 @@ from tests.util import *
 
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
-@pytest.mark.parametrize("backups", [0, 1, 2, 3, -1])
+@pytest.mark.parametrize("backups", [0, 1, 2, 3])
 def test_cache_operation_on_primitive_key_routes_request_to_primary_node(
         request, key, grid_idx, backups, client_affinity_aware):
 
-    cache_name = request.node.name + str(backups)
-    cache_mode = CacheMode.PARTITIONED
-
-    if backups < 0:
-        cache_mode = CacheMode.REPLICATED
-        backups = 0
-
     cache = client_affinity_aware.get_or_create_cache({
-        PROP_NAME: cache_name,
-        PROP_CACHE_MODE: cache_mode,
+        PROP_NAME: request.node.name + str(backups),
         PROP_BACKUPS_NUMBER: backups,
     })
 
@@ -111,10 +103,22 @@ def test_cache_operation_routed_to_new_cluster_node(request):
 
 
 def test_unsupported_affinity_cache_operation_routed_to_random_node(client_affinity_aware):
-    cache = client_affinity_aware.get_cache("custom-affinity")
+    verify_random_node(client_affinity_aware.get_cache("custom-affinity"))
 
+
+def test_replicated_cache_operation_routed_to_random_node(request, client_affinity_aware):
+    cache = client_affinity_aware.get_or_create_cache({
+        PROP_NAME: request.node.name,
+        PROP_CACHE_MODE: CacheMode.REPLICATED,
+    })
+
+    verify_random_node(cache)
+
+
+def verify_random_node(cache):
     key = 1
     cache.put(key, key)
+
     idx1 = get_request_grid_idx("Put")
     idx2 = idx1
 
@@ -124,5 +128,4 @@ def test_unsupported_affinity_cache_operation_routed_to_random_node(client_affin
         idx2 = get_request_grid_idx("Put")
         if idx2 != idx1:
             break
-
     assert idx1 != idx2
