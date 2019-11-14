@@ -13,8 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from collections import OrderedDict
+
 import pytest
 
+from pygridgain import *
+from pygridgain.datatypes import *
 from pygridgain.datatypes.cache_config import CacheMode
 from pygridgain.datatypes.prop_codes import *
 from tests.util import *
@@ -82,8 +86,40 @@ def test_cache_operation_on_complex_key_routes_request_to_primary_node(request):
     pass  # TODO
 
 
-def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(request):
-    pass  # TODO
+@pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
+def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(
+        request, client_affinity_aware, key, grid_idx):
+    class AffinityTestType1(
+        metaclass=GenericObjectMeta,
+        type_name='AffinityTestType1',
+        schema=OrderedDict([
+            ('test_str', String),
+            ('test_int', LongObject)
+        ])
+    ):
+        pass
+
+    cache_config = {
+        PROP_NAME: request.node.name,
+        PROP_CACHE_KEY_CONFIGURATION: [
+            {
+                'type_name': 'AffinityTestType1',
+                'affinity_key_field_name': 'test_int',
+            },
+        ],
+    }
+    cache = client_affinity_aware.create_cache(cache_config)
+
+    # noinspection PyArgumentList
+    key_obj = AffinityTestType1(
+        test_str="abc",
+        test_int=key
+    )
+
+    cache.put(key_obj, 1)
+    cache.put(key_obj, 2)
+
+    assert get_request_grid_idx("Put") == grid_idx
 
 
 def test_cache_operation_routed_to_new_cluster_node(request):
