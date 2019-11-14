@@ -108,3 +108,15 @@ def test_cache_operation_routed_to_new_cluster_node(request):
         assert get_request_grid_idx("GetAndRemove") == 4
     finally:
         kill_process_tree(srv.pid)
+
+
+def test_unsupported_affinity_cache_operation_routed_to_random_node(client_affinity_aware):
+    cache = client_affinity_aware.get_cache("custom-affinity")
+
+    cache.put(1, 1)
+    idx1 = get_request_grid_idx()
+
+    cache.put(1,1)
+    idx2 = get_request_grid_idx()
+
+    assert idx1 != idx2
