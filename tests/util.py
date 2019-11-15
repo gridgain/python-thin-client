@@ -89,6 +89,7 @@ def kill_process_tree(pid):
     if is_windows():
         subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
     else:
+        # TODO: This destroys TC agent, we should kill only descendants somehow
         os.killpg(os.getpgid(pid), signal.SIGKILL)
 
 
