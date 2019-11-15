@@ -178,7 +178,7 @@ def test_get_binary_type(client):
 
 
 @pytest.mark.parametrize('page_size', range(1, 17, 5))
-def test_cache_scan(client, page_size):
+def test_cache_scan(request, client, page_size):
     test_data = {
         1: 'This is a test',
         2: 'One more test',
@@ -197,7 +197,7 @@ def test_cache_scan(client, page_size):
         15: 'sollicitudin iaculis',
     }
 
-    cache = client.get_or_create_cache('my_oop_cache')
+    cache = client.get_or_create_cache(request.node.name)
     cache.put_all(test_data)
 
     gen = cache.scan(page_size=page_size)
