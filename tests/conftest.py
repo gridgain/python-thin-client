@@ -151,9 +151,6 @@ def client0(
         nodes.append((host, port))
     client.connect(nodes)
     yield client
-    conn = client.random_node
-    for cache_name in cache_get_names(conn).value:
-        cache_destroy(conn, cache_name)
     client.close()
 
 
