@@ -16,6 +16,7 @@
 import datetime
 import glob
 import os
+import psutil
 import re
 import signal
 import subprocess
@@ -89,8 +90,10 @@ def kill_process_tree(pid):
     if is_windows():
         subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
     else:
-        # TODO: This destroys TC agent, we should kill only descendants somehow
-        os.killpg(os.getpgid(pid), signal.SIGKILL)
+        children = psutil.Process(pid).children(recursive=True)
+        for child in children:
+            os.kill(child.pid, signal.SIGKILL)
+        os.kill(signal.SIGKILL)
 
 
 def start_ignite(idx=1, debug=False):
