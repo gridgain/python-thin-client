@@ -29,16 +29,25 @@
 
         <property name="discoverySpi">
             <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <property name="localAddress" value="127.0.0.1"/>
+                <property name="localPort" value="48500"/>
                 <property name="ipFinder">
                     <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
                         <property name="addresses">
                             <list>
-                                <value>127.0.0.1:47500..47503</value>
+                                <value>127.0.0.1:48500..48503</value>
                             </list>
                         </property>
                     </bean>
                 </property>
                 <property name="socketTimeout" value="300"/>
+            </bean>
+        </property>
+
+        <property name="communicationSpi">
+            <bean class="org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi">
+                <property name="localAddress" value="127.0.0.1"/>
+                <property name="localPort" value="48100"/>
             </bean>
         </property>
 
