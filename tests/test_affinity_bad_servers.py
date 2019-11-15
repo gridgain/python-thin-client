@@ -52,7 +52,7 @@ def test_client_with_recovered_server(request):
         srv = start_ignite(4)
 
         # First request fails
-        with pytest.raises(ConnectionResetError):
+        with pytest.raises(Exception):
             cache.put(1, 2)
 
         # Retry succeeds
