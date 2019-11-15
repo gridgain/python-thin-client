@@ -93,7 +93,7 @@ def kill_process_tree(pid):
         children = psutil.Process(pid).children(recursive=True)
         for child in children:
             os.kill(child.pid, signal.SIGKILL)
-        os.kill(signal.SIGKILL)
+        os.kill(pid, signal.SIGKILL)
 
 
 def start_ignite(idx=1, debug=False):
