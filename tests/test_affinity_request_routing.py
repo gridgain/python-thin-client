@@ -130,7 +130,7 @@ def test_cache_operation_routed_to_new_cluster_node(request):
     cache = client.get_or_create_cache(request.node.name)
     key = 12
     cache.put(key, key)
-    assert get_request_grid_idx("Put") == 2
+    assert get_request_grid_idx("Put") == 3
 
     srv = start_ignite(4)
     try:
