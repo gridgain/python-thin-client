@@ -10,18 +10,21 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
 ## Installation
 
-#### *for end user*
-If you only want to use the `pygridgain` module in your project, do:
+### From repository
+This is a recommended way for users. If you only want to use the `pygridgain`
+module in your project, do:
 ```
 $ pip install pygridgain
 ```
 
-#### *for developer*
-If you want to run tests, examples or build documentation, clone
-the whole repository:
-```
-$ git clone git@github.com:gridgain/gridgain.git
-$ cd gridgain/modules/platforms/python
+### From sources
+This way is more suitable for developers or if you install client from zip archive.
+1. Download and/or unzip GridGain Python client sources to `gridgain_client_path`
+2. Go to `gridgain_client_path` folder
+3. Execute `pip install -e .`
+
+```bash
+$ cd <gridgain_client_path>
 $ pip install -e .
 ```
 
@@ -37,6 +40,25 @@ $ pip install -r requirements/<your task>.txt
 ```
 
 You may also want to consult the `setuptools` manual about using `setup.py`.
+
+### Updating from older version
+
+To upgrade an existing package, use the following command:
+```
+pip install --upgrade pygridgain
+```
+
+To install the latest version of a package:
+
+```
+pip install pygridgain
+```
+
+To install a specific version:
+
+```
+pip install pygridgain==1.0.0
+```
 
 ## Documentation
 [The package documentation](https://pygridgain.readthedocs.io) is available
