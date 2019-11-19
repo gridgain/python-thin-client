@@ -257,6 +257,8 @@ class Cache:
             if key_hint is None:
                 key_hint = AnyDataObject.map_python_type(key)
 
+            parts = -1
+
             if self.affinity['version'] < self._client.affinity_version:
                 # update partition mapping
                 while True:
@@ -284,7 +286,10 @@ class Cache:
                 self.affinity['number_of_partitions'] = parts
             else:
                 # get number of partitions
-                parts = self.affinity['number_of_partitions']
+                parts = self.affinity.get('number_of_partitions')
+
+            if not parts:
+                return conn
 
             if self.affinity['is_applicable']:
                 affinity_key_id = self.affinity['cache_config'].get(
