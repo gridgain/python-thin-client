@@ -1,1 +1,5 @@
 .idea
+.eggs
+.pytest_cache
+pygridgain.egg-info
+ignite-log-*

@@ -19,9 +19,9 @@ import ssl
 
 import pytest
 
-from pygridgain import Client
 from pygridgain.constants import *
 from pygridgain.api import cache_create, cache_get_names, cache_destroy
+from tests.util import *
 
 
 class BoolParser(argparse.Action):
@@ -64,8 +64,69 @@ class SSLVersionParser(argparse.Action):
             )
 
 
+@pytest.fixture(scope='session', autouse=True)
+def server1():
+    yield from start_ignite_gen(1)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def server2():
+    yield from start_ignite_gen(2)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def server3():
+    yield from start_ignite_gen(3)
+
+
 @pytest.fixture(scope='module')
 def client(
+    node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile,
+    ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+    username, password,
+):
+    yield from client0(node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+                       ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
+
+
+@pytest.fixture(scope='module')
+def client_affinity_aware(
+        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+        username, password
+):
+    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+                       ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
+
+
+@pytest.fixture(scope='module')
+def client_affinity_aware_single_server(
+        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+        username, password
+):
+    node = node[:1]
+    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
+                      ssl_ciphers, ssl_version, username, password)
+
+
+@pytest.fixture
+def cache(client):
+    cache_name = 'my_bucket'
+    conn = client.random_node
+
+    cache_create(conn, cache_name)
+    yield cache_name
+    cache_destroy(conn, cache_name)
+
+
+@pytest.fixture(autouse=True)
+def log_init():
+    # Init log call timestamp
+    get_request_grid_idx()
+
+
+def client0(
     node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile,
     ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
@@ -90,20 +151,7 @@ def client(
         nodes.append((host, port))
     client.connect(nodes)
     yield client
-    conn = client.random_node
-    for cache_name in cache_get_names(conn).value:
-        cache_destroy(conn, cache_name)
     client.close()
-
-
-@pytest.fixture
-def cache(client):
-    cache_name = 'my_bucket'
-    conn = client.random_node
-
-    cache_create(conn, cache_name)
-    yield cache_name
-    cache_destroy(conn, cache_name)
 
 
 def pytest_addoption(parser):
@@ -113,7 +161,7 @@ def pytest_addoption(parser):
         default=None,
         help=(
             'GridGain binary protocol test server connection string '
-            '(default: "localhost:10800")'
+            '(default: "localhost:10801")'
         )
     )
     parser.addoption(
@@ -206,7 +254,9 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     session_parameters = {
-        'node': ['{host}:{port}'.format(host=DEFAULT_HOST, port=DEFAULT_PORT)],
+        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801),
+                 '{host}:{port}'.format(host='127.0.0.1', port=10802),
+                 '{host}:{port}'.format(host='127.0.0.1', port=10803)],
         'timeout': None,
         'affinity_aware': False,
         'use_ssl': False,
@@ -223,6 +273,7 @@ def pytest_generate_tests(metafunc):
     for param_name in session_parameters:
         if param_name in metafunc.fixturenames:
             param = metafunc.config.getoption(param_name)
+            # TODO: This does not work for bool
             if param is None:
                 param = session_parameters[param_name]
             if param_name == 'node' or type(param) is not list:
