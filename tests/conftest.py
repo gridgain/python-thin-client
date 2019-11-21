@@ -161,7 +161,7 @@ def pytest_addoption(parser):
         default=None,
         help=(
             'GridGain binary protocol test server connection string '
-            '(default: "localhost:10800")'
+            '(default: "localhost:10801")'
         )
     )
     parser.addoption(
