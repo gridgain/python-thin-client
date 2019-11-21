@@ -425,4 +425,6 @@ class SQLResponse130(Response130):
 
 
 Response120 = Response130
+Response110 = Response130
+Response100 = Response130
 SQLResponse120 = SQLResponse130

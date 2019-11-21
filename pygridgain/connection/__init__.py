@@ -232,6 +232,8 @@ class Connection:
         return data
 
     read_response_120 = read_response_130
+    read_response_110 = read_response_130
+    read_response_100 = read_response_130
 
     def connect(
         self, host: str = None, port: int = None

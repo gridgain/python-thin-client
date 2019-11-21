@@ -64,17 +64,17 @@ class SSLVersionParser(argparse.Action):
             )
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session', autouse=False)
 def server1():
     yield from start_ignite_gen(1)
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session', autouse=False)
 def server2():
     yield from start_ignite_gen(2)
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session', autouse=False)
 def server3():
     yield from start_ignite_gen(3)
 
@@ -161,7 +161,7 @@ def pytest_addoption(parser):
         default=None,
         help=(
             'GridGain binary protocol test server connection string '
-            '(default: "localhost:10801")'
+            '(default: "localhost:10800")'
         )
     )
     parser.addoption(
@@ -254,7 +254,7 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     session_parameters = {
-        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10801),
+        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10800),
                  '{host}:{port}'.format(host='127.0.0.1', port=10802),
                  '{host}:{port}'.format(host='127.0.0.1', port=10803)],
         'timeout': None,
