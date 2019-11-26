@@ -27,12 +27,12 @@ from pygridgain.datatypes.cache_config import CacheMode
 from pygridgain.datatypes.prop_codes import *
 
 
-def test_get_node_partitions(client_affinity_aware):
+def test_get_node_partitions(client_partition_aware):
 
-    conn = client_affinity_aware.random_node
+    conn = client_partition_aware.random_node
 
-    cache_1 = client_affinity_aware.get_or_create_cache('test_cache_1')
-    cache_2 = client_affinity_aware.get_or_create_cache({
+    cache_1 = client_partition_aware.get_or_create_cache('test_cache_1')
+    cache_2 = client_partition_aware.get_or_create_cache({
         PROP_NAME: 'test_cache_2',
         PROP_CACHE_KEY_CONFIGURATION: [
             {
@@ -41,9 +41,9 @@ def test_get_node_partitions(client_affinity_aware):
             }
         ],
     })
-    cache_3 = client_affinity_aware.get_or_create_cache('test_cache_3')
-    cache_4 = client_affinity_aware.get_or_create_cache('test_cache_4')
-    cache_5 = client_affinity_aware.get_or_create_cache('test_cache_5')
+    cache_3 = client_partition_aware.get_or_create_cache('test_cache_3')
+    cache_4 = client_partition_aware.get_or_create_cache('test_cache_4')
+    cache_5 = client_partition_aware.get_or_create_cache('test_cache_5')
 
     result = cache_get_node_partitions(
         conn,
@@ -115,9 +115,9 @@ def test_get_node_partitions(client_affinity_aware):
 
     ],
 )
-def test_affinity(client_affinity_aware, key, key_hint):
+def test_affinity(client_partition_aware, key, key_hint):
 
-    cache_1 = client_affinity_aware.get_or_create_cache({
+    cache_1 = client_partition_aware.get_or_create_cache({
         PROP_NAME: 'test_cache_1',
         PROP_CACHE_MODE: CacheMode.PARTITIONED,
     })
@@ -126,7 +126,7 @@ def test_affinity(client_affinity_aware, key, key_hint):
 
     best_node = cache_1.get_best_node(key, key_hint=key_hint)
 
-    for node in filter(lambda n: n.alive, client_affinity_aware._nodes):
+    for node in filter(lambda n: n.alive, client_partition_aware._nodes):
         result = cache_local_peek(
             node, cache_1.cache_id, key, key_hint=key_hint,
         )
@@ -142,9 +142,9 @@ def test_affinity(client_affinity_aware, key, key_hint):
     cache_1.destroy()
 
 
-def test_affinity_for_generic_object(client_affinity_aware):
+def test_affinity_for_generic_object(client_partition_aware):
 
-    cache_1 = client_affinity_aware.get_or_create_cache({
+    cache_1 = client_partition_aware.get_or_create_cache({
         PROP_NAME: 'test_cache_1',
         PROP_CACHE_MODE: CacheMode.PARTITIONED,
     })
@@ -166,7 +166,7 @@ def test_affinity_for_generic_object(client_affinity_aware):
 
     best_node = cache_1.get_best_node(key, key_hint=BinaryObject)
 
-    for node in filter(lambda n: n.alive, client_affinity_aware._nodes):
+    for node in filter(lambda n: n.alive, client_partition_aware._nodes):
         result = cache_local_peek(
             node, cache_1.cache_id, key, key_hint=BinaryObject,
         )
@@ -182,16 +182,16 @@ def test_affinity_for_generic_object(client_affinity_aware):
     cache_1.destroy()
 
 
-def test_affinity_for_generic_object_without_type_hints(client_affinity_aware):
+def test_affinity_for_generic_object_without_type_hints(client_partition_aware):
 
-    if client_affinity_aware.protocol_version < (1, 4, 0):
+    if client_partition_aware.protocol_version < (1, 4, 0):
         pytest.skip(
             'Best effort affinity is not supported by the protocol {}.'.format(
-                client_affinity_aware.protocol_version
+                client_partition_aware.protocol_version
             )
         )
 
-    cache_1 = client_affinity_aware.get_or_create_cache({
+    cache_1 = client_partition_aware.get_or_create_cache({
         PROP_NAME: 'test_cache_1',
         PROP_CACHE_MODE: CacheMode.PARTITIONED,
     })
@@ -213,7 +213,7 @@ def test_affinity_for_generic_object_without_type_hints(client_affinity_aware):
 
     best_node = cache_1.get_best_node(key)
 
-    for node in filter(lambda n: n.alive, client_affinity_aware._nodes):
+    for node in filter(lambda n: n.alive, client_partition_aware._nodes):
         result = cache_local_peek(
             node, cache_1.cache_id, key
         )

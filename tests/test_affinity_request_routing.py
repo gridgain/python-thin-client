@@ -27,9 +27,9 @@ from tests.util import *
 @pytest.mark.parametrize("key,grid_idx", [(1, 3), (2, 1), (3, 1), (4, 3), (5, 1), (6, 3), (11, 2), (13, 2), (19, 2)])
 @pytest.mark.parametrize("backups", [0, 1, 2, 3])
 def test_cache_operation_on_primitive_key_routes_request_to_primary_node(
-        request, key, grid_idx, backups, client_affinity_aware):
+        request, key, grid_idx, backups, client_partition_aware):
 
-    cache = client_affinity_aware.get_or_create_cache({
+    cache = client_partition_aware.get_or_create_cache({
         PROP_NAME: request.node.name + str(backups),
         PROP_BACKUPS_NUMBER: backups,
     })
@@ -90,7 +90,7 @@ def test_cache_operation_on_complex_key_routes_request_to_primary_node():
 @pytest.mark.parametrize("key,grid_idx", [(1, 2), (2, 1), (3, 1), (4, 2), (5, 2), (6, 3)])
 @pytest.mark.skip(reason="GG-25823: Custom key objects are not supported yet")
 def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(
-        request, client_affinity_aware, key, grid_idx):
+        request, client_partition_aware, key, grid_idx):
     class AffinityTestType1(
         metaclass=GenericObjectMeta,
         type_name='AffinityTestType1',
@@ -110,7 +110,7 @@ def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(
             },
         ],
     }
-    cache = client_affinity_aware.create_cache(cache_config)
+    cache = client_partition_aware.create_cache(cache_config)
 
     # noinspection PyArgumentList
     key_obj = AffinityTestType1(
@@ -125,7 +125,7 @@ def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(
 
 
 def test_cache_operation_routed_to_new_cluster_node(request):
-    client = Client(affinity_aware=True)
+    client = Client(partition_aware=True)
     client.connect([("127.0.0.1", 10801), ("127.0.0.1", 10802), ("127.0.0.1", 10803), ("127.0.0.1", 10804)])
     cache = client.get_or_create_cache(request.node.name)
     key = 12
@@ -149,12 +149,12 @@ def test_cache_operation_routed_to_new_cluster_node(request):
         kill_process_tree(srv.pid)
 
 
-def test_unsupported_affinity_cache_operation_routed_to_random_node(client_affinity_aware):
-    verify_random_node(client_affinity_aware.get_cache("custom-affinity"))
+def test_unsupported_affinity_cache_operation_routed_to_random_node(client_partition_aware):
+    verify_random_node(client_partition_aware.get_cache("custom-affinity"))
 
 
-def test_replicated_cache_operation_routed_to_random_node(request, client_affinity_aware):
-    cache = client_affinity_aware.get_or_create_cache({
+def test_replicated_cache_operation_routed_to_random_node(request, client_partition_aware):
+    cache = client_partition_aware.get_or_create_cache({
         PROP_NAME: request.node.name,
         PROP_CACHE_MODE: CacheMode.REPLICATED,
     })

@@ -19,7 +19,7 @@ from tests.util import *
 
 
 def test_client_with_multiple_bad_servers():
-    client = Client(affinity_aware=True)
+    client = Client(partition_aware=True)
     with pytest.raises(ReconnectError) as e_info:
         client.connect([("127.0.0.1", 10900), ("127.0.0.1", 10901)])
     assert str(e_info.value) == "Can not connect."
