@@ -140,7 +140,7 @@ Other `pytest` parameters:
 ``--timeout`` − timeout (in seconds) for each socket operation, including
 `connect`. Accepts integer or float value. Default is None (blocking mode),
 
-``--affinity-aware`` − experimental; off by default; turns on the affinity
+``--partition-aware`` − experimental; off by default; turns on the partition
 awareness: a way for the thin client to calculate a data placement for the
 given key.
 

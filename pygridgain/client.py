@@ -92,7 +92,7 @@ class Client:
     protocol_version: Optional[Tuple] = None
 
     def __init__(
-        self, compact_footer: bool = None, affinity_aware: bool = False,
+        self, compact_footer: bool = None, partition_aware: bool = False,
         **kwargs
     ):
         """
@@ -103,7 +103,7 @@ class Client:
          Default is to use the same approach the server is using (None).
          GridGain binary protocol documentation on this topic:
          https://apacheignite.readme.io/docs/binary-client-protocol-data-format#section-schema
-        :param affinity_aware: (optional) try to calculate the exact data
+        :param partition_aware: (optional) try to calculate the exact data
          placement from the key before to issue the key operation to the
          server node:
          https://cwiki.apache.org/confluence/display/IGNITE/IEP-23%3A+Best+Effort+Affinity+for+thin+clients
@@ -114,7 +114,7 @@ class Client:
         self._connection_args = kwargs
         self._nodes = []
         self._current_node = 0
-        self._affinity_aware = affinity_aware
+        self._partition_aware = partition_aware
         self.affinity_version = (0, 0)
 
     def get_protocol_version(self) -> Optional[Tuple]:
@@ -130,8 +130,8 @@ class Client:
         return self.protocol_version
 
     @property
-    def affinity_aware(self):
-        return self._affinity_aware
+    def partition_aware(self):
+        return self._partition_aware
 
     def connect(self, *args):
         """

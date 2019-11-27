@@ -18,8 +18,8 @@ import pytest
 from tests.util import get_request_grid_idx
 
 
-def test_all_cache_operations_with_affinity_aware_client_on_single_server(request, client_affinity_aware_single_server):
-    cache = client_affinity_aware_single_server.get_or_create_cache(request.node.name)
+def test_all_cache_operations_with_partition_aware_client_on_single_server(request, client_partition_aware_single_server):
+    cache = client_partition_aware_single_server.get_or_create_cache(request.node.name)
     key = 1
     key2 = 2
 
