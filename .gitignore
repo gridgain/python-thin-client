@@ -3,3 +3,4 @@
 .pytest_cache
 pygridgain.egg-info
 ignite-log-*
+__pycache__

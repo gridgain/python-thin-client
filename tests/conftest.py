@@ -81,16 +81,16 @@ def server3():
 
 @pytest.fixture(scope='module')
 def client(
-    node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile,
+    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
     ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
-    yield from client0(node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+    yield from client0(node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
                        ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
-def client_affinity_aware(
+def client_partition_aware(
         node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
         ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
         username, password
@@ -100,7 +100,7 @@ def client_affinity_aware(
 
 
 @pytest.fixture(scope='module')
-def client_affinity_aware_single_server(
+def client_partition_aware_single_server(
         node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
         ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
         username, password
@@ -127,13 +127,13 @@ def log_init():
 
 
 def client0(
-    node, timeout, affinity_aware, use_ssl, ssl_keyfile, ssl_certfile,
+    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
     ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
     client = Client(
         timeout=timeout,
-        affinity_aware=affinity_aware,
+        partition_aware=partition_aware,
         use_ssl=use_ssl,
         ssl_keyfile=ssl_keyfile,
         ssl_certfile=ssl_certfile,
@@ -175,7 +175,7 @@ def pytest_addoption(parser):
         )
     )
     parser.addoption(
-        '--affinity-aware',
+        '--partition-aware',
         action=BoolParser,
         nargs='?',
         default=False,
@@ -258,7 +258,7 @@ def pytest_generate_tests(metafunc):
                  '{host}:{port}'.format(host='127.0.0.1', port=10802),
                  '{host}:{port}'.format(host='127.0.0.1', port=10803)],
         'timeout': None,
-        'affinity_aware': False,
+        'partition_aware': False,
         'use_ssl': False,
         'ssl_keyfile': None,
         'ssl_certfile': None,

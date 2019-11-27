@@ -253,7 +253,7 @@ class Cache:
         """
         conn = self._client.random_node
 
-        if self.client.affinity_aware and key is not None:
+        if self.client.partition_aware and key is not None:
             if key_hint is None:
                 key_hint = AnyDataObject.map_python_type(key)
 
