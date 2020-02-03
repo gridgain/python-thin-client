@@ -43,12 +43,10 @@ class Primitive(GridGainDataType):
     _type_name = None
     _type_id = None
     c_type = None
-    size = None
 
     @classmethod
     def parse(cls, client: 'Client'):
-        # TODO: Where does this c_type go?
-        return cls.c_type, client.recv(cls.size)
+        return cls.c_type, client.recv(ctypes.sizeof(cls.c_type))
 
     @staticmethod
     def to_python(ctype_object, *args, **kwargs):
@@ -56,81 +54,54 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def from_python(cls, value):
-        return value.to_bytes(cls.size, byteorder=PROTOCOL_BYTE_ORDER, signed=True)
-
-    @classmethod
-    def from_bytes(cls, bytes):
-        return int.from_bytes(bytes, PROTOCOL_BYTE_ORDER)
+        return bytes(cls.c_type(value))
 
 
 class Byte(Primitive):
     _type_name = NAME_BYTE
     _type_id = TYPE_BYTE
     c_type = ctypes.c_byte
-    size = 1
 
 
 class Short(Primitive):
     _type_name = NAME_SHORT
     _type_id = TYPE_SHORT
     c_type = ctypes.c_short
-    size = 2
 
 
 class Int(Primitive):
     _type_name = NAME_INT
     _type_id = TYPE_INT
     c_type = ctypes.c_int
-    size = 4
 
 
 class Long(Primitive):
     _type_name = NAME_LONG
     _type_id = TYPE_LONG
     c_type = ctypes.c_longlong
-    size = 8
 
 
 class Float(Primitive):
     _type_name = NAME_FLOAT
     _type_id = TYPE_FLOAT
     c_type = ctypes.c_float
-    size = 4
-
-    @classmethod
-    def from_bytes(cls, bytes):
-        raise Exception("Not implemented")
-
-    @classmethod
-    def from_python(cls, value):
-        raise Exception("Not implemented")
 
 
 class Double(Primitive):
     _type_name = NAME_DOUBLE
     _type_id = TYPE_DOUBLE
     c_type = ctypes.c_double
-    size = 8
-
-    @classmethod
-    def from_bytes(cls, bytes):
-        raise Exception("Not implemented")
-
-    @classmethod
-    def from_python(cls, value):
-        raise Exception("Not implemented")
 
 
 class Char(Primitive):
     _type_name = NAME_CHAR
     _type_id = TYPE_CHAR
     c_type = ctypes.c_short
-    size = 2  # TODO: why?
 
     @classmethod
     def to_python(cls, ctype_object, *args, **kwargs):
         return ctype_object.value.to_bytes(
-            cls.size,
+            ctypes.sizeof(cls.c_type),
             byteorder=PROTOCOL_BYTE_ORDER
         ).decode(PROTOCOL_CHAR_ENCODING)
 
@@ -143,7 +114,7 @@ class Char(Primitive):
             value = int.from_bytes(value, byteorder=PROTOCOL_BYTE_ORDER)
         # assuming a valid integer
         return value.to_bytes(
-            cls.size,
+            ctypes.sizeof(cls.c_type),
             byteorder=PROTOCOL_BYTE_ORDER
         )
 
@@ -152,4 +123,3 @@ class Bool(Primitive):
     _type_name = NAME_BOOLEAN
     _type_id = TYPE_BOOLEAN
     c_type = ctypes.c_bool
-    size = 1
