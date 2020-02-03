@@ -87,13 +87,28 @@ class Float(Primitive):
     _type_name = NAME_FLOAT
     _type_id = TYPE_FLOAT
     size = 4
-    float.
+
+    @classmethod
+    def from_bytes(cls, bytes):
+        raise Exception("Not implemented")
+
+    @classmethod
+    def from_python(cls, value):
+        raise Exception("Not implemented")
 
 
 class Double(Primitive):
     _type_name = NAME_DOUBLE
     _type_id = TYPE_DOUBLE
     size = 8
+
+    @classmethod
+    def from_bytes(cls, bytes):
+        raise Exception("Not implemented")
+
+    @classmethod
+    def from_python(cls, value):
+        raise Exception("Not implemented")
 
 
 class Char(Primitive):
