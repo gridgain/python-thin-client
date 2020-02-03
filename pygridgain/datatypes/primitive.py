@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import ctypes
+
 from pygridgain.constants import *
 from .base import GridGainDataType
 from .type_ids import *
@@ -40,11 +42,13 @@ class Primitive(GridGainDataType):
     """
     _type_name = None
     _type_id = None
+    c_type = None
     size = None
 
     @classmethod
     def parse(cls, client: 'Client'):
-        return cls.from_bytes(client.recv(cls.size))
+        # TODO: Where does this c_type go?
+        return cls.c_type, client.recv(cls.size)
 
     @staticmethod
     def to_python(ctype_object, *args, **kwargs):
@@ -62,30 +66,35 @@ class Primitive(GridGainDataType):
 class Byte(Primitive):
     _type_name = NAME_BYTE
     _type_id = TYPE_BYTE
+    c_type = ctypes.c_byte
     size = 1
 
 
 class Short(Primitive):
     _type_name = NAME_SHORT
     _type_id = TYPE_SHORT
+    c_type = ctypes.c_short
     size = 2
 
 
 class Int(Primitive):
     _type_name = NAME_INT
     _type_id = TYPE_INT
+    c_type = ctypes.c_int
     size = 4
 
 
 class Long(Primitive):
     _type_name = NAME_LONG
     _type_id = TYPE_LONG
+    c_type = ctypes.c_longlong
     size = 8
 
 
 class Float(Primitive):
     _type_name = NAME_FLOAT
     _type_id = TYPE_FLOAT
+    c_type = ctypes.c_float
     size = 4
 
     @classmethod
@@ -100,6 +109,7 @@ class Float(Primitive):
 class Double(Primitive):
     _type_name = NAME_DOUBLE
     _type_id = TYPE_DOUBLE
+    c_type = ctypes.c_double
     size = 8
 
     @classmethod
@@ -114,6 +124,7 @@ class Double(Primitive):
 class Char(Primitive):
     _type_name = NAME_CHAR
     _type_id = TYPE_CHAR
+    c_type = ctypes.c_short
     size = 2  # TODO: why?
 
     @classmethod
@@ -140,4 +151,5 @@ class Char(Primitive):
 class Bool(Primitive):
     _type_name = NAME_BOOLEAN
     _type_id = TYPE_BOOLEAN
+    c_type = ctypes.c_bool
     size = 1
