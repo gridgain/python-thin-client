@@ -50,7 +50,7 @@ class PrimitiveArray(GridGainDataType):
     def build_header_class(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -187,7 +187,7 @@ class PrimitiveArrayObject(PrimitiveArray):
     def build_header_class(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [

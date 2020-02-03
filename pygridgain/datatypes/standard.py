@@ -83,7 +83,7 @@ class String(GridGainDataType):
     def build_c_type(cls, length: int):
         return type(
             cls.__name__,
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -153,7 +153,7 @@ class DecimalObject(GridGainDataType):
     def build_c_header(cls):
         return type(
             cls.__name__,
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -290,7 +290,7 @@ class UUIDObject(StandardObject):
         if cls._object_c_type is None:
             cls._object_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -353,7 +353,7 @@ class TimestampObject(StandardObject):
         if cls._object_c_type is None:
             cls._object_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -415,7 +415,7 @@ class DateObject(StandardObject):
         if cls._object_c_type is None:
             cls._object_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -473,7 +473,7 @@ class TimeObject(StandardObject):
         if cls._object_c_type is None:
             cls._object_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -525,7 +525,7 @@ class EnumObject(StandardObject):
         if cls._object_c_type is None:
             cls._object_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -590,7 +590,7 @@ class StandardArray(GridGainDataType):
     def build_header_class(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -708,7 +708,7 @@ class StandardArrayObject(StandardArray):
     def build_header_class(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -783,7 +783,7 @@ class EnumArrayObject(StandardArrayObject):
     def build_header_class(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [

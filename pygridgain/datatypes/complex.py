@@ -55,7 +55,7 @@ class ObjectArrayObject(GridGainDataType):
     def build_header(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -138,7 +138,7 @@ class WrappedDataObject(GridGainDataType):
     def build_header(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -230,7 +230,7 @@ class CollectionObject(GridGainDataType):
     def build_header(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -319,7 +319,7 @@ class Map(GridGainDataType):
     def build_header(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -407,7 +407,7 @@ class MapObject(Map):
     def build_header(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -485,7 +485,7 @@ class BinaryObject(GridGainDataType):
     def build_header(cls):
         return type(
             cls.__name__,
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -515,7 +515,7 @@ class BinaryObject(GridGainDataType):
             return cls.offset_c_type(flags)
         return type(
             'SchemaElement',
-            (ctypes.LittleEndianStructure,),
+            (ctypes.Structure,),
             {
                 '_pack_': 1,
                 '_fields_': [

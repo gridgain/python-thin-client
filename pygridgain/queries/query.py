@@ -47,7 +47,7 @@ class Query:
         if cls._query_c_type is None:
             cls._query_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -128,7 +128,7 @@ class ConfigQuery(Query):
         if cls._query_c_type is None:
             cls._query_c_type = type(
                 cls.__name__,
-                (ctypes.LittleEndianStructure,),
+                (ctypes.Structure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
