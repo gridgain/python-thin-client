@@ -157,6 +157,7 @@ class Client:
 
         # the following code is quite twisted, because the protocol version
         # is initially unknown
+        print("Starting connection")
 
         # TODO: open first node in foregroung, others − in background
         for i, node in enumerate(nodes):
@@ -171,6 +172,7 @@ class Client:
                     or self.protocol_version >= (1, 4, 0)
                 ):
                     # open connection before adding to the pool
+                    print("Opening connection to port {0}".format(port))
                     conn.connect(host, port)
 
                     # now we have the protocol version

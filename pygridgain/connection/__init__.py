@@ -254,6 +254,7 @@ class Connection:
             self.client.protocol_version = max(PROTOCOLS)
 
         try:
+            print("Opening connection to port {0}, proto {1}".format(port, self.client.protocol_version))
             result = self._connect_version(host, port)
         except HandshakeError as e:
             if e.expected_version in PROTOCOLS:
@@ -287,10 +288,14 @@ class Connection:
         host = host or DEFAULT_HOST
         port = port or DEFAULT_PORT
 
+        print("Connecting socket...")
+
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.settimeout(self.timeout)
         self._socket = self._wrap(self.socket)
         self._socket.connect((host, port))
+
+        print("Connected, starting handshake")
 
         protocol_version = self.client.protocol_version
 
