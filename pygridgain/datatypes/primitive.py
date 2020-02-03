@@ -44,7 +44,7 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def parse(cls, client: 'Client'):
-        return cls.c_type, client.recv(cls.size)
+        return cls.from_bytes(client.recv(cls.size), PROTOCOL_BYTE_ORDER)
 
     @staticmethod
     def to_python(ctype_object, *args, **kwargs):
@@ -53,6 +53,10 @@ class Primitive(GridGainDataType):
     @classmethod
     def from_python(cls, value):
         return value.to_bytes(cls.size, byteorder=PROTOCOL_BYTE_ORDER)
+
+    @classmethod
+    def from_bytes(cls, bytes):
+        return int.from_bytes(bytes, PROTOCOL_BYTE_ORDER)
 
 
 class Byte(Primitive):
@@ -83,6 +87,7 @@ class Float(Primitive):
     _type_name = NAME_FLOAT
     _type_id = TYPE_FLOAT
     size = 4
+    float.
 
 
 class Double(Primitive):
