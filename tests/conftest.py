@@ -243,9 +243,7 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     session_parameters = {
-        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10800),
-                 '{host}:{port}'.format(host='127.0.0.1', port=10802),
-                 '{host}:{port}'.format(host='127.0.0.1', port=10803)],
+        'node': ['{host}:{port}'.format(host='127.0.0.1', port=10800)],
         'partition_aware': False,
         'use_ssl': False,
         'ssl_keyfile': None,
