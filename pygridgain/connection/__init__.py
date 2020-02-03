@@ -428,8 +428,14 @@ class Connection:
         if flags is not None:
             kwargs['flags'] = flags
         data = bytes(data)
+
+        # Handshake
+        # GOOD: b'\x00\x00\x00\x08\x01\x00\x01\x00\x04\x00\x00\x02'
+        # BAD:  b'\x00\x00\x00\x08\x01\x00\x01\x00\x04\x00\x00\x02'
+
         print("REQ: {0}".format(data))
         raise Exception('BREAK')
+
         total_bytes_sent = 0
 
         while total_bytes_sent < len(data):
