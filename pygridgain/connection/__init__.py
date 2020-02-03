@@ -295,8 +295,6 @@ class Connection:
         self._socket = self._wrap(self.socket)
         self._socket.connect((host, port))
 
-        raise Exception('Yo1')
-
         print("Connected, starting handshake")
 
         protocol_version = self.client.protocol_version
@@ -307,7 +305,15 @@ class Connection:
             self.password
         )
         self.send(hs_request)
+
+        print("Hs req sent")
+
         hs_response = self.read_response()
+
+        print("Hs resp received: {0}".format(hs_response))
+
+        raise Exception('Yo1')
+
         if hs_response['op_code'] == 0:
             # disconnect but keep in use
             self.close(release=False)
