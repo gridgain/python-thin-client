@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import ctypes
+import sys
 
 from pygridgain.constants import *
 from .base import GridGainDataType
@@ -46,7 +47,12 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def parse(cls, client: 'Client'):
-        return cls.c_type, client.recv(ctypes.sizeof(cls.c_type))
+        buf = client.recv(ctypes.sizeof(cls.c_type))
+
+        if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
+            buf = buf[::-1]
+
+        return cls.c_type, buf
 
     @staticmethod
     def to_python(ctype_object, *args, **kwargs):
