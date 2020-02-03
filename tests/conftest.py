@@ -81,32 +81,32 @@ def server3():
 
 @pytest.fixture(scope='module')
 def client(
-    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
+    node, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
     ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
-    yield from client0(node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+    yield from client0(node, partition_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
                        ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
 def client_partition_aware(
-        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        node, use_ssl, ssl_keyfile, ssl_certfile,
         ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
         username, password
 ):
-    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+    yield from client0(node, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
                        ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
 def client_partition_aware_single_server(
-        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        node, use_ssl, ssl_keyfile, ssl_certfile,
         ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
         username, password
 ):
     node = node[:1]
-    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
+    yield from client(node, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
                       ssl_ciphers, ssl_version, username, password)
 
 
@@ -127,12 +127,11 @@ def log_init():
 
 
 def client0(
-    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
+    node, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
     ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
     client = Client(
-        timeout=timeout,
         partition_aware=partition_aware,
         use_ssl=use_ssl,
         ssl_keyfile=ssl_keyfile,
@@ -247,7 +246,6 @@ def pytest_generate_tests(metafunc):
         'node': ['{host}:{port}'.format(host='127.0.0.1', port=10800),
                  '{host}:{port}'.format(host='127.0.0.1', port=10802),
                  '{host}:{port}'.format(host='127.0.0.1', port=10803)],
-        'timeout': None,
         'partition_aware': False,
         'use_ssl': False,
         'ssl_keyfile': None,

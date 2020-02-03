@@ -102,7 +102,7 @@ def start_ignite(idx=1, debug=False):
 def start_ignite_gen(idx=1):
     srv = start_ignite(idx)
     yield srv
-    kill_process_tree(srv.pid)
+    # kill_process_tree(srv.pid)
 
 
 def get_log_files(idx=1):
