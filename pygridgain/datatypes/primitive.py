@@ -44,7 +44,7 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def parse(cls, client: 'Client'):
-        return cls.from_bytes(client.recv(cls.size), PROTOCOL_BYTE_ORDER)
+        return cls.from_bytes(client.recv(cls.size))
 
     @staticmethod
     def to_python(ctype_object, *args, **kwargs):
