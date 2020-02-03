@@ -56,7 +56,7 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def from_python(cls, value):
-        return value.to_bytes(cls.size, byteorder=PROTOCOL_BYTE_ORDER)
+        return value.to_bytes(cls.size, byteorder=PROTOCOL_BYTE_ORDER, signed=True)
 
     @classmethod
     def from_bytes(cls, bytes):
