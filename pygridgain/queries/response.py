@@ -285,6 +285,9 @@ class Response130:
             (header_class,),
             {
                 '_pack_': 1,
+
+                # TODO: On BigEndian this setted causes
+                # TypeError: This type does not support other endian: <class 'ctypes.c_bool'>
                 '_fields_': fields,
             }
         )
