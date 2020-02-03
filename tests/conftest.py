@@ -165,16 +165,6 @@ def pytest_addoption(parser):
         )
     )
     parser.addoption(
-        '--timeout',
-        action='store',
-        type=float,
-        default=None,
-        help=(
-            'Timeout (in seconds) for each socket operation. Can accept '
-            'integer or float value. Default is None'
-        )
-    )
-    parser.addoption(
         '--partition-aware',
         action=BoolParser,
         nargs='?',
