@@ -255,6 +255,7 @@ class Connection:
 
         try:
             print("Opening connection to port {0}, proto {1}".format(port, self.client.protocol_version))
+            raise ConnectionError('Yo1')
             result = self._connect_version(host, port)
         except HandshakeError as e:
             if e.expected_version in PROTOCOLS:
