@@ -307,12 +307,11 @@ class Connection:
         self.send(hs_request)
 
         print("Hs req sent")
+        raise Exception('Yo1')
 
         hs_response = self.read_response()
 
         print("Hs resp received: {0}".format(hs_response))
-
-        raise Exception('Yo1')
 
         if hs_response['op_code'] == 0:
             # disconnect but keep in use
@@ -429,6 +428,8 @@ class Connection:
         if flags is not None:
             kwargs['flags'] = flags
         data = bytes(data)
+        print("REQ: {0}".format(data))
+        raise Exception('BREAK')
         total_bytes_sent = 0
 
         while total_bytes_sent < len(data):
