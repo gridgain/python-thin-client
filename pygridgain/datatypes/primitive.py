@@ -49,10 +49,7 @@ class Primitive(GridGainDataType):
     def parse(cls, client: 'Client'):
         buf = client.recv(ctypes.sizeof(cls.c_type))
 
-        if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
-            buf = buf[::-1]
-
-        return cls.c_type, buf
+        return cls.c_type, Primitive.fix_endianness(buf)
 
     @staticmethod
     def to_python(ctype_object, *args, **kwargs):
@@ -60,7 +57,14 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def from_python(cls, value):
-        return bytes(cls.c_type(value))
+        return Primitive.fix_endianness(bytes(cls.c_type(value)))
+
+    @staticmethod
+    def fix_endianness(buf):
+        if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
+            buf = buf[::-1]
+
+        return buf
 
 
 class Byte(Primitive):
