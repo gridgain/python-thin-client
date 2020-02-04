@@ -433,7 +433,7 @@ class Connection:
         # BAD:  b'\x00\x00\x00\x08\x01\x00\x01\x00\x04\x00\x00\x02'
 
         print("REQ: {0}".format(data))
-        # raise Exception('BREAK')
+        raise Exception('BREAK')
 
         total_bytes_sent = 0
 
