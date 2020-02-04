@@ -47,7 +47,7 @@ class DataObject(GridGainDataType):
         if cls._object_c_type is None:
             cls._object_c_type = type(
                 cls.__name__,
-                (ctypes.Structure,),
+                (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
                     '_fields_': [

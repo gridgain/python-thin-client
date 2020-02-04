@@ -82,7 +82,7 @@ class PropBase:
     def build_header(cls):
         return type(
             cls.__name__+'Header',
-            (ctypes.Structure,),
+            (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
                 '_fields_': [

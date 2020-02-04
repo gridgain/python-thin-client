@@ -122,7 +122,7 @@ class StructArray:
     def build_header_class(self):
         return type(
             self.__class__.__name__+'Header',
-            (ctypes.Structure,),
+            (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
                 '_fields_': [
@@ -205,7 +205,7 @@ class Struct:
 
         data_class = type(
             'Struct',
-            (ctypes.Structure,),
+            (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
                 '_fields_': fields,
@@ -426,7 +426,7 @@ class AnyDataArray(AnyDataObject):
     def build_header(self):
         return type(
             self.__class__.__name__+'Header',
-            (ctypes.Structure,),
+            (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
                 '_fields_': [
