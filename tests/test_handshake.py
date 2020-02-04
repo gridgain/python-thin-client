@@ -27,7 +27,6 @@ def test_put_get(client, cache):
     # we have to fix Boolean situation somehow, maybe replace it with int
 
     conn = client.random_node
-    raise Exception("TEST STARTED")
 
     result = cache_put(conn, cache, 'my_key', 5)
     assert result.status == 0

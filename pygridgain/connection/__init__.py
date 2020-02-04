@@ -437,7 +437,6 @@ class Connection:
         # BAD:  b'\x08\x00\x00\x00\x01\x01\x00\x04\x00\x00\x00\x02'
 
         logging.getLogger("HS").warning("REQ: {0}".format(data))
-        # raise Exception('BREAK')
 
         total_bytes_sent = 0
 
