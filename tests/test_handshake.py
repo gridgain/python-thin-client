@@ -22,6 +22,9 @@ from pygridgain.datatypes import (
 
 
 def test_put_get(client, cache):
+    # TODO: We can't get rid of LittleEndianStructure, because every structure has it's own encoding,
+    # which is not handled in primitive.py.
+    # we have to fix Boolean situation somehow, maybe replace it with int
 
     conn = client.random_node
     raise Exception("TEST STARTED")
