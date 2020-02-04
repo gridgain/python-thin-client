@@ -190,6 +190,10 @@ class Connection:
         start_class, start_buffer = response_start.parse(self)
         start = start_class.from_buffer_copy(start_buffer)
         data = response_start.to_python(start)
+
+        logging.getLogger("Hs").warning("response_start: {0}".format(data))
+        raise Exception("BREAK1")
+
         if data['op_code'] == 0:
             response_end = Struct([
                 ('version_major', Short),
