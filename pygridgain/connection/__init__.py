@@ -315,7 +315,6 @@ class Connection:
         hs_response = self.read_response()
 
         print("Hs resp received: {0}".format(hs_response))
-        raise Exception("BREAK1")
 
         if hs_response['op_code'] == 0:
             # disconnect but keep in use

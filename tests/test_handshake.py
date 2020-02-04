@@ -24,6 +24,7 @@ from pygridgain.datatypes import (
 def test_put_get(client, cache):
 
     conn = client.random_node
+    raise Exception("TEST STARTED")
 
     result = cache_put(conn, cache, 'my_key', 5)
     assert result.status == 0
