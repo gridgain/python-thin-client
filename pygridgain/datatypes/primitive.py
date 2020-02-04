@@ -51,8 +51,8 @@ class Primitive(GridGainDataType):
 
         return cls.c_type, Primitive.fix_endianness(buf)
 
-    @staticmethod
-    def to_python(ctype_object, *args, **kwargs):
+    @classmethod
+    def to_python(cls, ctype_object, *args, **kwargs):
         return ctype_object
 
     @classmethod
@@ -132,4 +132,8 @@ class Char(Primitive):
 class Bool(Primitive):
     _type_name = NAME_BOOLEAN
     _type_id = TYPE_BOOLEAN
-    c_type = ctypes.c_bool
+    c_type = ctypes.c_byte  # Use c_byte because c_bool throws endianness conversion error on BE systems.
+
+    @classmethod
+    def to_python(cls, ctype_object, *args, **kwargs):
+        return ctype_object != 0
