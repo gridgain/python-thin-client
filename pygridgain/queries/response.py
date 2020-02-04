@@ -55,7 +55,6 @@ class Response140:
         header_class = self.build_header()
         buffer = conn.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
-        print("RESP HDR: {0} {1}".format(header.length, header.status_code))
 
         fields = []
 
@@ -270,7 +269,6 @@ class Response130:
         header_class = self.build_header()
         buffer = client.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
-        print("RESP HDR: {0} {1}".format(header.length, header.status_code))
         fields = []
 
         if header.status_code == OP_SUCCESS:
