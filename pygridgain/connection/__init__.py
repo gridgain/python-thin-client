@@ -192,7 +192,6 @@ class Connection:
         data = response_start.to_python(start)
 
         logging.getLogger("Hs").warning("response_start: {0}".format(data))
-        raise Exception("BREAK1")
 
         if data['op_code'] == 0:
             response_end = Struct([
@@ -316,6 +315,7 @@ class Connection:
         hs_response = self.read_response()
 
         print("Hs resp received: {0}".format(hs_response))
+        raise Exception("BREAK1")
 
         if hs_response['op_code'] == 0:
             # disconnect but keep in use
