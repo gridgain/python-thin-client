@@ -39,7 +39,7 @@ class Response140:
         if cls._response_header is None:
             cls._response_header = type(
                 'ResponseHeader',
-                (ctypes.Structure,),
+                (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -174,7 +174,7 @@ class SQLResponse140(Response140):
 
                 row_class = type(
                     'SQLResponseRow',
-                    (ctypes.Structure,),
+                    (ctypes.LittleEndianStructure,),
                     {
                         '_pack_': 1,
                         '_fields_': row_fields,
@@ -185,7 +185,7 @@ class SQLResponse140(Response140):
 
             data_class = type(
                 'SQLResponseData',
-                (ctypes.Structure,),
+                (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
                     '_fields_': data_fields,
@@ -256,7 +256,7 @@ class Response130:
         if cls._response_header is None:
             cls._response_header = type(
                 'ResponseHeader',
-                (ctypes.Structure,),
+                (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
                     '_fields_': [
@@ -362,7 +362,7 @@ class SQLResponse130(Response130):
 
                 row_class = type(
                     'SQLResponseRow',
-                    (ctypes.Structure,),
+                    (ctypes.LittleEndianStructure,),
                     {
                         '_pack_': 1,
                         '_fields_': row_fields,
@@ -373,7 +373,7 @@ class SQLResponse130(Response130):
 
             data_class = type(
                 'SQLResponseData',
-                (ctypes.Structure,),
+                (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
                     '_fields_': data_fields,
