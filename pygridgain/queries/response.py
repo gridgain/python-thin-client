@@ -55,6 +55,9 @@ class Response140:
         header_class = self.build_header()
         buffer = conn.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
+        print("RESP HDR: {0} {1}".format(header.length, header.status_code))
+        raise Exception("BREAK3")
+
         fields = []
 
         if header.flags & RHF_TOPOLOGY_CHANGED:
@@ -268,6 +271,8 @@ class Response130:
         header_class = self.build_header()
         buffer = client.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
+        print("RESP HDR: {0} {1}".format(header.length, header.status_code))
+        raise Exception("BREAK3")
         fields = []
 
         if header.status_code == OP_SUCCESS:
