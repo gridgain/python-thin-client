@@ -53,6 +53,7 @@ class Response140:
 
     def parse(self, conn: 'Connection'):
         header_class = self.build_header()
+        raise Exception("BREAK4")
         buffer = conn.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
         print("RESP HDR: {0} {1}".format(header.length, header.status_code))
@@ -269,6 +270,7 @@ class Response130:
 
     def parse(self, client: 'Client'):
         header_class = self.build_header()
+        raise Exception("BREAK4")
         buffer = client.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
         print("RESP HDR: {0} {1}".format(header.length, header.status_code))
