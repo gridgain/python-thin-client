@@ -21,6 +21,7 @@ as well as GridGain protocol handshaking.
 
 from collections import OrderedDict
 import socket
+import logging
 from threading import Lock
 from typing import Union
 
@@ -432,7 +433,7 @@ class Connection:
         # GOOD: b'\x00\x00\x00\x08\x01\x00\x01\x00\x04\x00\x00\x02'
         # BAD:  b'\x08\x00\x00\x00\x01\x01\x00\x04\x00\x00\x00\x02'
 
-        print("REQ: {0}".format(data))
+        logging.getLogger("HS").warning("REQ: {0}".format(data))
         # raise Exception('BREAK')
 
         total_bytes_sent = 0
