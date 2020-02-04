@@ -212,6 +212,8 @@ class Struct:
             },
         )
 
+        raise Exception("BREAK1")
+
         return data_class, buffer
 
     def to_python(
