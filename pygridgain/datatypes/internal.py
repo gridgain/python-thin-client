@@ -198,6 +198,8 @@ class Struct:
             c_type, buffer_fragment = c_type.parse(client)
             buffer += buffer_fragment
 
+            print("Recv: {0} = {1}".format(name, buffer_fragment))
+
             fields.append((name, c_type))
 
         data_class = type(
