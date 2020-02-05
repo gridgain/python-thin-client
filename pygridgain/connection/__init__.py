@@ -183,6 +183,8 @@ class Connection:
 
         :return: handshake data.
         """
+        # TODO: Investigate LittleEndianStruct and conversion separately.
+        # Why does not this work for Handshake?
         response_start = Struct([
             ('length', Int),
             ('op_code', Byte),
