@@ -90,6 +90,17 @@ class Long(Primitive):
     _type_id = TYPE_LONG
     c_type = ctypes.c_longlong
 
+    @classmethod
+    def parse(cls, client: 'Client'):
+        buf = client.recv(ctypes.sizeof(cls.c_type))
+        fixedBuf = Primitive.fix_endianness(buf)
+        print("LONG: orig={0}, fixed={1}".format(buf, fixedBuf))
+        return cls.c_type, fixedBuf
+
+    @classmethod
+    def to_python(cls, ctype_object, *args, **kwargs):
+        return ctype_object
+
 
 class Float(Primitive):
     _type_name = NAME_FLOAT
