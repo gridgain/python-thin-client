@@ -191,7 +191,7 @@ class Struct:
 
     def parse(
         self, client: 'Client'
-    ) -> Tuple[ctypes.BigEndianStructure, bytes]:
+    ) -> Tuple[ctypes.LittleEndianStructure, bytes]:
         buffer = b''
         fields = []
 

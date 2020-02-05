@@ -61,8 +61,8 @@ class Primitive(GridGainDataType):
 
     @staticmethod
     def fix_endianness(buf):
-        if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
-            buf = buf[::-1]
+        #if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
+        #    buf = buf[::-1]
 
         return buf
 
