@@ -94,7 +94,7 @@ class Long(Primitive):
     def parse(cls, client: 'Client'):
         buf = client.recv(ctypes.sizeof(cls.c_type))
         fixedBuf = Primitive.fix_endianness(buf)
-        print("LONG: orig={0}, fixed={1}".format(buf, fixedBuf))
+        # TODO: For some reason we don't need to fix_endianness fo c_longlong, why?
         return cls.c_type, buf
 
     @classmethod
