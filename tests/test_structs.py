@@ -17,7 +17,7 @@ import ctypes
 
 
 def test_structs():
-    test_class = type(
+    be_class = type(
         "FooBar",
         (ctypes.BigEndianStructure,),
         {
@@ -30,13 +30,27 @@ def test_structs():
         },
     )
 
-    obj = test_class()
+    le_class = type(
+        "FooBar",
+        (ctypes.LittleEndianStructure,),
+        {
+            '_pack_': 1,
+            '_fields_': [
+                ('length', ctypes.c_int),
+                ('op_code', ctypes.c_short),
+                ('query_id', ctypes.c_longlong),
+            ],
+        },
+    )
+
+    show_struct(le_class())
+    show_struct(be_class())
+
+
+def show_struct(obj):
     obj.length = 7
     obj.op_code = 13
     obj.query_id = 42
 
-    # LE: b'\x07\x00\x00\x00\r\x00*\x00\x00\x00\x00\x00\x00\x00'
-    # BE: b'\x00\x00\x00\x07\x00\r\x00\x00\x00\x00\x00\x00\x00*'
     bytearr = bytes(obj)
     print(''.join('{:02x} '.format(x) for x in bytearr))
-    #print(bytearr)
