@@ -55,7 +55,6 @@ class Response140:
         header_class = self.build_header()
         buffer = conn.recv(ctypes.sizeof(header_class))
         header = header_class.from_buffer_copy(buffer)
-
         fields = []
 
         if header.flags & RHF_TOPOLOGY_CHANGED:
@@ -286,9 +285,6 @@ class Response130:
             (header_class,),
             {
                 '_pack_': 1,
-
-                # TODO: On BigEndian this setted causes
-                # TypeError: This type does not support other endian: <class 'ctypes.c_bool'>
                 '_fields_': fields,
             }
         )

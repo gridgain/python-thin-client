@@ -19,7 +19,6 @@ import decimal
 from datetime import date, datetime, timedelta
 from typing import Any, Tuple, Union
 import uuid
-import logging
 
 import attr
 
@@ -198,8 +197,6 @@ class Struct:
         for name, c_type in self.fields:
             c_type, buffer_fragment = c_type.parse(client)
             buffer += buffer_fragment
-
-            logging.getLogger("X").warning("Recv: {0} = {1}".format(name, buffer_fragment))
 
             fields.append((name, c_type))
 

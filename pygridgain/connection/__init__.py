@@ -21,7 +21,6 @@ as well as GridGain protocol handshaking.
 
 from collections import OrderedDict
 import socket
-import logging
 from threading import Lock
 from typing import Union
 
@@ -183,8 +182,6 @@ class Connection:
 
         :return: handshake data.
         """
-        # TODO: Investigate LittleEndianStruct and conversion separately.
-        # Why does not this work for Handshake?
         response_start = Struct([
             ('length', Int),
             ('op_code', Byte),
@@ -192,9 +189,6 @@ class Connection:
         start_class, start_buffer = response_start.parse(self)
         start = start_class.from_buffer_copy(start_buffer)
         data = response_start.to_python(start)
-
-        logging.getLogger("Hs").warning("response_start: {0}".format(data))
-
         if data['op_code'] == 0:
             response_end = Struct([
                 ('version_major', Short),
@@ -260,7 +254,6 @@ class Connection:
             self.client.protocol_version = max(PROTOCOLS)
 
         try:
-            print("Opening connection to port {0}, proto {1}".format(port, self.client.protocol_version))
             result = self._connect_version(host, port)
         except HandshakeError as e:
             if e.expected_version in PROTOCOLS:
@@ -294,14 +287,10 @@ class Connection:
         host = host or DEFAULT_HOST
         port = port or DEFAULT_PORT
 
-        print("Connecting socket...")
-
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.settimeout(self.timeout)
         self._socket = self._wrap(self.socket)
         self._socket.connect((host, port))
-
-        print("Connected, starting handshake")
 
         protocol_version = self.client.protocol_version
 
@@ -311,13 +300,7 @@ class Connection:
             self.password
         )
         self.send(hs_request)
-
-        print("Hs req sent")
-
         hs_response = self.read_response()
-
-        print("Hs resp received: {0}".format(hs_response))
-
         if hs_response['op_code'] == 0:
             # disconnect but keep in use
             self.close(release=False)
@@ -433,13 +416,6 @@ class Connection:
         if flags is not None:
             kwargs['flags'] = flags
         data = bytes(data)
-
-        # Handshake
-        # GOOD: b'\x00\x00\x00\x08\x01\x00\x01\x00\x04\x00\x00\x02'
-        # BAD:  b'\x08\x00\x00\x00\x01\x01\x00\x04\x00\x00\x00\x02'
-
-        logging.getLogger("HS").warning("REQ: {0}".format(data))
-
         total_bytes_sent = 0
 
         while total_bytes_sent < len(data):
