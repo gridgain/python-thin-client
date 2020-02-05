@@ -49,7 +49,9 @@ class Primitive(GridGainDataType):
     def parse(cls, client: 'Client'):
         buf = client.recv(ctypes.sizeof(cls.c_type))
 
-        return cls.c_type, Primitive.fix_endianness(buf)
+        # don't need to fix endianness when parsing, only when encoding: weird
+        # should probably use same code path if possible
+        return cls.c_type, buf
 
     @classmethod
     def to_python(cls, ctype_object, *args, **kwargs):
@@ -61,8 +63,8 @@ class Primitive(GridGainDataType):
 
     @staticmethod
     def fix_endianness(buf):
-        #if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
-        #    buf = buf[::-1]
+        if len(buf) > 1 and sys.byteorder != PROTOCOL_BYTE_ORDER:
+            buf = buf[::-1]
 
         return buf
 
