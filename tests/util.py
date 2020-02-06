@@ -16,7 +16,7 @@
 import datetime
 import glob
 import os
-# import psutil
+import psutil
 import re
 import signal
 import subprocess
@@ -89,20 +89,41 @@ def try_connect_client(idx=1):
 def kill_process_tree(pid):
     if is_windows():
         subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
-#    else:
-#        children = psutil.Process(pid).children(recursive=True)
-#        for child in children:
-#            os.kill(child.pid, signal.SIGKILL)
-#        os.kill(pid, signal.SIGKILL)
+    else:
+        children = psutil.Process(pid).children(recursive=True)
+        for child in children:
+            os.kill(child.pid, signal.SIGKILL)
+        os.kill(pid, signal.SIGKILL)
 
 
 def start_ignite(idx=1, debug=False):
-    pass
+    clear_logs(idx)
+
+    runner = get_ignite_runner()
+
+    env = os.environ.copy()
+
+    if debug:
+        env["JVM_OPTS"] = "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
+                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
+
+    ignite_cmd = [runner, get_ignite_config_path(idx)]
+    print("Starting Ignite server node:", ignite_cmd)
+
+    srv = subprocess.Popen(ignite_cmd, env=env, cwd=get_test_dir())
+
+    started = wait_for_condition(lambda: try_connect_client(idx), timeout=10)
+    if started:
+        return srv
+
+    kill_process_tree(srv.pid)
+    raise Exception("Failed to start Ignite: timeout while trying to connect")
+
 
 def start_ignite_gen(idx=1):
     srv = start_ignite(idx)
     yield srv
-    # kill_process_tree(srv.pid)
+    kill_process_tree(srv.pid)
 
 
 def get_log_files(idx=1):

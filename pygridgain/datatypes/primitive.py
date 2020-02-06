@@ -47,11 +47,7 @@ class Primitive(GridGainDataType):
 
     @classmethod
     def parse(cls, client: 'Client'):
-        buf = client.recv(ctypes.sizeof(cls.c_type))
-
-        # don't need to fix endianness when parsing, only when encoding: weird
-        # should probably use same code path if possible
-        return cls.c_type, buf
+        return cls.c_type, client.recv(ctypes.sizeof(cls.c_type))
 
     @classmethod
     def to_python(cls, ctype_object, *args, **kwargs):
