@@ -189,7 +189,7 @@ class SQLResponse140(Response140):
             )
             fields += body_class._fields_ + [
                 ('data', data_class),
-                ('more', ctypes.c_bool),
+                ('more', ctypes.c_byte),
             ]
             buffer += body_buffer + data_buffer
 
@@ -371,7 +371,7 @@ class SQLResponse130(Response130):
             )
             fields += body_class._fields_ + [
                 ('data', data_class),
-                ('more', ctypes.c_bool),
+                ('more', ctypes.c_byte),
             ]
             buffer += body_buffer + data_buffer
         else:
