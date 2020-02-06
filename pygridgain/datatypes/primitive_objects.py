@@ -218,5 +218,5 @@ class BoolObject(DataObject):
 
     @classmethod
     def to_python(cls, ctype_object, *args, **kwargs):
-        return ctype_object != 0
+        return ctype_object.value != 0
 
