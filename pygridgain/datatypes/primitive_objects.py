@@ -207,7 +207,7 @@ class CharObject(DataObject):
 class BoolObject(DataObject):
     _type_name = NAME_BOOLEAN
     _type_id = TYPE_BOOLEAN
-    c_type = ctypes.c_byte
+    c_type = ctypes.c_byte  # Use c_byte because c_bool throws endianness conversion error on BE systems.
     type_code = TC_BOOL
     pythonic = bool
     default = False
