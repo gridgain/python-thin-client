@@ -89,6 +89,5 @@ installed, and GridGain node is running on localhost:10800.
 ## Testing
 Run
 ```
-$ cd gridgain/modules/platforms/python
 $ python setup.py pytest
 ```
