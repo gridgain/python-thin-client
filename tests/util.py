@@ -55,8 +55,6 @@ def get_ignite_dirs():
     ignite_home = os.getenv("IGNITE_HOME")
     if ignite_home is not None:
         yield ignite_home
-    else:
-        yield "C:\work\ignite\gridgain-ultimate-8.7.10"
 
     proj_dir = os.path.abspath(os.path.join(get_test_dir(), "..", ".."))
     yield os.path.join(proj_dir, "ignite")

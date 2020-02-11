@@ -44,18 +44,18 @@ class Student(
     pass
 
 
-create_query = '''CREATE TABLE Student (
+create_query = '''CREATE TABLE StudentTable (
     id INT(11),
     dept VARCHAR,
     name CHAR(24),
     PRIMARY KEY (id, dept))
     WITH "CACHE_NAME=StudentCache, KEY_TYPE=test.model.StudentKey, VALUE_TYPE=test.model.Student"'''
 
-insert_query = '''INSERT INTO Student (id, dept, name) VALUES (?, ?, ?)'''
+insert_query = '''INSERT INTO StudentTable (id, dept, name) VALUES (?, ?, ?)'''
 
-select_query = 'SELECT _KEY, id, dept, name FROM Student'
+select_query = 'SELECT _KEY, id, dept, name FROM StudentTable'
 
-drop_query = 'DROP TABLE Student IF EXISTS'
+drop_query = 'DROP TABLE StudentTable IF EXISTS'
 
 
 def test_cache_get_with_composite_key_finds_sql_value(client):
