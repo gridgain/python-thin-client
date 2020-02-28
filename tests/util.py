@@ -69,7 +69,8 @@ def get_ignite_runner():
         if os.path.exists(runner):
             return runner
 
-    raise Exception("Ignite not found.")
+    raise Exception("Ignite not found. Please make sure your IGNITE_HOME environment variable points to directory with "
+                    "a valid Ignite instance")
 
 
 def get_ignite_config_path(idx=1):
@@ -120,8 +121,8 @@ def start_ignite(idx=1, debug=False):
     raise Exception("Failed to start Ignite: timeout while trying to connect")
 
 
-def start_ignite_gen(idx=1):
-    srv = start_ignite(idx)
+def start_ignite_gen(idx=1, debug=False):
+    srv = start_ignite(idx, debug)
     yield srv
     kill_process_tree(srv.pid)
 
