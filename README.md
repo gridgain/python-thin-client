@@ -67,18 +67,18 @@ at *RTD* for your convenience.
 If you want to build the documentation from source, do the developer
 installation as described above, then run the following commands:
 ```
-$ cd gridgain/modules/platforms/python
+$ cd pygridgain
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make html
 ```
 
-Then open `gridgain/modules/platforms/python/docs/generated/html/index.html`
+Then open `pygridgain/docs/generated/html/index.html`
 in your browser.
 
 ## Examples
 Some examples of using pygridgain are provided in
-`gridgain/modules/platforms/python/examples` folder. They are extensively
+`pygridgain/examples` folder. They are extensively
 commented in the
 “[Examples of usage](https://pygridgain.readthedocs.io/en/latest/examples.html)”
 section of the documentation.
