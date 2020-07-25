@@ -16,7 +16,7 @@
 from typing import Iterable, Union
 
 from pygridgain.datatypes import Bool, Int, Long, UUIDObject
-from pygridgain.datatypes.internal import StructArray
+from pygridgain.datatypes.internal import StructArray, Conditional, Struct
 from pygridgain.queries import Query
 from pygridgain.queries.op_codes import OP_CACHE_PARTITIONS
 from pygridgain.utils import is_iterable
@@ -46,10 +46,22 @@ cache_mapping = StructArray([
     ('cache_config', cache_config),
 ])
 
+empty_cache_mapping = StructArray([
+    ('cache_id', Int)
+])
+
+empty_node_mapping = Struct([])
+
 partition_mapping = StructArray([
     ('is_applicable', Bool),
-    ('cache_mapping', cache_mapping),
-    ('node_mapping', node_mapping),
+
+    ('cache_mapping', Conditional(lambda ctx: ctx['is_applicable'] == b'\x01',
+                                  lambda ctx: ctx['is_applicable'] is True,
+                                  cache_mapping, empty_cache_mapping)),
+
+    ('node_mapping', Conditional(lambda ctx: ctx['is_applicable'] == b'\x01',
+                                 lambda ctx: ctx['is_applicable'] is True,
+                                 node_mapping, empty_node_mapping)),
 ])
 
 
