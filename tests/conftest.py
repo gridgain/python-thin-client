@@ -115,7 +115,7 @@ def client_partition_aware(
 
 @pytest.fixture(scope='module')
 def client_partition_aware_single_server(
-        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
+        node, timeout, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
         ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
         username, password
 ):
@@ -171,6 +171,7 @@ def client0(
         partition_aware=partition_aware,
         use_ssl=use_ssl,
         ssl_keyfile=ssl_keyfile,
+        ssl_keyfile_password=ssl_keyfile_password,
         ssl_certfile=ssl_certfile,
         ssl_ca_certfile=ssl_ca_certfile,
         ssl_cert_reqs=ssl_cert_reqs,
@@ -243,6 +244,13 @@ def pytest_addoption(parser):
         help='a path to SSL key file to identify local party'
     )
     parser.addoption(
+        '--ssl-keyfile-password',
+        action='store',
+        default=None,
+        type=str,
+        help='password for SSL key file'
+    )
+    parser.addoption(
         '--ssl-certfile',
         action='store',
         default=None,
@@ -308,6 +316,7 @@ def pytest_generate_tests(metafunc):
         'partition_aware': False,
         'use_ssl': False,
         'ssl_keyfile': None,
+        'ssl_keyfile_password': None,
         'ssl_certfile': None,
         'ssl_ca_certfile': None,
         'ssl_cert_reqs': ssl.CERT_NONE,
