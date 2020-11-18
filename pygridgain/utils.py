@@ -112,13 +112,19 @@ def hashcode(string: Union[str, bytes]) -> int:
     :param string: UTF-8-encoded string identifier of binary buffer,
     :return: hash code.
     """
-    result = 1 if isinstance(string, (bytes, bytearray)) else 0
-    for char in string:
+    data = string
+    result = 1
+
+    if isinstance(string, str):
+        data = string.encode('utf-8')
+        result = 0
+
+    for byte in data:
         try:
-            char = ord(char)
+            byte = ctypes.c_int8(byte).value
         except TypeError:
             pass
-        result = int_overflow(31 * result + char)
+        result = int_overflow(31 * result + byte)
     return result
 
 
