@@ -105,26 +105,36 @@ def unwrap_binary(client: 'Client', wrapped: tuple) -> object:
     return result
 
 
-def hashcode(string: Union[str, bytes]) -> int:
+def hashcode(data: Union[str, bytes]) -> int:
     """
     Calculate hash code used for identifying objects in GridGain binary API.
 
     :param string: UTF-8-encoded string identifier of binary buffer,
     :return: hash code.
     """
-    data = string
-    result = 1
 
-    if isinstance(string, str):
-        data = string.encode('utf-8')
+    if isinstance(data, str):
+        """
+        For strings we iterate over code point which are of the int type
+        and can take up to 4 bytes and can only be positive.
+        """
         result = 0
+        for char in data:
+            try:
+                char_val = ord(char)
+                result = int_overflow(31 * result + char_val)
+            except TypeError:
+                pass
+    else:
+        """
+        For byte array we iterate over bytes which only take 1 byte and can
+        be negative. For this reason we use ctypes.c_byte() to 
+        """
+        result = 1
+        for byte in data:
+            byte = ctypes.c_byte(byte).value
+            result = int_overflow(31 * result + byte)
 
-    for byte in data:
-        try:
-            byte = ctypes.c_int8(byte).value
-        except TypeError:
-            pass
-        result = int_overflow(31 * result + byte)
     return result
 
 
