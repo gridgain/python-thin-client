@@ -30,7 +30,7 @@ from pygridgain.exceptions import (
 )
 from pygridgain.datatypes import Byte, Int, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
-from pygridgain.utils import DaemonicTimer, select_version
+from pygridgain.utils import DaemonicTimer
 
 from .handshake import HandshakeRequest
 from .ssl import wrap
