@@ -320,10 +320,9 @@ class BoolArrayObject(PrimitiveArrayObject):
 
     @classmethod
     def to_python(cls, ctype_object, *args, **kwargs):
-        result = []
-        length = getattr(ctype_object, "length", None)
-        if length is None:
+        if not ctype_object:
             return None
-        for i in range(length):
-            result.append(ctype_object.data[i] != 0)
+        result = [False] * ctype_object.length
+        for i in range(ctype_object.length):
+            result[i] = ctype_object.data[i] != 0
         return result
