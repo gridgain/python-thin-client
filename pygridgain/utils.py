@@ -118,7 +118,7 @@ def hashcode(data: Union[str, bytes]) -> int:
         For strings we iterate over code point which are of the int type
         and can take up to 4 bytes and can only be positive.
         """
-        result = 0
+        result = 1 if isinstance(string, (bytes, bytearray)) else 0
         for char in data:
             try:
                 char_val = ord(char)
@@ -134,7 +134,6 @@ def hashcode(data: Union[str, bytes]) -> int:
         for byte in data:
             byte = ctypes.c_byte(byte).value
             result = int_overflow(31 * result + byte)
-
     return result
 
 

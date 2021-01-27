@@ -15,8 +15,6 @@
 #
 from collections import OrderedDict
 
-import pytest
-
 from pygridgain import GenericObjectMeta
 from pygridgain.datatypes import (
     IntObject, String
