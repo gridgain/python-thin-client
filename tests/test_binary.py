@@ -313,8 +313,8 @@ def test_complex_object_names(client):
 
 def test_complex_object_hash(client):
     """
-    Test that Python client correctly calculates hash of the binary object that
-    contains negative bytes.
+    Test that Python client correctly calculates hash of the binary
+    object that contains negative bytes.
     """
     class Internal(
         metaclass=GenericObjectMeta,

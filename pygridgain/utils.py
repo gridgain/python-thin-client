@@ -109,16 +109,15 @@ def hashcode(data: Union[str, bytes]) -> int:
     """
     Calculate hash code used for identifying objects in GridGain binary API.
 
-    :param string: UTF-8-encoded string identifier of binary buffer,
+    :param data: UTF-8-encoded string identifier of binary buffer or byte array
     :return: hash code.
     """
-
     if isinstance(data, str):
         """
         For strings we iterate over code point which are of the int type
         and can take up to 4 bytes and can only be positive.
         """
-        result = 1 if isinstance(string, (bytes, bytearray)) else 0
+        result = 0
         for char in data:
             try:
                 char_val = ord(char)
@@ -127,8 +126,11 @@ def hashcode(data: Union[str, bytes]) -> int:
                 pass
     else:
         """
-        For byte array we iterate over bytes which only take 1 byte and can
-        be negative. For this reason we use ctypes.c_byte() to 
+        For byte array we iterate over bytes which only take 1 byte. But
+        according to protocol, bytes during hashing should be treated as signed
+        integer numbers 8 bits long. On other hand elements in Python's `bytes`
+        are unsigned. For this reason we use ctypes.c_byte() to make them
+        signed.
         """
         result = 1
         for byte in data:
