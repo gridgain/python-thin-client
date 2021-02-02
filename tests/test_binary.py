@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import re
 from collections import OrderedDict
 from decimal import Decimal
 
@@ -22,9 +23,7 @@ from pygridgain.datatypes import (
     DoubleObject, CharObject, UUIDObject, DateObject, TimestampObject, TimeObject, EnumObject, BinaryEnumObject,
     ByteArrayObject, ShortArrayObject, IntArrayObject, LongArrayObject, FloatArrayObject, DoubleArrayObject,
     CharArrayObject, BoolArrayObject, UUIDArrayObject, DateArrayObject, TimestampArrayObject, TimeArrayObject,
-    EnumArrayObject, StringArrayObject, DecimalArrayObject, ObjectArrayObject, CollectionObject, MapObject,
-    WrappedDataObject,
-)
+    EnumArrayObject, StringArrayObject, DecimalArrayObject, ObjectArrayObject, CollectionObject, MapObject)
 from pygridgain.datatypes.prop_codes import *
 
 
@@ -313,8 +312,8 @@ def test_complex_object_names(client):
 
 def test_complex_object_hash(client):
     """
-    Test that Python client correctly calculates hash of the binary
-    object that contains negative bytes.
+    Test that Python client correctly calculates hash of the binary object that
+    contains negative bytes.
     """
     class Internal(
         metaclass=GenericObjectMeta,
@@ -367,87 +366,25 @@ def test_complex_object_null_fields(client):
     Test that Python client can correctly write and read binary object that
     contains null fields.
     """
-    class AllTypesObject(
-        metaclass=GenericObjectMeta,
-        type_name='TestObject',
-        schema=OrderedDict([
-            ('byteField', ByteObject),
-            ('shortField', ShortObject),
-            ('intField', IntObject),
-            ('longField', LongObject),
-            ('floatField', FloatObject),
-            ('doubleField', DoubleObject),
-            ('charField', CharObject),
-            ('boolField', BoolObject),
-            ('uuidField', UUIDObject),
-            ('dateField', DateObject),
-            ('timestampField', TimestampObject),
-            ('timeField', TimeObject),
-            ('enumField', EnumObject),
-            ('binaryEnumField', BinaryEnumObject),
-            ('byteArrayField', ByteArrayObject),
-            ('shortArrayField', ShortArrayObject),
-            ('intArrayField', IntArrayObject),
-            ('longArrayField', LongArrayObject),
-            ('floatArrayField', FloatArrayObject),
-            ('doubleArrayField', DoubleArrayObject),
-            ('charArrayField', CharArrayObject),
-            ('boolArrayField', BoolArrayObject),
-            ('uuidArrayField', UUIDArrayObject),
-            ('dateArrayField', DateArrayObject),
-            ('timestampArrayField', TimestampArrayObject),
-            ('timeArrayField', TimeArrayObject),
-            ('enumArrayField', EnumArrayObject),
-            ('stringField', String),
-            ('stringArrayField', StringArrayObject),
-            ('decimalField', DecimalObject),
-            ('decimalArrayField', DecimalArrayObject),
-            ('objectArrayField', ObjectArrayObject),
-            ('collectionField', CollectionObject),
-            ('mapField', MapObject),
-            ('binaryObjectField', BinaryObject),
-        ])
-    ):
+    def camel_to_snake(name):
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
+
+    fields = {camel_to_snake(type_.__name__): type_ for type_ in [
+        ByteObject, ShortObject, IntObject, LongObject, FloatObject, DoubleObject, CharObject, BoolObject, UUIDObject,
+        DateObject, TimestampObject, TimeObject, EnumObject, BinaryEnumObject, ByteArrayObject, ShortArrayObject,
+        IntArrayObject, LongArrayObject, FloatArrayObject, DoubleArrayObject, CharArrayObject, BoolArrayObject,
+        UUIDArrayObject, DateArrayObject, TimestampArrayObject, TimeArrayObject, EnumArrayObject, String,
+        StringArrayObject, DecimalObject, DecimalArrayObject, ObjectArrayObject, CollectionObject, MapObject,
+        BinaryObject]}
+
+    class AllTypesObject(metaclass=GenericObjectMeta, type_name='AllTypesObject', schema=fields):
         pass
 
     key = 42
     null_fields_value = AllTypesObject()
 
-    null_fields_value.byteField = None
-    null_fields_value.shortField = None
-    null_fields_value.intField = 10
-    null_fields_value.longField = None
-    null_fields_value.floatField = None
-    null_fields_value.doubleField = None
-    null_fields_value.charField = None
-    null_fields_value.boolField = None
-    null_fields_value.uuidField = None
-    null_fields_value.dateField = None
-    null_fields_value.timestampField = None
-    null_fields_value.timeField = None
-    null_fields_value.enumField = None
-    null_fields_value.binaryEnumField = None
-    null_fields_value.byteArrayField = None
-    null_fields_value.shortArrayField = None
-    null_fields_value.intArrayField = None
-    null_fields_value.longArrayField = None
-    null_fields_value.floatArrayField = None
-    null_fields_value.doubleArrayField = None
-    null_fields_value.charArrayField = None
-    null_fields_value.boolArrayField = None
-    null_fields_value.uuidArrayField = None
-    null_fields_value.dateArrayField = None
-    null_fields_value.timestampArrayField = None
-    null_fields_value.timeArrayField = None
-    null_fields_value.enumArrayField = None
-    null_fields_value.stringField = None
-    null_fields_value.stringArrayField = None
-    null_fields_value.decimalField = None
-    null_fields_value.decimalArrayField = None
-    null_fields_value.objectArrayField = None
-    null_fields_value.collectionField = None
-    null_fields_value.mapField = None
-    null_fields_value.binaryObjectField = None
+    for field in fields.keys():
+        setattr(null_fields_value, field, None)
 
     cache = client.get_or_create_cache('all_types_test_cache')
     cache.put(key, null_fields_value)
