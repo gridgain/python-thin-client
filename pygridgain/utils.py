@@ -109,10 +109,9 @@ def hashcode(data: Union[str, bytes]) -> int:
     """
     Calculate hash code used for identifying objects in GridGain binary API.
 
-    :param string: UTF-8-encoded string identifier of binary buffer,
+    :param data: UTF-8-encoded string identifier of binary buffer or byte array
     :return: hash code.
     """
-
     if isinstance(data, str):
         """
         For strings we iterate over code point which are of the int type
@@ -127,14 +126,16 @@ def hashcode(data: Union[str, bytes]) -> int:
                 pass
     else:
         """
-        For byte array we iterate over bytes which only take 1 byte and can
-        be negative. For this reason we use ctypes.c_byte() to 
+        For byte array we iterate over bytes which only take 1 byte. But
+        according to protocol, bytes during hashing should be treated as signed
+        integer numbers 8 bits long. On other hand elements in Python's `bytes`
+        are unsigned. For this reason we use ctypes.c_byte() to make them
+        signed.
         """
         result = 1
         for byte in data:
             byte = ctypes.c_byte(byte).value
             result = int_overflow(31 * result + byte)
-
     return result
 
 
@@ -252,30 +253,6 @@ def status_to_exception(exc: Type[Exception]):
             return result.value
         return ste_wrapper
     return ste_decorator
-
-
-def select_version(func):
-    """
-    This decorator tries to find a method more suitable for a current protocol
-    version, before calling the decorated method. The object which method is
-    being decorated must have `get_protocol_version()` method.
-
-    :param func: decorated method,
-    :return: wrapper.
-    """
-    def wrapper(obj: object, *args, **kwargs) -> Callable:
-        suggested_name = '{}_{}{}{}'.format(
-            func.__name__,
-            *obj.get_protocol_version()
-        )
-        suggested = getattr(obj, suggested_name, None)
-        if suggested is None:
-            return func(obj, *args, **kwargs)
-
-        # this method is bound, do not pass `conn` here
-        return suggested(*args, **kwargs)
-
-    return wrapper
 
 
 def get_field_by_id(
