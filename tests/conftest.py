@@ -95,33 +95,33 @@ def start_ignite_server_gen(idx, request):
 
 @pytest.fixture(scope='module')
 def client(
-    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
-    ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_keyfile_password,
+    ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
-    yield from client0(node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
-                       ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
+    yield from client0(node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
+                       ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
 def client_partition_aware(
-        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
-        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
-        username, password
+        node, timeout, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version, username,
+        password
 ):
-    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile,
                        ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
 def client_partition_aware_single_server(
         node, timeout, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
-        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
-        username, password
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version, username,
+        password
 ):
     node = node[:1]
-    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
-                      ssl_ciphers, ssl_version, username, password)
+    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile,
+                      ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture
@@ -141,13 +141,14 @@ def log_init():
 
 
 @pytest.fixture(scope='module')
-def start_client(use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
+def start_client(use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
                  ssl_version,username, password):
     def start(**kwargs):
         cli_kw = kwargs.copy()
         cli_kw.update({
             'use_ssl': use_ssl,
             'ssl_keyfile': ssl_keyfile,
+            'ssl_keyfile_password': ssl_keyfile_password,
             'ssl_certfile': ssl_certfile,
             'ssl_ca_certfile': ssl_ca_certfile,
             'ssl_cert_reqs': ssl_cert_reqs,
@@ -162,8 +163,8 @@ def start_client(use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_r
 
 
 def client0(
-    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
-    ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_keyfile_password,
+    ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
     client = Client(
