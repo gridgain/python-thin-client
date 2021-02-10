@@ -90,7 +90,7 @@ def start_ignite_server(use_ssl):
 
 def start_ignite_server_gen(idx, request):
     use_ssl = request.config.getoption("--use-ssl")
-    yield from start_ignite_gen(idx, use_ssl)
+    yield from start_ignite_gen(idx, use_ssl=use_ssl)
 
 
 @pytest.fixture(scope='module')
