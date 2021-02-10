@@ -19,7 +19,7 @@ import ssl
 
 import pytest
 
-from pyignite import Client
+from pygridgain import Client
 from pygridgain.constants import *
 from pygridgain.api import cache_create, cache_destroy
 from tests.util import _start_ignite, start_ignite_gen, get_request_grid_idx
@@ -141,14 +141,13 @@ def log_init():
 
 
 @pytest.fixture(scope='module')
-def start_client(use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
+def start_client(use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
                  ssl_version,username, password):
     def start(**kwargs):
         cli_kw = kwargs.copy()
         cli_kw.update({
             'use_ssl': use_ssl,
             'ssl_keyfile': ssl_keyfile,
-            'ssl_keyfile_password': ssl_keyfile_password,
             'ssl_certfile': ssl_certfile,
             'ssl_ca_certfile': ssl_ca_certfile,
             'ssl_cert_reqs': ssl_cert_reqs,

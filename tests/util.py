@@ -131,7 +131,7 @@ def _start_ignite(idx=1, debug=False, use_ssl=False):
 
 
 def start_ignite_gen(idx=1, debug=False, use_ssl=False):
-    srv = start_ignite(idx, debug=debug, use_ssl=use_ssl)
+    srv = _start_ignite(idx, debug=debug, use_ssl=use_ssl)
     yield srv
     kill_process_tree(srv.pid)
 

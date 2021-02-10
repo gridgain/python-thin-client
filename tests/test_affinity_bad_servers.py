@@ -15,7 +15,7 @@
 #
 import pytest
 
-from pyignite.exceptions import ReconnectError
+from pygridgain.exceptions import ReconnectError
 from tests.util import *
 
 
