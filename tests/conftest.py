@@ -90,38 +90,38 @@ def start_ignite_server(use_ssl):
 
 def start_ignite_server_gen(idx, request):
     use_ssl = request.config.getoption("--use-ssl")
-    yield from start_ignite_gen(idx, use_ssl)
+    yield from start_ignite_gen(idx, use_ssl=use_ssl)
 
 
 @pytest.fixture(scope='module')
 def client(
-    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
-    ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_keyfile_password,
+    ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
-    yield from client0(node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
-                       ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
+    yield from client0(node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
+                       ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
 def client_partition_aware(
-        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
-        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
-        username, password
+        node, timeout, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version, username,
+        password
 ):
-    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile,
+    yield from client0(node, timeout, True, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile,
                        ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture(scope='module')
 def client_partition_aware_single_server(
-        node, timeout, use_ssl, ssl_keyfile, ssl_certfile,
-        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
-        username, password
+        node, timeout, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile,
+        ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version, username,
+        password
 ):
     node = node[:1]
-    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs,
-                      ssl_ciphers, ssl_version, username, password)
+    yield from client(node, timeout, True, use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile,
+                      ssl_cert_reqs, ssl_ciphers, ssl_version, username, password)
 
 
 @pytest.fixture
@@ -141,13 +141,14 @@ def log_init():
 
 
 @pytest.fixture(scope='module')
-def start_client(use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
+def start_client(use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
                  ssl_version,username, password):
     def start(**kwargs):
         cli_kw = kwargs.copy()
         cli_kw.update({
             'use_ssl': use_ssl,
             'ssl_keyfile': ssl_keyfile,
+            'ssl_keyfile_password': ssl_keyfile_password,
             'ssl_certfile': ssl_certfile,
             'ssl_ca_certfile': ssl_ca_certfile,
             'ssl_cert_reqs': ssl_cert_reqs,
@@ -162,8 +163,8 @@ def start_client(use_ssl, ssl_keyfile, ssl_certfile, ssl_ca_certfile, ssl_cert_r
 
 
 def client0(
-    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_certfile,
-    ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
+    node, timeout, partition_aware, use_ssl, ssl_keyfile, ssl_keyfile_password,
+    ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers, ssl_version,
     username, password,
 ):
     client = Client(
@@ -171,6 +172,7 @@ def client0(
         partition_aware=partition_aware,
         use_ssl=use_ssl,
         ssl_keyfile=ssl_keyfile,
+        ssl_keyfile_password=ssl_keyfile_password,
         ssl_certfile=ssl_certfile,
         ssl_ca_certfile=ssl_ca_certfile,
         ssl_cert_reqs=ssl_cert_reqs,
@@ -243,6 +245,13 @@ def pytest_addoption(parser):
         help='a path to SSL key file to identify local party'
     )
     parser.addoption(
+        '--ssl-keyfile-password',
+        action='store',
+        default=None,
+        type=str,
+        help='password for SSL key file'
+    )
+    parser.addoption(
         '--ssl-certfile',
         action='store',
         default=None,
@@ -308,6 +317,7 @@ def pytest_generate_tests(metafunc):
         'partition_aware': False,
         'use_ssl': False,
         'ssl_keyfile': None,
+        'ssl_keyfile_password': None,
         'ssl_certfile': None,
         'ssl_ca_certfile': None,
         'ssl_cert_reqs': ssl.CERT_NONE,

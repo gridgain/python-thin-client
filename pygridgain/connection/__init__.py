@@ -72,6 +72,7 @@ class Connection:
             'ssl_ciphers',
             'ssl_cert_reqs',
             'ssl_keyfile',
+            'ssl_keyfile_password',
             'ssl_certfile',
             'ssl_ca_certfile',
         ]
@@ -115,6 +116,9 @@ class Connection:
 
         :param ssl_keyfile: (optional) a path to SSL key file to identify
          local (client) party,
+        :param ssl_keyfile_password: (optional) password for SSL key file,
+         can be provided when key file is encrypted to prevent OpenSSL
+         password prompt,
         :param ssl_certfile: (optional) a path to ssl certificate file
          to identify local (client) party,
         :param ssl_ca_certfile: (optional) a path to a trusted certificate
