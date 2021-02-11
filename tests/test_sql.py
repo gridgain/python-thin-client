@@ -19,7 +19,8 @@ from pygridgain.api import (
     cache_get_configuration,
 )
 from pygridgain.datatypes.prop_codes import *
-from pygridgain.utils import entity_id, unwrap_binary
+from pygridgain.utils import entity_id
+from pygridgain.binary import unwrap_binary
 
 initial_data = [
         ('John', 'Doe', 5),
