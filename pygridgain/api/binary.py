@@ -20,10 +20,11 @@ from pygridgain.datatypes.binary import (
     body_struct, enum_struct, schema_struct, binary_fields_struct,
 )
 from pygridgain.datatypes import String, Int, Bool
-from pygridgain.queries import Query, get_response_class
+from pygridgain.queries import Query
 from pygridgain.queries.op_codes import *
 from pygridgain.utils import int_overflow, entity_id
 from .result import APIResult
+from ..queries.response import Response
 
 
 def get_binary_type(
@@ -53,9 +54,9 @@ def get_binary_type(
     })
     connection.send(send_buffer)
 
-    response_head_struct = get_response_class(connection)([
-        ('type_exists', Bool),
-    ])
+    response_head_struct = Response(protocol_version=connection.get_protocol_version(),
+                                    following=[('type_exists', Bool)])
+
     response_head_type, recv_buffer = response_head_struct.parse(connection)
     response_head = response_head_type.from_buffer_copy(recv_buffer)
     response_parts = []
