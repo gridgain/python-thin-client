@@ -30,13 +30,18 @@ __all__ = [
 ]
 
 PROTOCOLS = {
+    (1, 8, 0),
+    (1, 7, 1),
+    (1, 7, 0),
+    (1, 6, 0),
+    (1, 5, 0),
     (1, 4, 0),
     (1, 3, 0),
     (1, 2, 0),
 }
 
 PROTOCOL_VERSION_MAJOR = 1
-PROTOCOL_VERSION_MINOR = 4
+PROTOCOL_VERSION_MINOR = 8
 PROTOCOL_VERSION_PATCH = 0
 
 MAX_LONG = 9223372036854775807

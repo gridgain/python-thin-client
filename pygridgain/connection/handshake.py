@@ -15,7 +15,7 @@
 #
 from typing import Optional, Tuple
 
-from pygridgain.datatypes import Byte, Int, Short, String
+from pygridgain.datatypes import Byte, ByteArray, Int, Map, Short, String
 from pygridgain.datatypes.internal import Struct
 
 OP_HANDSHAKE = 1
@@ -27,10 +27,11 @@ class HandshakeRequest:
     username = None
     password = None
     protocol_version = None
+    timezone = None
 
     def __init__(
         self, protocol_version: Tuple[int, int, int],
-        username: Optional[str] = None, password: Optional[str] = None
+        username: Optional[str] = None, password: Optional[str] = None, timezone: str = None,
     ):
         fields = [
             ('length', Int),
@@ -41,6 +42,19 @@ class HandshakeRequest:
             ('client_code', Byte),
         ]
         self.protocol_version = protocol_version
+        self.timezone = timezone
+        if protocol_version >= (1, 7, 0):
+            fields.extend([
+                ('features', ByteArray),
+            ])
+        if protocol_version >= (1, 8, 0):
+            fields.extend([
+                ('timezone', String),
+            ])
+        if protocol_version >= (1, 7, 1):
+            fields.extend([
+                ('user_attributes', Map),
+            ])
         if username and password:
             self.username = username
             self.password = password
@@ -59,6 +73,18 @@ class HandshakeRequest:
             'version_patch': self.protocol_version[2],
             'client_code': 2,  # fixed value defined by protocol
         }
+        if self.protocol_version >= (1, 7, 0):
+            handshake_data.update({
+                'features': None,
+            })
+        if self.protocol_version >= (1, 8, 0):
+            handshake_data.update({
+                'timezone': self.timezone,
+            })
+        if self.protocol_version >= (1, 7, 1):
+            handshake_data.update({
+                'user_attributes': None,
+            })
         if self.username and self.password:
             handshake_data.update({
                 'username': self.username,
@@ -69,5 +95,4 @@ class HandshakeRequest:
                 len(self.username),
                 len(self.password),
             ])
-
         self.handshake_struct.from_python(stream, handshake_data)
