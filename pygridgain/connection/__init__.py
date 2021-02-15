@@ -29,7 +29,7 @@ from pygridgain.constants import *
 from pygridgain.exceptions import (
     HandshakeError, ParameterError, SocketError, connection_errors,
 )
-from pygridgain.datatypes import Byte, Int, Short, String, UUIDObject
+from pygridgain.datatypes import Byte, ByteArray, Int, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
 from pygridgain.utils import DaemonicTimer
 
@@ -204,6 +204,11 @@ class Connection:
                     ('version_minor', Short),
                     ('version_patch', Short),
                     ('message', String),
+                ])
+            elif self.get_protocol_version() >= (1, 7, 0):
+                response_end = Struct([
+                    ('features', ByteArray),
+                    ('node_uuid', UUIDObject),
                 ])
             elif self.get_protocol_version() >= (1, 4, 0):
                 response_end = Struct([

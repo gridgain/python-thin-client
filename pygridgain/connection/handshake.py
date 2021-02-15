@@ -15,7 +15,7 @@
 #
 from typing import Optional, Tuple
 
-from pygridgain.datatypes import Byte, ByteArray, Int, Map, Short, String
+from pygridgain.datatypes import Byte, Int, Null, Short, String
 from pygridgain.datatypes.internal import Struct
 
 OP_HANDSHAKE = 1
@@ -45,7 +45,7 @@ class HandshakeRequest:
         self.timezone = timezone
         if protocol_version >= (1, 7, 0):
             fields.extend([
-                ('features', ByteArray),
+                ('features', Null),
             ])
         if protocol_version >= (1, 8, 0):
             fields.extend([
@@ -53,7 +53,7 @@ class HandshakeRequest:
             ])
         if protocol_version >= (1, 7, 1):
             fields.extend([
-                ('user_attributes', Map),
+                ('user_attributes', Null),
             ])
         if username and password:
             self.username = username
@@ -77,14 +77,17 @@ class HandshakeRequest:
             handshake_data.update({
                 'features': None,
             })
+            handshake_data['length'] += 1
         if self.protocol_version >= (1, 8, 0):
             handshake_data.update({
                 'timezone': self.timezone,
             })
+            handshake_data['length'] += 5 + len(self.timezone)
         if self.protocol_version >= (1, 7, 1):
             handshake_data.update({
                 'user_attributes': None,
             })
+            handshake_data['length'] += 1
         if self.username and self.password:
             handshake_data.update({
                 'username': self.username,
