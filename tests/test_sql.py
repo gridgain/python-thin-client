@@ -196,6 +196,7 @@ def test_long_multipage_query(client):
 
 @pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])
 def test_server_in_different_timezone(start_ignite_server, start_client, timezone):
+    import time
     server_id = 10
     server = start_ignite_server(idx=server_id, cluster_idx=2, jvm_opts=f'-Duser.timezone={timezone}')
     try:
@@ -211,6 +212,7 @@ def test_server_in_different_timezone(start_ignite_server, start_client, timezon
         page = client.sql('SELECT time FROM test')
         received = next(page)[0][0]
 
+        print(f'=== TIMEZONE === "{time.tzname}"')
         assert current_time == received
 
         client.close()
