@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright 2019 GridGain Systems, Inc. and Contributors.
+ Copyright 2021 GridGain Systems, Inc. and Contributors.
 
  Licensed under the GridGain Community Edition License (the "License");
  you may not use this file except in compliance with the License.
@@ -59,12 +59,12 @@
         <property name="discoverySpi">
             <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
                 <property name="localAddress" value="127.0.0.1"/>
-                <property name="localPort" value="48500"/>
+                <property name="localPort" value="{{ discovery_port }}"/>
                 <property name="ipFinder">
                     <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
                         <property name="addresses">
                             <list>
-                                <value>127.0.0.1:48500..48510</value>
+                                <value>127.0.0.1:{{ discovery_port }}..{{ discovery_port_range }}</value>
                             </list>
                         </property>
                     </bean>
@@ -76,7 +76,7 @@
         <property name="communicationSpi">
             <bean class="org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi">
                 <property name="localAddress" value="127.0.0.1"/>
-                <property name="localPort" value="48100"/>
+                <property name="localPort" value="{{ communication_port }}"/>
             </bean>
         </property>
 

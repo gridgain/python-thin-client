@@ -82,8 +82,8 @@ def server3(request):
 
 @pytest.fixture(scope='module')
 def start_ignite_server(use_ssl):
-    def start(idx=1):
-        return _start_ignite(idx, use_ssl=use_ssl)
+    def start(idx=1, cluster_idx=1, jvm_opts=''):
+        return _start_ignite(idx, use_ssl=use_ssl, cluster_idx=cluster_idx, jvm_opts=jvm_opts)
 
     return start
 

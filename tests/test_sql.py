@@ -13,14 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from datetime import datetime
+
+import pytest
+
 from pygridgain.api import (
     sql_fields, sql_fields_cursor_get_page,
-    cache_get_or_create, sql, sql_cursor_get_page,
+    sql, sql_cursor_get_page,
     cache_get_configuration,
 )
 from pygridgain.datatypes.prop_codes import *
 from pygridgain.utils import entity_id
 from pygridgain.binary import unwrap_binary
+from tests.util import kill_process_tree
 
 initial_data = [
         ('John', 'Doe', 5),
@@ -187,3 +192,26 @@ def test_long_multipage_query(client):
             assert value == field_number * page[0]
 
     client.sql(drop_query)
+
+
+@pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])
+def test_server_in_different_timezone(start_ignite_server, start_client, timezone):
+    server = start_ignite_server(idx=4, cluster_idx=2, jvm_opts=f'-Duser.timezone={timezone}')
+    try:
+        client = start_client()
+        client.connect('127.0.0.1', 10804)
+
+        client.get_or_create_cache('PUBLIC')
+        client.sql('create table test(key int primary key, time datetime)')
+
+        current_time = datetime(year=2020, month=2, day=12, hour=12, minute=32, second=55)
+        client.sql(f"insert into test (key, time) VALUES (1, '{current_time}')")
+
+        page = client.sql('SELECT time FROM test')
+        received = next(page)[0][0]
+
+        assert current_time == received
+
+        client.close()
+    finally:
+        kill_process_tree(server.pid)
