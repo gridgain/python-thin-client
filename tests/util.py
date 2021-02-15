@@ -139,7 +139,7 @@ def _start_ignite(idx=1, debug=False, use_ssl=False, cluster_idx=1, jvm_opts='')
     }
 
     create_config_file('log4j.xml.jinja2', f'log4j-{idx}.xml', **params)
-    create_config_file('ignite-default.xml.jinja2', f'ignite-config-{idx}.xml', **params)
+    create_config_file('ignite-config.xml.jinja2', f'ignite-config-{idx}.xml', **params)
 
     ignite_cmd = [runner, os.path.join(get_test_dir(), "config", f'ignite-config-{idx}.xml')]
     print("Starting Ignite server node:", ignite_cmd)
