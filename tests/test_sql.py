@@ -196,10 +196,11 @@ def test_long_multipage_query(client):
 
 @pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])
 def test_server_in_different_timezone(start_ignite_server, start_client, timezone):
-    server = start_ignite_server(idx=4, cluster_idx=2, jvm_opts=f'-Duser.timezone={timezone}')
+    server_id = 10
+    server = start_ignite_server(idx=server_id, cluster_idx=2, jvm_opts=f'-Duser.timezone={timezone}')
     try:
         client = start_client()
-        client.connect('127.0.0.1', 10804)
+        client.connect('127.0.0.1', 10800 + server_id)
 
         client.get_or_create_cache('PUBLIC')
         client.sql('create table test(key int primary key, time datetime)')
