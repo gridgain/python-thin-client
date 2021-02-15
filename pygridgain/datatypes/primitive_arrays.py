@@ -57,7 +57,6 @@ class PrimitiveArray(GridGainDataType, Nullable):
             {
                 '_pack_': 1,
                 '_fields_': [
-                    ('type_code', ctypes.c_byte),
                     ('length', ctypes.c_int),
                 ],
             }
@@ -68,7 +67,6 @@ class PrimitiveArray(GridGainDataType, Nullable):
         header_class = cls.build_header_class()
         header = stream.read_ctype(header_class)
 
-        print(f'header.length={header.length}')
         final_class = type(
             cls.__name__,
             (header_class,),

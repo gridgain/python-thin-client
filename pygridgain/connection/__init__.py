@@ -21,7 +21,6 @@ as well as GridGain protocol handshaking.
 
 from collections import OrderedDict
 import socket
-import time
 from threading import RLock
 from typing import Union
 from tzlocal import get_localzone
@@ -30,7 +29,7 @@ from pygridgain.constants import *
 from pygridgain.exceptions import (
     HandshakeError, ParameterError, SocketError, connection_errors,
 )
-from pygridgain.datatypes import Byte, ByteArray, Int, Short, String, UUIDObject
+from pygridgain.datatypes import Byte, ByteArrayObject, Int, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
 from pygridgain.utils import DaemonicTimer
 
@@ -208,7 +207,7 @@ class Connection:
                 ])
             elif self.get_protocol_version() >= (1, 7, 0):
                 response_end = Struct([
-                    ('features', ByteArray),
+                    ('features', ByteArrayObject),
                     ('node_uuid', UUIDObject),
                 ])
             elif self.get_protocol_version() >= (1, 4, 0):

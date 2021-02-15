@@ -15,10 +15,12 @@
 #
 from typing import Optional, Tuple
 
-from pygridgain.datatypes import Byte, Int, Null, Short, String
+from pygridgain.datatypes import Byte, ByteArrayObject, Int, MapObject, Short, String
 from pygridgain.datatypes.internal import Struct
 
 OP_HANDSHAKE = 1
+
+USER_ATTR_TIMEZONE = 'client.timezone'
 
 
 class HandshakeRequest:
@@ -45,15 +47,11 @@ class HandshakeRequest:
         self.timezone = timezone
         if protocol_version >= (1, 7, 0):
             fields.extend([
-                ('features', Null),
-            ])
-        if protocol_version >= (1, 8, 0):
-            fields.extend([
-                ('timezone', String),
+                ('features', ByteArrayObject),
             ])
         if protocol_version >= (1, 7, 1):
             fields.extend([
-                ('user_attributes', Null),
+                ('user_attributes', MapObject),
             ])
         if username and password:
             self.username = username
@@ -78,16 +76,16 @@ class HandshakeRequest:
                 'features': None,
             })
             handshake_data['length'] += 1
-        if self.protocol_version >= (1, 8, 0):
-            handshake_data.update({
-                'timezone': self.timezone,
-            })
-            handshake_data['length'] += 5 + len(self.timezone)
         if self.protocol_version >= (1, 7, 1):
+            user_attributes = (
+                MapObject.HASH_MAP, {
+                    USER_ATTR_TIMEZONE: self.timezone
+                })
+
             handshake_data.update({
-                'user_attributes': None,
+                'user_attributes': user_attributes,
             })
-            handshake_data['length'] += 1
+            handshake_data['length'] += 6 + 5 + len(USER_ATTR_TIMEZONE) + 5 + len(self.timezone)
         if self.username and self.password:
             handshake_data.update({
                 'username': self.username,
