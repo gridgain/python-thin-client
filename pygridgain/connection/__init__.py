@@ -24,6 +24,7 @@ import socket
 import time
 from threading import RLock
 from typing import Union
+from tzlocal import get_localzone
 
 from pygridgain.constants import *
 from pygridgain.exceptions import (
@@ -282,8 +283,7 @@ class Connection:
 
         protocol_version = self.client.protocol_version
 
-        timezone_idx = 1 if time.localtime().tm_isdst else 0
-        timezone = time.tzname[timezone_idx]
+        timezone = get_localzone().tzname(None)
 
         hs_request = HandshakeRequest(
             protocol_version=protocol_version,
