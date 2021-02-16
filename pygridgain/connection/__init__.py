@@ -201,17 +201,13 @@ class Connection:
             data = response_start.to_python(start)
             response_end = None
             if data['op_code'] == 0:
-                response_fields = [
+                response_end = Struct([
                     ('version_major', Short),
                     ('version_minor', Short),
                     ('version_patch', Short),
                     ('message', String),
-                ]
-                if self.get_protocol_version() >= (1,1, 0):
-                    response_fields.append(
-                        ('client_status', Int)
-                    )
-                response_end = Struct(response_fields)
+                    ('client_status', Int)
+                ])
             elif self.get_protocol_version() >= (1, 7, 0):
                 response_end = Struct([
                     ('features', ByteArrayObject),
