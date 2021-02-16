@@ -23,12 +23,13 @@ from collections import OrderedDict
 import socket
 from threading import RLock
 from typing import Union
+from tzlocal import get_localzone
 
 from pygridgain.constants import *
 from pygridgain.exceptions import (
     HandshakeError, ParameterError, SocketError, connection_errors,
 )
-from pygridgain.datatypes import Byte, Int, Short, String, UUIDObject
+from pygridgain.datatypes import Byte, ByteArrayObject, Int, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
 from pygridgain.utils import DaemonicTimer
 
@@ -204,6 +205,11 @@ class Connection:
                     ('version_patch', Short),
                     ('message', String),
                 ])
+            elif self.get_protocol_version() >= (1, 7, 0):
+                response_end = Struct([
+                    ('features', ByteArrayObject),
+                    ('node_uuid', UUIDObject),
+                ])
             elif self.get_protocol_version() >= (1, 4, 0):
                 response_end = Struct([
                     ('node_uuid', UUIDObject),
@@ -276,10 +282,13 @@ class Connection:
 
         protocol_version = self.client.protocol_version
 
+        timezone = get_localzone().tzname(None)
+
         hs_request = HandshakeRequest(
-            protocol_version,
-            self.username,
-            self.password
+            protocol_version=protocol_version,
+            username=self.username,
+            password=self.password,
+            timezone=timezone,
         )
 
         with BinaryStream(self) as stream:

@@ -76,7 +76,7 @@ def get_ignite_config_path(use_ssl=False):
     if use_ssl:
         file_name = "ignite-config-ssl.xml"
     else:
-        file_name = "ignite-config.xml.jinja2"
+        file_name = "ignite-default.xml.jinja2"
 
     return os.path.join(get_test_dir(), "config", file_name)
 
@@ -113,7 +113,7 @@ def create_config_file(tpl_name, file_name, **kwargs):
         f.write(template.render(**kwargs))
 
 
-def _start_ignite(idx=1, debug=False, use_ssl=False):
+def _start_ignite(idx=1, debug=False, use_ssl=False, cluster_idx=1, jvm_opts=''):
     clear_logs(idx)
 
     runner = get_ignite_runner()
@@ -121,10 +121,22 @@ def _start_ignite(idx=1, debug=False, use_ssl=False):
     env = os.environ.copy()
 
     if debug:
-        env["JVM_OPTS"] = "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
-                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
+        env["JVM_OPTS"] = env.get("JVM_OPTS", '') + \
+                          "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
+                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address={5005} "
 
-    params = {'ignite_instance_idx': str(idx), 'ignite_client_port': 10800 + idx, 'use_ssl': use_ssl}
+    if jvm_opts:
+        env["JVM_OPTS"] = env.get("JVM_OPTS", '') + jvm_opts
+
+    port_offset = (cluster_idx - 1) * 10
+    params = {
+        'ignite_instance_idx': str(idx),
+        'ignite_client_port': 10800 + idx,
+        'use_ssl': use_ssl,
+        'discovery_port': 48500 + port_offset,
+        'discovery_port_range': 48510 + port_offset,
+        'communication_port': 48100 + port_offset,
+    }
 
     create_config_file('log4j.xml.jinja2', f'log4j-{idx}.xml', **params)
     create_config_file('ignite-config.xml.jinja2', f'ignite-config-{idx}.xml', **params)
