@@ -41,6 +41,8 @@ __all__ = ['Connection']
 
 from ..stream import BinaryStream, READ_BACKWARD
 
+CLIENT_STATUS_AUTH_FAILURE = 2000
+
 
 class Connection:
     """
@@ -199,12 +201,17 @@ class Connection:
             data = response_start.to_python(start)
             response_end = None
             if data['op_code'] == 0:
-                response_end = Struct([
+                response_fields = [
                     ('version_major', Short),
                     ('version_minor', Short),
                     ('version_patch', Short),
                     ('message', String),
-                ])
+                ]
+                if self.get_protocol_version() >= (1,1, 0):
+                    response_fields.append(
+                        ('client_status', Int)
+                    )
+                response_end = Struct(response_fields)
             elif self.get_protocol_version() >= (1, 7, 0):
                 response_end = Struct([
                     ('features', ByteArrayObject),
@@ -318,7 +325,7 @@ class Connection:
                     client_patch=protocol_version[2],
                     **hs_response
                 )
-            elif error_text.find('The user name or password is incorrect') != -1:
+            elif hs_response['client_status'] == CLIENT_STATUS_AUTH_FAILURE:
                 raise AuthenticationError(error_text)
             raise HandshakeError((
                 hs_response['version_major'],
