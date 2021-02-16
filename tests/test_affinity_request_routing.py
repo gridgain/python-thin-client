@@ -18,6 +18,7 @@ import pytest
 
 from pygridgain import *
 from pygridgain.connection import Connection
+from pygridgain.constants import PROTOCOL_BYTE_ORDER
 from pygridgain.datatypes import *
 from pygridgain.datatypes.cache_config import CacheMode
 from pygridgain.datatypes.prop_codes import *
@@ -30,7 +31,12 @@ old_send = Connection.send
 
 def patched_send(self, *args, **kwargs):
     """Patched send function that push to queue idx of server to which request is routed."""
-    requests.append(self.port % 100)
+    buf = args[0]
+    if buf and len(buf) >= 6:
+        op_code = int.from_bytes(buf[4:6], byteorder=PROTOCOL_BYTE_ORDER)
+        # Filter only caches operation.
+        if 1000 <= op_code < 1100:
+            requests.append(self.port % 100)
     return old_send(self, *args, **kwargs)
 
 
