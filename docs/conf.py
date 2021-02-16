@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'GridGain binary client Python API'
-copyright = '2018-2019, GridGain Community Edition License'
-author = 'Dmitry Melnichuk'
+copyright = '2018-2021, GridGain Community Edition License'
+author = 'GridGain Systems, Inc.'
 
 # The short X.Y version
 version = ''

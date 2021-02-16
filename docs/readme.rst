@@ -60,7 +60,7 @@ the whole repository:
 ::
 
 $ git clone git@github.com:gridgain/gridgain.git
-$ cd gridgain/modules/platforms/python
+$ cd python-thin-client
 $ pip install -e .
 
 This will install the repository version of `pygridgain` into your environment
@@ -80,7 +80,7 @@ Examples
 --------
 
 Some examples of using pygridgain are provided in
-`gridgain/modules/platforms/python/examples` folder. They are extensively
+`python-thin-client/examples` folder. They are extensively
 commented in the :ref:`examples_of_usage` section of the documentation.
 
 This code implies that it is run in the environment with `pygridgain` package
@@ -97,7 +97,7 @@ Create and activate virtualenv_ environment. Run
 
 ::
 
-$ cd gridgain/modules/platforms/python
+$ cd python-thin-client
 $ python ./setup.py pytest
 
 This does not require `pytest` and other test dependencies to be installed
@@ -172,14 +172,14 @@ To recompile this documentation, do this from your virtualenv_ environment:
 
 ::
 
-$ cd gridgain/modules/platforms/python
+$ cd python-thin-client
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make clean
 $ sphinx-apidoc -feM -o source/ ../ ../setup.py
 $ make html
 
-Then open `gridgain/modules/platforms/python/docs/generated/html/index.html`_
+Then open `python-thin-client/docs/generated/html/index.html`_
 in your browser.
 
 Licensing
@@ -189,9 +189,9 @@ This is a free software, brought to you on terms of the
 `GridGain Community Edition License`_.
 
 .. _GridGain: https://docs.gridgain.com/docs
-.. _binary client protocol: https://apacheignite.readme.io/docs/binary-client-protocol
+.. _binary client protocol: https://ignite.apache.org/docs/latest/binary-client-protocol/binary-client-protocol
 .. _GridGain Community Edition License: https://www.gridgain.com/products/software/community-edition/gridgain-community-edition-license
 .. _virtualenv: https://virtualenv.pypa.io/
 .. _setuptools: https://setuptools.readthedocs.io/
-.. _gridgain/modules/platforms/python/docs/generated/html/index.html: .
+.. _python-thin-client/docs/generated/html/index.html: .
 .. _editable installs: https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs
