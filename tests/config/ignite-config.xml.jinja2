@@ -26,8 +26,18 @@
         http://www.springframework.org/schema/util/spring-util.xsd">
 
     <bean id="grid.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
-        {% if use_ssl %}
-            <property name="connectorConfiguration"><null/></property>
+        {% if enable_auth %}
+        <property name="authenticationEnabled" value="true"/>
+
+        <property name="persistentStoreConfiguration">
+            <bean class="org.apache.ignite.configuration.PersistentStoreConfiguration"/>
+        </property>
+
+        <property name="connectorConfiguration">
+            <bean class="org.apache.ignite.configuration.ConnectorConfiguration">
+                <property name="port" value="{{ connector_port }}"/>
+            </bean>
+        </property>
         {% endif %}
 
         <property name="clientConnectorConfiguration">

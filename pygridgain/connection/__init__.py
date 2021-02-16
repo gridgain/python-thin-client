@@ -27,7 +27,7 @@ from tzlocal import get_localzone
 
 from pygridgain.constants import *
 from pygridgain.exceptions import (
-    HandshakeError, ParameterError, SocketError, connection_errors,
+    HandshakeError, ParameterError, SocketError, connection_errors, AuthenticationError,
 )
 from pygridgain.datatypes import Byte, ByteArrayObject, Int, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
@@ -300,7 +300,7 @@ class Connection:
             # disconnect but keep in use
             self.close(release=False)
 
-            error_text = 'Handshake error: {}'.format(hs_response['message'])
+            error_text = f'Handshake error: {hs_response["message"]}'
             # if handshake fails for any reason other than protocol mismatch
             # (i.e. authentication error), server version is 0.0.0
             if any([
@@ -318,6 +318,8 @@ class Connection:
                     client_patch=protocol_version[2],
                     **hs_response
                 )
+            elif error_text.find('The user name or password is incorrect') != -1:
+                raise AuthenticationError(error_text)
             raise HandshakeError((
                 hs_response['version_major'],
                 hs_response['version_minor'],
@@ -421,7 +423,6 @@ class Connection:
         data.extend(bytearray(response_len))
         _recv(memoryview(data)[4:], response_len)
         return data
-
 
     def close(self, release=True):
         """
