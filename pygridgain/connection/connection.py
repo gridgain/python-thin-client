@@ -183,6 +183,11 @@ class Connection:
                     ('message', String),
                     ('client_status', Int)
                 ])
+            elif self.get_protocol_version() >= (1, 7, 0):
+                response_end = Struct([
+                    ('features', ByteArrayObject),
+                    ('node_uuid', UUIDObject),
+                ])
             elif self.get_protocol_version() >= (1, 4, 0):
                 response_end = Struct([
                     ('node_uuid', UUIDObject),
