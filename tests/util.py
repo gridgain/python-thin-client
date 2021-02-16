@@ -16,6 +16,7 @@
 
 import glob
 import os
+import shutil
 
 import jinja2 as jinja2
 import psutil
@@ -113,7 +114,7 @@ def create_config_file(tpl_name, file_name, **kwargs):
         f.write(template.render(**kwargs))
 
 
-def _start_ignite(idx=1, debug=False, use_ssl=False, cluster_idx=1, jvm_opts=''):
+def _start_ignite(idx=1, debug=False, use_ssl=False, enable_auth=False, cluster_idx=1, jvm_opts=''):
     clear_logs(idx)
 
     runner = get_ignite_runner()
@@ -123,19 +124,21 @@ def _start_ignite(idx=1, debug=False, use_ssl=False, cluster_idx=1, jvm_opts='')
     if debug:
         env["JVM_OPTS"] = env.get("JVM_OPTS", '') + \
                           "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
-                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address={5005} "
+                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
 
     if jvm_opts:
         env["JVM_OPTS"] = env.get("JVM_OPTS", '') + jvm_opts
 
     port_offset = (cluster_idx - 1) * 10
     params = {
-        'ignite_instance_idx': str(idx),
+        'ignite_instance_idx': idx,
         'ignite_client_port': 10800 + idx,
         'use_ssl': use_ssl,
+        'enable_auth': enable_auth,
         'discovery_port': 48500 + port_offset,
         'discovery_port_range': 48510 + port_offset,
         'communication_port': 48100 + port_offset,
+        'connector_port': 10080 + idx,
     }
 
     create_config_file('log4j.xml.jinja2', f'log4j-{idx}.xml', **params)
@@ -146,7 +149,7 @@ def _start_ignite(idx=1, debug=False, use_ssl=False, cluster_idx=1, jvm_opts='')
 
     srv = subprocess.Popen(ignite_cmd, env=env, cwd=get_test_dir())
 
-    started = wait_for_condition(lambda: check_server_started(idx), timeout=30)
+    started = wait_for_condition(lambda: check_server_started(idx), timeout=60)
     if started:
         return srv
 
@@ -168,3 +171,10 @@ def get_log_files(idx=1):
 def clear_logs(idx=1):
     for f in get_log_files(idx):
         os.remove(f)
+
+
+def clear_workdir():
+    for path in get_ignite_dirs():
+        work_dir = os.path.join(path, 'work')
+        if os.path.exists(work_dir):
+            shutil.rmtree(work_dir, ignore_errors=True)

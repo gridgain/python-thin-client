@@ -82,8 +82,15 @@ def server3(request):
 
 @pytest.fixture(scope='module')
 def start_ignite_server(use_ssl):
-    def start(idx=1, cluster_idx=1, jvm_opts=''):
-        return _start_ignite(idx, use_ssl=use_ssl, cluster_idx=cluster_idx, jvm_opts=jvm_opts)
+    def start(idx=1, debug=False, enable_auth=False, cluster_idx=1, jvm_opts=''):
+        return _start_ignite(
+            idx=idx,
+            debug=debug,
+            use_ssl=use_ssl,
+            enable_auth=enable_auth,
+            cluster_idx=cluster_idx,
+            jvm_opts=jvm_opts
+        )
 
     return start
 
@@ -136,10 +143,9 @@ def cache(client):
 
 @pytest.fixture(scope='module')
 def start_client(use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_ca_certfile, ssl_cert_reqs, ssl_ciphers,
-                 ssl_version,username, password):
+                 ssl_version, username, password):
     def start(**kwargs):
-        cli_kw = kwargs.copy()
-        cli_kw.update({
+        cli_kw = {
             'use_ssl': use_ssl,
             'ssl_keyfile': ssl_keyfile,
             'ssl_keyfile_password': ssl_keyfile_password,
@@ -150,7 +156,8 @@ def start_client(use_ssl, ssl_keyfile, ssl_keyfile_password, ssl_certfile, ssl_c
             'ssl_version': ssl_version,
             'username': username,
             'password': password
-        })
+        }
+        cli_kw.update(kwargs.copy())
         return Client(**cli_kw)
 
     return start
