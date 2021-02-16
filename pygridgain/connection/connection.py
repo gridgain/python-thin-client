@@ -1,5 +1,5 @@
 #
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+# Copyright 2021 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,8 @@
 # limitations under the License.
 #
 
-"""
-This module contains `Connection` class, that wraps TCP socket handling,
-as well as GridGain protocol handshaking.
-"""
-
 from collections import OrderedDict
 import socket
-from threading import RLock
 from typing import Union
 from tzlocal import get_localzone
 
@@ -31,14 +25,9 @@ from pygridgain.exceptions import (
 )
 from pygridgain.datatypes import Byte, ByteArrayObject, Int, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
-from pygridgain.utils import DaemonicTimer
 
 from .handshake import HandshakeRequest
 from .ssl import wrap
-
-
-__all__ = ['Connection']
-
 from ..stream import BinaryStream, READ_BACKWARD
 
 CLIENT_STATUS_AUTH_FAILURE = 2000
@@ -56,7 +45,6 @@ class Connection:
 
     _socket = None
     _failed = None
-    _in_use = None
 
     client = None
     host = None
@@ -139,31 +127,25 @@ class Connection:
             ssl_params['use_ssl'] = True
         self.ssl_params = ssl_params
         self._failed = False
-        self._mux = RLock()
-        self._in_use = False
-
-    @property
-    def socket(self) -> socket.socket:
-        """ Network socket. """
-        return self._socket
 
     @property
     def closed(self) -> bool:
         """ Tells if socket is closed. """
-        with self._mux:
-            return self._socket is None
+        return self._socket is None
 
     @property
     def failed(self) -> bool:
         """ Tells if connection is failed. """
-        with self._mux:
-            return self._failed
+        return self._failed
+
+    @failed.setter
+    def failed(self, value):
+        self._failed = value
 
     @property
     def alive(self) -> bool:
         """ Tells if connection is up and no failure detected. """
-        with self._mux:
-            return not (self._failed or self.closed)
+        return not self.failed and not self.closed
 
     def __repr__(self) -> str:
         return '{}:{}'.format(self.host or '?', self.port or '?')
@@ -177,13 +159,6 @@ class Connection:
         cluster was yet established.
         """
         return self.client.protocol_version
-
-    def _fail(self):
-        """ set client to failed state. """
-        with self._mux:
-            self._failed = True
-
-            self._in_use = False
 
     def read_response(self) -> Union[dict, OrderedDict]:
         """
@@ -208,11 +183,6 @@ class Connection:
                     ('message', String),
                     ('client_status', Int)
                 ])
-            elif self.get_protocol_version() >= (1, 7, 0):
-                response_end = Struct([
-                    ('features', ByteArrayObject),
-                    ('node_uuid', UUIDObject),
-                ])
             elif self.get_protocol_version() >= (1, 4, 0):
                 response_end = Struct([
                     ('node_uuid', UUIDObject),
@@ -233,11 +203,6 @@ class Connection:
         :param port: GridGain server node's port number.
         """
         detecting_protocol = False
-
-        with self._mux:
-            if self._in_use:
-                raise ConnectionError('Connection is in use.')
-            self._in_use = True
 
         # choose highest version first
         if self.client.protocol_version is None:
@@ -261,7 +226,7 @@ class Connection:
         # connection is ready for end user
         self.uuid = result.get('node_uuid', None)  # version-specific (1.4+)
 
-        self._failed = False
+        self.failed = False
         return result
 
     def _connect_version(
@@ -280,7 +245,7 @@ class Connection:
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.settimeout(self.timeout)
-        self._socket = self._wrap(self.socket)
+        self._socket = self._wrap(self._socket)
         self._socket.connect((host, port))
 
         protocol_version = self.client.protocol_version
@@ -300,8 +265,7 @@ class Connection:
 
         hs_response = self.read_response()
         if hs_response['op_code'] == 0:
-            # disconnect but keep in use
-            self.close(release=False)
+            self.close()
 
             error_text = f'Handshake error: {hs_response["message"]}'
             # if handshake fails for any reason other than protocol mismatch
@@ -331,25 +295,7 @@ class Connection:
         self.host, self.port = host, port
         return hs_response
 
-    def reconnect(self, seq_no=0):
-        """
-        Tries to reconnect synchronously, then in background.
-        """
-
-        # stop trying to reconnect
-        if seq_no >= len(RECONNECT_BACKOFF_SEQUENCE):
-            self._failed = False
-
-        self._reconnect()
-
-        if self.failed:
-            DaemonicTimer(
-                RECONNECT_BACKOFF_SEQUENCE[seq_no],
-                self.reconnect,
-                kwargs={'seq_no': seq_no + 1},
-            ).start()
-
-    def _reconnect(self):
+    def reconnect(self):
         # do not reconnect if connection is already working
         # or was closed on purpose
         if not self.failed:
@@ -362,18 +308,6 @@ class Connection:
             self.connect(self.host, self.port)
         except connection_errors:
             pass
-
-    def _transfer_params(self, to: 'Connection'):
-        """
-        Transfer non-SSL parameters to target connection object.
-
-        :param to: connection object to transfer parameters to.
-        """
-        to.username = self.username
-        to.password = self.password
-        to.client = self.client
-        to.host = self.host
-        to.port = self.port
 
     def send(self, data: Union[bytes, bytearray, memoryview], flags=None):
         """
@@ -390,9 +324,9 @@ class Connection:
             kwargs['flags'] = flags
 
         try:
-            self.socket.sendall(data, **kwargs)
-        except Exception:
-            self._fail()
+            self._socket.sendall(data, **kwargs)
+        except connection_errors:
+            self.failed = True
             self.reconnect()
             raise
 
@@ -401,11 +335,11 @@ class Connection:
             bytes_to_receive = num_bytes
             while bytes_to_receive > 0:
                 try:
-                    bytes_rcvd = self.socket.recv_into(buffer, bytes_to_receive, **kwargs)
+                    bytes_rcvd = self._socket.recv_into(buffer, bytes_to_receive, **kwargs)
                     if bytes_rcvd == 0:
                         raise SocketError('Connection broken.')
                 except connection_errors:
-                    self._fail()
+                    self.failed = True
                     self.reconnect()
                     raise
 
@@ -427,20 +361,17 @@ class Connection:
         _recv(memoryview(data)[4:], response_len)
         return data
 
-    def close(self, release=True):
+    def close(self):
         """
         Try to mark socket closed, then unlink it. This is recommended but
         not required, since sockets are automatically closed when
         garbage-collected.
         """
-        with self._mux:
-            if self._socket:
-                try:
-                    self._socket.shutdown(socket.SHUT_RDWR)
-                    self._socket.close()
-                except connection_errors:
-                    pass
-                self._socket = None
+        if self._socket:
+            try:
+                self._socket.shutdown(socket.SHUT_RDWR)
+                self._socket.close()
+            except connection_errors:
+                pass
 
-            if release:
-                self._in_use = False
+            self._socket = None
