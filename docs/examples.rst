@@ -649,24 +649,24 @@ with the following message:
 
     # pygridgain.exceptions.HandshakeError: Handshake error: Unauthenticated sessions are prohibited.
 
-.. _get_and_put.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/get_and_put.py
-.. _type_hints.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/type_hints.py
-.. _failover.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/failover.py
-.. _scans.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/scans.py
-.. _sql.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/sql.py
-.. _binary_basics.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/binary_basics.py
-.. _read_binary.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/read_binary.py
-.. _create_binary.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/create_binary.py
-.. _migrate_binary.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/migrate_binary.py
-.. _Getting Started: https://apacheignite-sql.readme.io/docs/getting-started
+.. _get_and_put.py: https://github.com/gridgain/python-thin-client/tree/master/examples/get_and_put.py
+.. _type_hints.py: https://github.com/gridgain/python-thin-client/tree/master/examples/type_hints.py
+.. _failover.py: https://github.com/gridgain/python-thin-client/tree/master/examples/failover.py
+.. _scans.py: https://github.com/gridgain/python-thin-client/tree/master/examples/scans.py
+.. _sql.py: https://github.com/gridgain/python-thin-client/tree/master/examples/sql.py
+.. _binary_basics.py: https://github.com/gridgain/python-thin-client/tree/master/examples/binary_basics.py
+.. _read_binary.py: https://github.com/gridgain/python-thin-client/tree/master/examples/read_binary.py
+.. _create_binary.py: https://github.com/gridgain/python-thin-client/tree/master/examples/create_binary.py
+.. _migrate_binary.py: https://github.com/gridgain/python-thin-client/tree/master/examples/migrate_binary.py
+.. _Getting Started: https://ignite.apache.org/docs/latest/quick-start/sql
 .. _GridGain CE GitHub repository: https://github.com/gridgain/gridgain/blob/master/examples/sql/world.sql
-.. _Complex object: https://apacheignite.readme.io/docs/binary-client-protocol-data-format#section-complex-object
+.. _Complex object: https://ignite.apache.org/docs/latest/binary-client-protocol/data-format#complex-object
 .. _Java keytool: https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
-.. _Securing Connection Between Nodes: https://apacheignite.readme.io/docs/ssltls#section-securing-connection-between-nodes
-.. _ClientConnectorConfiguration: https://ignite.apache.org/releases/latest/javadoc/org/apache/ignite/configuration/ClientConnectorConfiguration.html
+.. _Securing Connection Between Nodes: https://ignite.apache.org/docs/latest/security/ssl-tls#ssltls-for-nodes
+.. _ClientConnectorConfiguration: https://www.gridgain.com/sdk/latest/javadoc/org/apache/ignite/configuration/ClientConnectorConfiguration.html
 .. _openssl: https://www.openssl.org/docs/manmaster/man1/openssl.html
-.. _Authentication: https://apacheignite.readme.io/docs/advanced-security#section-authentication
+.. _Authentication: https://ignite.apache.org/docs/latest/security/authentication
 .. _attrs: https://pypi.org/project/attrs/
-.. _get_and_put_complex.py: https://github.com/gridgain/gridgain/tree/master/modules/platforms/python/examples/get_and_put_complex.py
-.. _Collection: https://apacheignite.readme.io/docs/binary-client-protocol-data-format#section-collection
-.. _simple class names: https://apacheignite.readme.io/docs/binary-marshaller#binary-name-mapper-and-binary-id-mapper
+.. _get_and_put_complex.py: https://github.com/gridgain/python-thin-client/tree/master/examples/get_and_put_complex.py
+.. _Collection: https://ignite.apache.org/docs/latest/binary-client-protocol/data-format#collection
+.. _simple class names: https://ignite.apache.org/docs/latest/data-modeling/binary-marshaller#binary-name-mapper-and-binary-id-mapper
