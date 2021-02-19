@@ -91,6 +91,9 @@ def hashcode(data: Union[str, bytes, bytearray, memoryview]) -> int:
     :param data: UTF-8-encoded string identifier of binary buffer or byte array
     :return: hash code.
     """
+    if data is None:
+        return 0
+
     if isinstance(data, str):
         """
         For strings we iterate over code point which are of the int type
