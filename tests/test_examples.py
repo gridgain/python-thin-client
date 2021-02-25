@@ -14,44 +14,40 @@
 # limitations under the License.
 #
 import glob
+import os
 import subprocess
 import sys
 
 import pytest
 
+from tests.util import get_test_dir, start_ignite_gen
 
 SKIP_LIST = [
     'failover.py',  # it hangs by design
 ]
 
 
-def run_subprocess_34(script: str):
-    return subprocess.call([
-        'python',
-        '../examples/{}'.format(script),
+def examples_scripts_gen():
+    examples_dir = os.path.join(get_test_dir(), '..', 'examples')
+    for script in glob.glob1(examples_dir, '*.py'):
+        if script not in SKIP_LIST:
+            yield os.path.join(examples_dir, script)
+
+
+@pytest.fixture(autouse=True)
+def server():
+    yield from start_ignite_gen(idx=0)  # idx=0, because 10800 port is needed for examples.
+
+
+@pytest.mark.examples
+@pytest.mark.parametrize(
+    'example_script',
+    examples_scripts_gen()
+)
+def test_examples(example_script):
+    proc = subprocess.run([
+        sys.executable,
+        example_script
     ])
 
-
-def run_subprocess_35(script: str):
-    return subprocess.run([
-        'python',
-        '../examples/{}'.format(script),
-    ]).returncode
-
-
-@pytest.mark.skipif(
-    condition=not pytest.config.option.examples,
-    reason=(
-        'If you wish to test examples, invoke pytest with '
-        '`--examples` option.'
-    ),
-)
-def test_examples():
-    for script in glob.glob1('../examples', '*.py'):
-        if script not in SKIP_LIST:
-            # `subprocess` module was refactored in Python 3.5
-            if sys.version_info >= (3, 5):
-                return_code = run_subprocess_35(script)
-            else:
-                return_code = run_subprocess_34(script)
-            assert return_code == 0
+    assert proc.returncode == 0

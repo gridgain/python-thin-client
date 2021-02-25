@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+import contextlib
 import glob
 import os
 import shutil
@@ -24,6 +25,26 @@ import re
 import signal
 import subprocess
 import time
+
+from pygridgain import Client
+
+
+@contextlib.contextmanager
+def get_client(**kwargs):
+    client = Client(**kwargs)
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@contextlib.contextmanager
+def get_or_create_cache(client, cache_name):
+    cache = client.get_or_create_cache(cache_name)
+    try:
+        yield cache
+    finally:
+        cache.destroy()
 
 
 def wait_for_condition(condition, interval=0.1, timeout=10, error=None):
@@ -114,32 +135,22 @@ def create_config_file(tpl_name, file_name, **kwargs):
         f.write(template.render(**kwargs))
 
 
-def _start_ignite(idx=1, debug=False, use_ssl=False, enable_auth=False, cluster_idx=1, jvm_opts=''):
+def start_ignite(idx=1, debug=False, use_ssl=False, use_auth=False, jvm_opts=''):
     clear_logs(idx)
 
     runner = get_ignite_runner()
 
     env = os.environ.copy()
 
+    env["JVM_OPTS"] = env.get("JVM_OPTS", '') + jvm_opts
+
     if debug:
         env["JVM_OPTS"] = env.get("JVM_OPTS", '') + \
                           "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
                           "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
 
-    if jvm_opts:
-        env["JVM_OPTS"] = env.get("JVM_OPTS", '') + jvm_opts
-
-    port_offset = (cluster_idx - 1) * 10
-    params = {
-        'ignite_instance_idx': idx,
-        'ignite_client_port': 10800 + idx,
-        'use_ssl': use_ssl,
-        'enable_auth': enable_auth,
-        'discovery_port': 48500 + port_offset,
-        'discovery_port_range': 48510 + port_offset,
-        'communication_port': 48100 + port_offset,
-        'connector_port': 10080 + idx,
-    }
+    params = {'ignite_instance_idx': str(idx), 'ignite_client_port': 10800 + idx, 'use_ssl': use_ssl,
+              'use_auth': use_auth}
 
     create_config_file('log4j.xml.jinja2', f'log4j-{idx}.xml', **params)
     create_config_file('ignite-config.xml.jinja2', f'ignite-config-{idx}.xml', **params)
@@ -157,15 +168,24 @@ def _start_ignite(idx=1, debug=False, use_ssl=False, enable_auth=False, cluster_
     raise Exception("Failed to start Ignite: timeout while trying to connect")
 
 
-def start_ignite_gen(idx=1, debug=False, use_ssl=False):
-    srv = _start_ignite(idx, debug=debug, use_ssl=use_ssl)
-    yield srv
-    kill_process_tree(srv.pid)
+def start_ignite_gen(idx=1, debug=False, use_ssl=False, use_auth=False):
+    srv = start_ignite(idx, debug=debug, use_ssl=use_ssl, use_auth=use_auth)
+    try:
+        yield srv
+    finally:
+        kill_process_tree(srv.pid)
 
 
 def get_log_files(idx=1):
     logs_pattern = os.path.join(get_test_dir(), "logs", "ignite-log-{0}*.txt".format(idx))
     return glob.glob(logs_pattern)
+
+
+def clear_ignite_work_dir():
+    for ignite_dir in get_ignite_dirs():
+        work_dir = os.path.join(ignite_dir, 'work')
+        if os.path.exists(work_dir):
+            shutil.rmtree(work_dir, ignore_errors=True)
 
 
 def clear_logs(idx=1):
