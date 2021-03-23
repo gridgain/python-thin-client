@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from datetime import datetime
-
 import pytest
 from pygridgain.exceptions import SQLError
 
@@ -27,7 +25,6 @@ from pygridgain.datatypes.cache_config import CacheMode
 from pygridgain.datatypes.prop_codes import *
 from pygridgain.utils import entity_id
 from pygridgain.binary import unwrap_binary
-from tests.util import kill_process_tree
 
 initial_data = [
         ('John', 'Doe', 5),
@@ -185,7 +182,7 @@ def test_long_multipage_query(client):
     client.sql('DROP TABLE LongMultipageQuery IF EXISTS')
 
     client.sql("CREATE TABLE LongMultiPageQuery (%s, %s)" %
-               (fields[0] + " INT(11) PRIMARY KEY", ",".join(map(lambda f: f + " INT(11)", fields[1:]))))
+                         (fields[0] + " INT(11) PRIMARY KEY", ",".join(map(lambda f: f + " INT(11)", fields[1:]))))
 
     for id in range(1, 21):
         client.sql(
@@ -199,30 +196,6 @@ def test_long_multipage_query(client):
             assert value == field_number * page[0]
 
     client.sql(drop_query)
-
-
-@pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])
-def test_server_in_different_timezone(start_ignite_server, start_client, timezone):
-    server_id = 10
-    server = start_ignite_server(idx=server_id, cluster_idx=2, jvm_opts=f'-Duser.timezone={timezone}')
-    try:
-        client = start_client()
-        client.connect('127.0.0.1', 10800 + server_id)
-
-        client.get_or_create_cache('PUBLIC')
-        client.sql('create table test(key int primary key, time datetime)')
-
-        current_time = datetime(year=2020, month=2, day=12, hour=12, minute=32, second=55)
-        client.sql(f"insert into test (key, time) VALUES (1, '{current_time}')")
-
-        page = client.sql('SELECT time FROM test')
-        received = next(page)[0][0]
-
-        assert current_time == received
-
-        client.close()
-    finally:
-        kill_process_tree(server.pid)
 
 
 def test_sql_not_create_cache_with_schema(client):

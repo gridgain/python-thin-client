@@ -170,7 +170,7 @@ class Connection:
             ('length', Int),
             ('op_code', Byte),
         ])
-        with BinaryStream(self, self.recv()) as stream:
+        with BinaryStream(self, self.recv(reconnect=False)) as stream:
             start_class = response_start.parse(stream)
             start = stream.read_ctype(start_class, direction=READ_BACKWARD)
             data = response_start.to_python(start)
@@ -266,7 +266,7 @@ class Connection:
 
         with BinaryStream(self) as stream:
             hs_request.from_python(stream)
-            self.send(stream.getbuffer())
+            self.send(stream.getbuffer(), reconnect=False)
 
         hs_response = self.read_response()
         if hs_response['op_code'] == 0:
@@ -314,12 +314,13 @@ class Connection:
         except connection_errors:
             pass
 
-    def send(self, data: Union[bytes, bytearray, memoryview], flags=None):
+    def send(self, data: Union[bytes, bytearray, memoryview], flags=None, reconnect=True):
         """
         Send data down the socket.
 
         :param data: bytes to send,
         :param flags: (optional) OS-specific flags.
+        :param reconnect: (optional) reconnect on failure, default True.
         """
         if self.closed:
             raise SocketError('Attempt to use closed connection.')
@@ -335,7 +336,13 @@ class Connection:
             self.reconnect()
             raise
 
-    def recv(self, flags=None) -> bytearray:
+    def recv(self, flags=None, reconnect=True) -> bytearray:
+        """
+        Receive data from the socket.
+
+        :param flags: (optional) OS-specific flags.
+        :param reconnect: (optional) reconnect on failure, default True.
+        """
         def _recv(buffer, num_bytes):
             bytes_to_receive = num_bytes
             while bytes_to_receive > 0:
@@ -345,7 +352,8 @@ class Connection:
                         raise SocketError('Connection broken.')
                 except connection_errors:
                     self.failed = True
-                    self.reconnect()
+                    if reconnect:
+                        self.reconnect()
                     raise
 
                 buffer = buffer[bytes_rcvd:]
