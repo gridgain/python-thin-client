@@ -21,4 +21,4 @@ used internally by :mod:`pygridgain.api` module. They, in turn, based on
 :mod:`pygridgain.datatypes` binary parser/generator classes.
 """
 
-from .query import Query, ConfigQuery
+from .query import Query, ConfigQuery, query_perform

@@ -20,5 +20,6 @@ as well as GridGain protocol handshaking.
 """
 
 from .connection import Connection
+from .aio_connection import AioConnection
 
-__all__ = ['Connection']
+__all__ = ['Connection', 'AioConnection']

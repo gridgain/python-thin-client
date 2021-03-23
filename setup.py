@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import re
 from collections import defaultdict
 from distutils.command.build_ext import build_ext
 from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
@@ -86,6 +87,14 @@ for section in requirement_sections:
 with open('README.md', 'r', encoding='utf-8') as readme_file:
     long_description = readme_file.read()
 
+version = ''
+with open('pygridgain/__init__.py', 'r') as fd:
+    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+                        fd.read(), re.MULTILINE).group(1)
+
+if not version:
+    raise RuntimeError('Cannot find version information')
+
 
 def run_setup(with_binary=True):
     if with_binary:
@@ -98,7 +107,7 @@ def run_setup(with_binary=True):
 
     setuptools.setup(
         name='pygridgain',
-        version='1.2.0',
+        version=version,
         python_requires='>=3.6',
         author='GridGain Systems',
         author_email='info@gridgain.com',
