@@ -20,6 +20,8 @@ from collections import OrderedDict
 from io import BytesIO
 from typing import Union
 
+from tzlocal import get_localzone
+
 from pygridgain.constants import PROTOCOLS, PROTOCOL_BYTE_ORDER
 from pygridgain.exceptions import HandshakeError, SocketError, connection_errors
 from .connection import BaseConnection
@@ -133,10 +135,13 @@ class AioConnection(BaseConnection):
 
         protocol_version = self.client.protocol_version
 
+        timezone = get_localzone().tzname(None)
+
         hs_request = HandshakeRequest(
-            protocol_version,
-            self.username,
-            self.password
+            protocol_version=protocol_version,
+            username=self.username,
+            password=self.password,
+            timezone=timezone,
         )
 
         with AioBinaryStream(self.client) as stream:

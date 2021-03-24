@@ -15,7 +15,7 @@
 #
 import pytest
 
-from pygridgain import Client
+from pygridgain import Client, AioClient
 from tests.util import start_ignite
 
 
@@ -37,5 +37,13 @@ def start_ignite_server():
 def start_client():
     def start(**kwargs):
         return Client(**kwargs)
+
+    return start
+
+
+@pytest.fixture(scope='module')
+def start_async_client():
+    def start(**kwargs):
+        return AioClient(**kwargs)
 
     return start
