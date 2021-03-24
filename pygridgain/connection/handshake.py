@@ -92,7 +92,13 @@ class HandshakeRequest:
             handshake_data.update({
                 'user_attributes': user_attributes,
             })
-            handshake_data['length'] += 6 + 5 + len(USER_ATTR_TIMEZONE) + 5 + len(self.timezone)
+            tz_len = 5 + len(self.timezone) if self.timezone else 1
+            handshake_data['length'] += sum([
+                6,  # Map header and type
+                5,  # String header for key
+                len(USER_ATTR_TIMEZONE),
+                tz_len,
+            ])
         if self.username and self.password:
             handshake_data.update({
                 'username': self.username,
