@@ -167,6 +167,11 @@ class HandshakeResponse(dict):
                 ('message', String),
                 ('client_status', Int)
             ])
+        elif protocol_version >= (1, 7, 0):
+            response_end = Struct([
+                ('features', ByteArrayObject),
+                ('node_uuid', UUIDObject),
+            ])
         elif protocol_version >= (1, 4, 0):
             response_end = Struct([
                 ('node_uuid', UUIDObject),
