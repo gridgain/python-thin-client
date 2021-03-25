@@ -36,7 +36,7 @@ def test_server_in_different_timezone(start_ignite_server, start_client, timezon
 
         with client.sql('SELECT time FROM test') as cursor:
             row = next(cursor)
-            received = row[0]
+            received = row[0][0]
 
         assert current_time == received
 
@@ -62,7 +62,7 @@ async def test_server_in_different_timezone_async(start_ignite_server, start_asy
 
         async with client.sql('SELECT time FROM test') as cursor:
             row = await cursor.__anext__()
-            received = row[0]
+            received = row[0][0]
 
         assert current_time == received
 
