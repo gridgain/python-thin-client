@@ -34,11 +34,38 @@ def test_server_in_different_timezone(start_ignite_server, start_client, timezon
         current_time = datetime(year=2020, month=2, day=12, hour=12, minute=32, second=55)
         client.sql(f"insert into test (key, time) VALUES (1, '{current_time}')")
 
-        page = client.sql('SELECT time FROM test')
-        received = next(page)[0][0]
+        with client.sql('SELECT time FROM test') as cursor:
+            row = next(cursor)
+            received = row[0][0]
 
         assert current_time == received
 
         client.close()
+    finally:
+        kill_process_tree(server.pid)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])
+async def test_server_in_different_timezone_async(start_ignite_server, start_async_client, timezone):
+    server_id = 10
+    server = start_ignite_server(idx=server_id, jvm_opts=f'-Duser.timezone={timezone}')
+    try:
+        client = start_async_client()
+        await client.connect('127.0.0.1', 10800 + server_id)
+
+        await client.get_or_create_cache('PUBLIC')
+        await client.sql('create table test(key int primary key, time datetime)')
+
+        current_time = datetime(year=2020, month=2, day=12, hour=12, minute=32, second=55)
+        await client.sql(f"insert into test (key, time) VALUES (1, '{current_time}')")
+
+        async with client.sql('SELECT time FROM test') as cursor:
+            row = await cursor.__anext__()
+            received = row[0][0]
+
+        assert current_time == received
+
+        await client.close()
     finally:
         kill_process_tree(server.pid)

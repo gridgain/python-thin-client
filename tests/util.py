@@ -14,8 +14,10 @@
 # limitations under the License.
 #
 
+import asyncio
 import contextlib
 import glob
+import inspect
 import os
 import shutil
 
@@ -26,7 +28,12 @@ import signal
 import subprocess
 import time
 
-from pygridgain import Client
+from pygridgain import Client, AioClient
+
+try:
+    from contextlib import asynccontextmanager
+except ImportError:
+    from async_generator import asynccontextmanager
 
 
 @contextlib.contextmanager
@@ -38,6 +45,15 @@ def get_client(**kwargs):
         client.close()
 
 
+@asynccontextmanager
+async def get_client_async(**kwargs):
+    client = AioClient(**kwargs)
+    try:
+        yield client
+    finally:
+        await client.close()
+
+
 @contextlib.contextmanager
 def get_or_create_cache(client, cache_name):
     cache = client.get_or_create_cache(cache_name)
@@ -47,6 +63,15 @@ def get_or_create_cache(client, cache_name):
         cache.destroy()
 
 
+@asynccontextmanager
+async def get_or_create_cache_async(client, cache_name):
+    cache = await client.get_or_create_cache(cache_name)
+    try:
+        yield cache
+    finally:
+        await cache.destroy()
+
+
 def wait_for_condition(condition, interval=0.1, timeout=10, error=None):
     start = time.time()
     res = condition()
@@ -54,6 +79,23 @@ def wait_for_condition(condition, interval=0.1, timeout=10, error=None):
     while not res and time.time() - start < timeout:
         time.sleep(interval)
         res = condition()
+
+    if res:
+        return True
+
+    if error is not None:
+        raise Exception(error)
+
+    return False
+
+
+async def wait_for_condition_async(condition, interval=0.1, timeout=10, error=None):
+    start = time.time()
+    res = await condition() if inspect.iscoroutinefunction(condition) else condition()
+
+    while not res and time.time() - start < timeout:
+        await asyncio.sleep(interval)
+        res = await condition() if inspect.iscoroutinefunction(condition) else condition()
 
     if res:
         return True

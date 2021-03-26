@@ -14,4 +14,7 @@
 # limitations under the License.
 #
 from pygridgain.client import Client
+from pygridgain.aio_client import AioClient
 from pygridgain.binary import GenericObjectMeta
+
+__version__ = '1.3.0-dev'

@@ -14,11 +14,10 @@
 # limitations under the License.
 #
 from pygridgain import GenericObjectMeta
-from pygridgain.datatypes import *
+from pygridgain.datatypes import IntObject, String
 
 
 def test_go():
-
     class GenericObject(
         metaclass=GenericObjectMeta,
         schema={

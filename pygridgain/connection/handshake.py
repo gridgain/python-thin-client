@@ -15,8 +15,9 @@
 #
 from typing import Optional, Tuple
 
-from pygridgain.datatypes import Byte, ByteArrayObject, Int, MapObject, Short, String
+from pygridgain.datatypes import Byte, ByteArrayObject, Int, MapObject, Short, String, UUIDObject
 from pygridgain.datatypes.internal import Struct
+from pygridgain.stream import READ_BACKWARD
 
 OP_HANDSHAKE = 1
 
@@ -63,6 +64,12 @@ class HandshakeRequest:
         self.handshake_struct = Struct(fields)
 
     def from_python(self, stream):
+        self.handshake_struct.from_python(stream, self.__create_handshake_data())
+
+    async def from_python_async(self, stream):
+        await self.handshake_struct.from_python_async(stream, self.__create_handshake_data())
+
+    def __create_handshake_data(self):
         handshake_data = {
             'length': 8,
             'op_code': OP_HANDSHAKE,
@@ -85,7 +92,13 @@ class HandshakeRequest:
             handshake_data.update({
                 'user_attributes': user_attributes,
             })
-            handshake_data['length'] += 6 + 5 + len(USER_ATTR_TIMEZONE) + 5 + len(self.timezone)
+            tz_len = 5 + len(self.timezone) if self.timezone else 1
+            handshake_data['length'] += sum([
+                6,  # Map header and type
+                5,  # String header for key
+                len(USER_ATTR_TIMEZONE),
+                tz_len,
+            ])
         if self.username and self.password:
             handshake_data.update({
                 'username': self.username,
@@ -96,4 +109,71 @@ class HandshakeRequest:
                 len(self.username),
                 len(self.password),
             ])
-        self.handshake_struct.from_python(stream, handshake_data)
+        return handshake_data
+
+
+class HandshakeResponse(dict):
+    """
+    Handshake response.
+    """
+    __response_start = Struct([
+        ('length', Int),
+        ('op_code', Byte),
+    ])
+
+    def __init__(self, data):
+        super().__init__()
+        self.update(data)
+
+    def __getattr__(self, item):
+        return self.get(item)
+
+    @classmethod
+    def parse(cls, stream, protocol_version):
+        start_class = cls.__response_start.parse(stream)
+        start = stream.read_ctype(start_class, direction=READ_BACKWARD)
+        data = cls.__response_start.to_python(start)
+
+        response_end = cls.__create_response_end(data, protocol_version)
+        if response_end:
+            end_class = response_end.parse(stream)
+            end = stream.read_ctype(end_class, direction=READ_BACKWARD)
+            data.update(response_end.to_python(end))
+
+        return cls(data)
+
+    @classmethod
+    async def parse_async(cls, stream, protocol_version):
+        start_class = cls.__response_start.parse(stream)
+        start = stream.read_ctype(start_class, direction=READ_BACKWARD)
+        data = await cls.__response_start.to_python_async(start)
+
+        response_end = cls.__create_response_end(data, protocol_version)
+        if response_end:
+            end_class = await response_end.parse_async(stream)
+            end = stream.read_ctype(end_class, direction=READ_BACKWARD)
+            data.update(await response_end.to_python_async(end))
+
+        return cls(data)
+
+    @classmethod
+    def __create_response_end(cls, start_data, protocol_version):
+        response_end = None
+        if start_data['op_code'] == 0:
+            response_end = Struct([
+                ('version_major', Short),
+                ('version_minor', Short),
+                ('version_patch', Short),
+                ('message', String),
+                ('client_status', Int)
+            ])
+        elif protocol_version >= (1, 7, 0):
+            response_end = Struct([
+                ('features', ByteArrayObject),
+                ('node_uuid', UUIDObject),
+            ])
+        elif protocol_version >= (1, 4, 0):
+            response_end = Struct([
+                ('node_uuid', UUIDObject),
+            ])
+        return response_end
