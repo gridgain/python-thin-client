@@ -15,8 +15,9 @@
 #
 import pytest
 
+from pygridgain import Client, AioClient
 from pygridgain.exceptions import AuthenticationError
-from tests.util import start_ignite_gen, clear_ignite_work_dir, get_client, get_client_async
+from tests.util import start_ignite_gen, clear_ignite_work_dir
 
 DEFAULT_IGNITE_USERNAME = 'ignite'
 DEFAULT_IGNITE_PASSWORD = 'ignite'
@@ -41,21 +42,16 @@ def cleanup():
 
 def test_auth_success(with_ssl, ssl_params):
     ssl_params['use_ssl'] = with_ssl
-
-    with get_client(username=DEFAULT_IGNITE_USERNAME, password=DEFAULT_IGNITE_PASSWORD, **ssl_params) as client:
-        client.connect("127.0.0.1", 10801)
-
+    client = Client(username=DEFAULT_IGNITE_USERNAME, password=DEFAULT_IGNITE_PASSWORD, **ssl_params)
+    with client.connect("127.0.0.1", 10801):
         assert all(node.alive for node in client._nodes)
 
 
 @pytest.mark.asyncio
 async def test_auth_success_async(with_ssl, ssl_params):
     ssl_params['use_ssl'] = with_ssl
-
-    async with get_client_async(username=DEFAULT_IGNITE_USERNAME, password=DEFAULT_IGNITE_PASSWORD,
-                                **ssl_params) as client:
-        await client.connect("127.0.0.1", 10801)
-
+    client = AioClient(username=DEFAULT_IGNITE_USERNAME, password=DEFAULT_IGNITE_PASSWORD, **ssl_params)
+    async with client.connect("127.0.0.1", 10801):
         assert all(node.alive for node in client._nodes)
 
 
@@ -74,8 +70,9 @@ def test_auth_failed(username, password, with_ssl, ssl_params):
     ssl_params['use_ssl'] = with_ssl
 
     with pytest.raises(AuthenticationError):
-        with get_client(username=username, password=password, **ssl_params) as client:
-            client.connect("127.0.0.1", 10801)
+        client = Client(username=username, password=password, **ssl_params)
+        with client.connect("127.0.0.1", 10801):
+            pass
 
 
 @pytest.mark.parametrize(
@@ -87,5 +84,6 @@ async def test_auth_failed_async(username, password, with_ssl, ssl_params):
     ssl_params['use_ssl'] = with_ssl
 
     with pytest.raises(AuthenticationError):
-        async with get_client_async(username=username, password=password, **ssl_params) as client:
-            await client.connect("127.0.0.1", 10801)
+        client = AioClient(username=username, password=password, **ssl_params)
+        async with client.connect("127.0.0.1", 10801):
+            pass
