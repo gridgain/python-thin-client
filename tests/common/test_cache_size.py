@@ -16,8 +16,11 @@
 
 import pytest
 
+from pygridgain.datatypes.cache_config import WriteSynchronizationMode
 from pygridgain.datatypes.key_value import PeekModes
-from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_IS_ONHEAP_CACHE_ENABLED, PROP_BACKUPS_NUMBER
+from pygridgain.datatypes.prop_codes import (
+    PROP_NAME, PROP_IS_ONHEAP_CACHE_ENABLED, PROP_BACKUPS_NUMBER, PROP_WRITE_SYNCHRONIZATION_MODE
+)
 from tests.util import get_or_create_cache, get_or_create_cache_async
 
 test_params = [
@@ -25,7 +28,8 @@ test_params = [
         {
             PROP_NAME: 'cache_onheap_backups_2',
             PROP_IS_ONHEAP_CACHE_ENABLED: True,
-            PROP_BACKUPS_NUMBER: 2
+            PROP_BACKUPS_NUMBER: 2,
+            PROP_WRITE_SYNCHRONIZATION_MODE: WriteSynchronizationMode.FULL_SYNC
         },
         [
             [None, 1],

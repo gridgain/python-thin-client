@@ -28,7 +28,6 @@ import signal
 import subprocess
 import time
 
-from pygridgain import Client, AioClient
 
 try:
     from contextlib import asynccontextmanager
