@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import Optional, Tuple
+from typing import Optional
 
-from pygridgain.datatypes import Byte, ByteArrayObject, Int, MapObject, Short, String, UUIDObject
+from pygridgain.connection.protocol_context import ProtocolContext
+from pygridgain.datatypes import Byte, ByteArrayObject, Int, MapObject, Short, String, UUIDObject, ByteArrayObject
 from pygridgain.datatypes.internal import Struct
 from pygridgain.stream import READ_BACKWARD
 
@@ -29,11 +30,11 @@ class HandshakeRequest:
     handshake_struct = None
     username = None
     password = None
-    protocol_version = None
+    protocol_context = None
     timezone = None
 
     def __init__(
-        self, protocol_version: Tuple[int, int, int],
+        self, protocol_context: 'ProtocolContext',
         username: Optional[str] = None, password: Optional[str] = None, timezone: str = None,
     ):
         fields = [
@@ -44,16 +45,12 @@ class HandshakeRequest:
             ('version_patch', Short),
             ('client_code', Byte),
         ]
-        self.protocol_version = protocol_version
+        self.protocol_context = protocol_context
         self.timezone = timezone
-        if protocol_version >= (1, 7, 0):
-            fields.extend([
-                ('features', ByteArrayObject),
-            ])
-        if protocol_version >= (1, 7, 1):
-            fields.extend([
-                ('user_attributes', MapObject),
-            ])
+        if self.protocol_context.is_feature_flags_supported():
+            fields.append(('features', ByteArrayObject))
+        if self.protocol_context.is_user_attributes_supported():
+            fields.append(('user_attributes', MapObject))
         if username and password:
             self.username = username
             self.password = password
@@ -70,28 +67,25 @@ class HandshakeRequest:
         await self.handshake_struct.from_python_async(stream, self.__create_handshake_data())
 
     def __create_handshake_data(self):
+        version = self.protocol_context.version
         handshake_data = {
             'length': 8,
             'op_code': OP_HANDSHAKE,
-            'version_major': self.protocol_version[0],
-            'version_minor': self.protocol_version[1],
-            'version_patch': self.protocol_version[2],
+            'version_major': version[0],
+            'version_minor': version[1],
+            'version_patch': version[2],
             'client_code': 2,  # fixed value defined by protocol
         }
-        if self.protocol_version >= (1, 7, 0):
-            handshake_data.update({
-                'features': None,
-            })
-            handshake_data['length'] += 1
-        if self.protocol_version >= (1, 7, 1):
+        if self.protocol_context.is_feature_flags_supported():
+            features = bytes(self.protocol_context.features)
+            handshake_data['features'] = features
+            handshake_data['length'] += 5 + len(features)
+        if self.protocol_context.is_user_attributes_supported():
             user_attributes = (
                 MapObject.HASH_MAP, {
                     USER_ATTR_TIMEZONE: self.timezone
                 })
-
-            handshake_data.update({
-                'user_attributes': user_attributes,
-            })
+            handshake_data['user_attributes'] = user_attributes
             tz_len = 5 + len(self.timezone) if self.timezone else 1
             handshake_data['length'] += sum([
                 6,  # Map header and type
@@ -129,12 +123,12 @@ class HandshakeResponse(dict):
         return self.get(item)
 
     @classmethod
-    def parse(cls, stream, protocol_version):
+    def parse(cls, stream, protocol_context):
         start_class = cls.__response_start.parse(stream)
         start = stream.read_ctype(start_class, direction=READ_BACKWARD)
         data = cls.__response_start.to_python(start)
 
-        response_end = cls.__create_response_end(data, protocol_version)
+        response_end = cls.__create_response_end(data, protocol_context)
         if response_end:
             end_class = response_end.parse(stream)
             end = stream.read_ctype(end_class, direction=READ_BACKWARD)
@@ -143,12 +137,12 @@ class HandshakeResponse(dict):
         return cls(data)
 
     @classmethod
-    async def parse_async(cls, stream, protocol_version):
+    async def parse_async(cls, stream, protocol_context):
         start_class = cls.__response_start.parse(stream)
         start = stream.read_ctype(start_class, direction=READ_BACKWARD)
         data = await cls.__response_start.to_python_async(start)
 
-        response_end = cls.__create_response_end(data, protocol_version)
+        response_end = cls.__create_response_end(data, protocol_context)
         if response_end:
             end_class = await response_end.parse_async(stream)
             end = stream.read_ctype(end_class, direction=READ_BACKWARD)
@@ -157,7 +151,7 @@ class HandshakeResponse(dict):
         return cls(data)
 
     @classmethod
-    def __create_response_end(cls, start_data, protocol_version):
+    def __create_response_end(cls, start_data, protocol_context):
         response_end = None
         if start_data['op_code'] == 0:
             response_end = Struct([
@@ -167,12 +161,12 @@ class HandshakeResponse(dict):
                 ('message', String),
                 ('client_status', Int)
             ])
-        elif protocol_version >= (1, 7, 0):
+        elif protocol_context.is_feature_flags_supported():
             response_end = Struct([
                 ('features', ByteArrayObject),
                 ('node_uuid', UUIDObject),
             ])
-        elif protocol_version >= (1, 4, 0):
+        elif protocol_context.is_partition_awareness_supported():
             response_end = Struct([
                 ('node_uuid', UUIDObject),
             ])
