@@ -24,9 +24,11 @@ from tzlocal import get_localzone
 
 from pygridgain.constants import PROTOCOLS, PROTOCOL_BYTE_ORDER
 from pygridgain.exceptions import HandshakeError, SocketError, connection_errors
+from .bitmask_feature import BitmaskFeature
 from .connection import BaseConnection
 
 from .handshake import HandshakeRequest, HandshakeResponse
+from .protocol_context import ProtocolContext
 from .ssl import create_ssl_context
 from ..stream import AioBinaryStream
 
@@ -100,27 +102,28 @@ class AioConnection(BaseConnection):
         detecting_protocol = False
 
         # choose highest version first
-        if self.client.protocol_version is None:
+        if self.client.protocol_context is None:
             detecting_protocol = True
-            self.client.protocol_version = max(PROTOCOLS)
+            self.client.protocol_context = ProtocolContext(max(PROTOCOLS), BitmaskFeature.all_supported())
 
         try:
             result = await self._connect_version()
         except HandshakeError as e:
             if e.expected_version in PROTOCOLS:
-                self.client.protocol_version = e.expected_version
+                self.client.protocol_context.version = e.expected_version
                 result = await self._connect_version()
             else:
                 raise e
         except connection_errors:
             # restore undefined protocol version
             if detecting_protocol:
-                self.client.protocol_version = None
+                self.client.protocol_context = None
             raise
 
         # connection is ready for end user
+        features = BitmaskFeature.from_array(result.get('features', None))
+        self.client.protocol_context.features = features
         self.uuid = result.get('node_uuid', None)  # version-specific (1.4+)
-
         self.failed = False
         return result
 
@@ -133,12 +136,12 @@ class AioConnection(BaseConnection):
         ssl_context = create_ssl_context(self.ssl_params)
         self._reader, self._writer = await asyncio.open_connection(self.host, self.port, ssl=ssl_context)
 
-        protocol_version = self.client.protocol_version
+        protocol_context = self.client.protocol_context
 
         timezone = get_localzone().tzname(None)
 
         hs_request = HandshakeRequest(
-            protocol_version=protocol_version,
+            protocol_context=protocol_context,
             username=self.username,
             password=self.password,
             timezone=timezone,
@@ -149,7 +152,7 @@ class AioConnection(BaseConnection):
             await self._send(stream.getbuffer(), reconnect=False)
 
         with AioBinaryStream(self.client, await self._recv(reconnect=False)) as stream:
-            hs_response = await HandshakeResponse.parse_async(stream, self.protocol_version)
+            hs_response = await HandshakeResponse.parse_async(stream, self.protocol_context)
 
             if hs_response.op_code == 0:
                 self._close()

@@ -21,8 +21,10 @@ from tzlocal import get_localzone
 
 from pygridgain.constants import PROTOCOLS, DEFAULT_HOST, DEFAULT_PORT, PROTOCOL_BYTE_ORDER
 from pygridgain.exceptions import HandshakeError, SocketError, connection_errors, AuthenticationError
+from .bitmask_feature import BitmaskFeature
 
 from .handshake import HandshakeRequest, HandshakeResponse
+from .protocol_context import ProtocolContext
 from .ssl import wrap, check_ssl_params
 from ..stream import BinaryStream
 
@@ -70,19 +72,18 @@ class BaseConnection:
         return '{}:{}'.format(self.host or '?', self.port or '?')
 
     @property
-    def protocol_version(self):
+    def protocol_context(self):
         """
-        Returns the tuple of major, minor, and revision numbers of the used
-        thin protocol version, or None, if no connection to the Ignite cluster
-        was yet established.
+        Returns protocol context, or None, if no connection to the Ignite
+        cluster was yet established.
         """
-        return self.client.protocol_version
+        return self.client.protocol_context
 
     def _process_handshake_error(self, response):
         error_text = f'Handshake error: {response.message}'
         # if handshake fails for any reason other than protocol mismatch
         # (i.e. authentication error), server version is 0.0.0
-        protocol_version = self.client.protocol_version
+        protocol_version = self.client.protocol_context.version
         server_version = (response.version_major, response.version_minor, response.version_patch)
 
         if any(server_version):
@@ -105,7 +106,7 @@ class Connection(BaseConnection):
      * binary protocol connector. Encapsulates handshake and failover reconnection.
     """
 
-    def __init__(self, client: 'Client', host: str, port: int, timeout: float = 2.0,
+    def __init__(self, client: 'Client', host: str, port: int, timeout: float = None,
                  username: str = None, password: str = None, **ssl_params):
         """
         Initialize connection.
@@ -168,25 +169,27 @@ class Connection(BaseConnection):
         detecting_protocol = False
 
         # choose highest version first
-        if self.client.protocol_version is None:
+        if self.client.protocol_context is None:
             detecting_protocol = True
-            self.client.protocol_version = max(PROTOCOLS)
+            self.client.protocol_context = ProtocolContext(max(PROTOCOLS), BitmaskFeature.all_supported())
 
         try:
             result = self._connect_version()
         except HandshakeError as e:
             if e.expected_version in PROTOCOLS:
-                self.client.protocol_version = e.expected_version
+                self.client.protocol_context.version = e.expected_version
                 result = self._connect_version()
             else:
                 raise e
         except connection_errors:
             # restore undefined protocol version
             if detecting_protocol:
-                self.client.protocol_version = None
+                self.client.protocol_context = None
             raise
 
         # connection is ready for end user
+        features = BitmaskFeature.from_array(result.get('features', None))
+        self.client.protocol_context.features = features
         self.uuid = result.get('node_uuid', None)  # version-specific (1.4+)
         self.failed = False
         return result
@@ -202,12 +205,12 @@ class Connection(BaseConnection):
         self._socket = wrap(self._socket, self.ssl_params)
         self._socket.connect((self.host, self.port))
 
-        protocol_version = self.client.protocol_version
+        protocol_context = self.client.protocol_context
 
         timezone = get_localzone().tzname(None)
 
         hs_request = HandshakeRequest(
-            protocol_version=protocol_version,
+            protocol_context=protocol_context,
             username=self.username,
             password=self.password,
             timezone=timezone,
@@ -218,7 +221,7 @@ class Connection(BaseConnection):
             self.send(stream.getbuffer(), reconnect=False)
 
         with BinaryStream(self.client, self.recv(reconnect=False)) as stream:
-            hs_response = HandshakeResponse.parse(stream, self.protocol_version)
+            hs_response = HandshakeResponse.parse(stream, self.protocol_context)
 
             if hs_response.op_code == 0:
                 self.close()
