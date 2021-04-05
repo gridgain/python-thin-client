@@ -37,7 +37,10 @@ __all__ = [
 from ..stream import READ_BACKWARD
 
 
-def tc_map(key: bytes, _memo_map: dict = {}):
+_tc_map = {}
+
+
+def tc_map(key: bytes):
     """
     Returns a default parser/generator class for the given type code.
 
@@ -50,7 +53,8 @@ def tc_map(key: bytes, _memo_map: dict = {}):
      of the “type code-type class” mapping,
     :return: parser/generator class for the type code.
     """
-    if not _memo_map:
+    global _tc_map
+    if not _tc_map:
         from pygridgain.datatypes import (
             Null, ByteObject, ShortObject, IntObject, LongObject, FloatObject,
             DoubleObject, CharObject, BoolObject, UUIDObject, DateObject,
@@ -65,7 +69,7 @@ def tc_map(key: bytes, _memo_map: dict = {}):
             MapObject, BinaryObject, WrappedDataObject,
         )
 
-        _memo_map = {
+        _tc_map = {
             TC_NULL: Null,
 
             TC_BYTE: ByteObject,
@@ -111,7 +115,7 @@ def tc_map(key: bytes, _memo_map: dict = {}):
             TC_COMPLEX_OBJECT: BinaryObject,
             TC_ARRAY_WRAPPED_OBJECTS: WrappedDataObject,
         }
-    return _memo_map[key]
+    return _tc_map[key]
 
 
 class Conditional:
@@ -184,7 +188,7 @@ class StructArray:
     def __parse_length(self, stream):
         counter_type_len = ctypes.sizeof(self.counter_type)
         length = int.from_bytes(
-            stream.mem_view(offset=counter_type_len),
+            stream.slice(offset=counter_type_len),
             byteorder=PROTOCOL_BYTE_ORDER
         )
         stream.seek(counter_type_len, SEEK_CUR)
@@ -349,6 +353,9 @@ class AnyDataObject:
     """
     _python_map = None
     _python_array_map = None
+    _map_obj_type = None
+    _collection_obj_type = None
+    _binary_obj_type = None
 
     @staticmethod
     def get_subtype(iterable, allow_none=False):
@@ -392,7 +399,7 @@ class AnyDataObject:
 
     @classmethod
     def __data_class_parse(cls, stream):
-        type_code = bytes(stream.mem_view(offset=ctypes.sizeof(ctypes.c_byte)))
+        type_code = stream.slice(offset=ctypes.sizeof(ctypes.c_byte))
         try:
             return tc_map(type_code)
         except KeyError:
@@ -417,15 +424,17 @@ class AnyDataObject:
         return tc_map(type_code)
 
     @classmethod
-    def _init_python_map(cls):
+    def _init_python_mapping(cls):
         """
         Optimizes Python types→GridGain types map creation for speed.
 
         Local imports seem inevitable here.
         """
         from pygridgain.datatypes import (
-            LongObject, DoubleObject, String, BoolObject, Null, UUIDObject,
-            DateObject, TimeObject, DecimalObject, ByteArrayObject,
+            LongObject, DoubleObject, String, BoolObject, Null, UUIDObject, DateObject, TimeObject,
+            DecimalObject, ByteArrayObject, LongArrayObject, DoubleArrayObject, StringArrayObject,
+            BoolArrayObject, UUIDArrayObject, DateArrayObject, TimeArrayObject, DecimalArrayObject,
+            MapObject, CollectionObject, BinaryObject
         )
 
         cls._python_map = {
@@ -443,17 +452,6 @@ class AnyDataObject:
             decimal.Decimal: DecimalObject,
         }
 
-    @classmethod
-    def _init_python_array_map(cls):
-        """
-        Optimizes  Python types→GridGain array types map creation for speed.
-        """
-        from pygridgain.datatypes import (
-            LongArrayObject, DoubleArrayObject, StringArrayObject,
-            BoolArrayObject, UUIDArrayObject, DateArrayObject, TimeArrayObject,
-            DecimalArrayObject,
-        )
-
         cls._python_array_map = {
             int: LongArrayObject,
             float: DoubleArrayObject,
@@ -467,18 +465,20 @@ class AnyDataObject:
             decimal.Decimal: DecimalArrayObject,
         }
 
+        cls._map_obj_type = MapObject
+        cls._collection_obj_type = CollectionObject
+        cls._binary_obj_type = BinaryObject
+
     @classmethod
     def map_python_type(cls, value):
-        from pygridgain.datatypes import (
-            MapObject, CollectionObject, BinaryObject,
-        )
-
-        if cls._python_map is None:
-            cls._init_python_map()
-        if cls._python_array_map is None:
-            cls._init_python_array_map()
+        if cls._python_map is None or cls._python_array_map is None:
+            cls._init_python_mapping()
 
         value_type = type(value)
+
+        if value_type in cls._python_map:
+            return cls._python_map[value_type]
+
         if is_iterable(value) and value_type not in (str, bytearray, bytes):
             value_subtype = cls.get_subtype(value)
             if value_subtype in cls._python_array_map:
@@ -491,7 +491,7 @@ class AnyDataObject:
                 isinstance(value[0], int),
                 isinstance(value[1], dict),
             ]):
-                return MapObject
+                return cls._map_obj_type
 
             if all([
                 value_subtype is None,
@@ -499,7 +499,7 @@ class AnyDataObject:
                 isinstance(value[0], int),
                 is_iterable(value[1]),
             ]):
-                return CollectionObject
+                return cls._collection_obj_type
 
             # no default for ObjectArrayObject, sorry
 
@@ -508,10 +508,8 @@ class AnyDataObject:
             )
 
         if is_binary(value):
-            return BinaryObject
+            return cls._binary_obj_type
 
-        if value_type in cls._python_map:
-            return cls._python_map[value_type]
         raise TypeError(
             'Type `{}` is invalid.'.format(value_type)
         )
