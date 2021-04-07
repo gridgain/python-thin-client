@@ -16,6 +16,7 @@
 from pygridgain.api import APIResult
 from pygridgain.connection import AioConnection, Connection
 from pygridgain.datatypes import Byte
+from pygridgain.datatypes.cluster_state import ClusterState
 from pygridgain.exceptions import NotSupportedByClusterError
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.op_codes import OP_CLUSTER_GET_STATE, OP_CLUSTER_CHANGE_STATE
@@ -44,7 +45,7 @@ async def cluster_get_state_async(connection: 'AioConnection', query_id=None) ->
 
 def __post_process_get_state(result):
     if result.status == 0:
-        result.value = result.value['state']
+        result.value = ClusterState(result.value['state'])
     return result
 
 
@@ -60,7 +61,7 @@ def __cluster_get_state(connection, query_id):
     )
 
 
-def cluster_set_state(connection: 'Connection', state: int, query_id=None) -> 'APIResult':
+def cluster_set_state(connection: 'Connection', state:  ClusterState, query_id=None) -> 'APIResult':
     """
     Set cluster state.
 
@@ -75,7 +76,7 @@ def cluster_set_state(connection: 'Connection', state: int, query_id=None) -> 'A
     return __cluster_set_state(connection, state, query_id)
 
 
-async def cluster_set_state_async(connection: 'AioConnection', state: int, query_id=None) -> 'APIResult':
+async def cluster_set_state_async(connection: 'AioConnection', state: ClusterState, query_id=None) -> 'APIResult':
     """
     Async version of cluster_get_state
     """
