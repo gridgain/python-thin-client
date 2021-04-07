@@ -17,7 +17,7 @@
 import pytest
 
 from pygridgain import Client, AioClient
-from pygridgain.exceptions import CacheError
+from pygridgain.exceptions import CacheError, ClusterError
 from tests.util import clear_ignite_work_dir, start_ignite_gen
 
 from pygridgain.datatypes.cluster_state import ClusterState
@@ -45,7 +45,17 @@ def server2(with_persistence, cleanup):
     yield from start_ignite_gen(idx=2, use_persistence=with_persistence)
 
 
-def test_cluster_set_active(with_persistence):
+def check_cluster_state_error(cluster, state: int):
+    with pytest.raises(ClusterError, match=f'Unknown cluster state \\[state={state}\\]'):
+        cluster.set_state(state)
+
+
+async def check_cluster_state_error_async(cluster, state: int):
+    with pytest.raises(ClusterError, match=f'Unknown cluster state \\[state={state}\\]'):
+        await cluster.set_state(state)
+
+
+def test_cluster_set_state(with_persistence):
     key = 42
     val = 42
     start_state = ClusterState.INACTIVE if with_persistence else ClusterState.ACTIVE
@@ -57,6 +67,11 @@ def test_cluster_set_active(with_persistence):
 
         cluster.set_state(ClusterState.ACTIVE)
         assert cluster.get_state() == ClusterState.ACTIVE
+
+        check_cluster_state_error(cluster, 3)
+        check_cluster_state_error(cluster, 42)
+        check_cluster_state_error(cluster, 1234567890987654321)
+        check_cluster_state_error(cluster, -1)
 
         cache = client.get_or_create_cache("test_cache")
         cache.put(key, val)
@@ -86,7 +101,7 @@ def test_cluster_set_active(with_persistence):
 
 
 @pytest.mark.asyncio
-async def test_cluster_set_active_async(with_persistence):
+async def test_cluster_set_state_async(with_persistence):
     key = 42
     val = 42
     start_state = ClusterState.INACTIVE if with_persistence else ClusterState.ACTIVE
@@ -98,6 +113,11 @@ async def test_cluster_set_active_async(with_persistence):
 
         await cluster.set_state(ClusterState.ACTIVE)
         assert await cluster.get_state() == ClusterState.ACTIVE
+
+        await check_cluster_state_error_async(cluster, 3)
+        await check_cluster_state_error_async(cluster, 42)
+        await check_cluster_state_error_async(cluster, 1234567890987654321)
+        await check_cluster_state_error_async(cluster, -1)
 
         cache = await client.get_or_create_cache("test_cache")
         await cache.put(key, val)

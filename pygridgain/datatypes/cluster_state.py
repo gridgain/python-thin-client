@@ -27,3 +27,9 @@ class ClusterState(IntEnum):
     #: Cluster activated. Cache read operation allowed, Cache data change operation
     #: aren't allowed.
     ACTIVE_READ_ONLY = 2
+
+    @classmethod
+    def has_value(cls, value):
+        if not hasattr(cls, 'values'):
+            cls.values = set(item.value for item in ClusterState)
+        return value in cls.values

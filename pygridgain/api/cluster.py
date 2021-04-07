@@ -17,7 +17,7 @@ from pygridgain.api import APIResult
 from pygridgain.connection import AioConnection, Connection
 from pygridgain.datatypes import Byte
 from pygridgain.datatypes.cluster_state import ClusterState
-from pygridgain.exceptions import NotSupportedByClusterError
+from pygridgain.exceptions import NotSupportedByClusterError, ClusterError
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.op_codes import OP_CLUSTER_GET_STATE, OP_CLUSTER_CHANGE_STATE
 
@@ -90,6 +90,9 @@ def __post_process_set_state(result):
 
 
 def __cluster_set_state(connection, state, query_id):
+    if not ClusterState.has_value(state):
+        raise ClusterError(f'Unknown cluster state [state={state}]')
+
     if not connection.protocol_context.is_cluster_api_supported():
         raise NotSupportedByClusterError('Cluster API is not supported by the cluster')
 
