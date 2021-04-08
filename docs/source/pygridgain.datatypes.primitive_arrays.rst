@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.cache module
-=====================
+pygridgain.datatypes.primitive\_arrays module
+=============================================
 
-.. automodule:: pygridgain.cache
+.. automodule:: pygridgain.datatypes.primitive_arrays
     :members:
     :undoc-members:
-    :inherited-members:
+    :show-inheritance:

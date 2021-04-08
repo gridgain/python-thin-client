@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.primitive\_objects module
-============================================
+pygridgain.datatypes.sql module
+===============================
 
-.. automodule:: pygridgain.datatypes.primitive_objects
+.. automodule:: pygridgain.datatypes.sql
     :members:
     :undoc-members:
     :show-inheritance:

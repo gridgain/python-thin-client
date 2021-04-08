@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.key\_value module
-====================================
+pygridgain.datatypes.complex module
+===================================
 
-.. automodule:: pygridgain.datatypes.key_value
+.. automodule:: pygridgain.datatypes.complex
     :members:
     :undoc-members:
     :show-inheritance:

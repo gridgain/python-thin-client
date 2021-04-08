@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.cache\_config module
-=======================================
+pygridgain.client module
+========================
 
-.. automodule:: pygridgain.datatypes.cache_config
+.. automodule:: pygridgain.client
     :members:
     :undoc-members:
-    :show-inheritance:
+    :inherited-members:

@@ -12,30 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes package
-==========================
+pygridgain.cursors module
+=========================
 
-.. automodule:: pygridgain.datatypes
+.. automodule:: pygridgain.cursors
     :members:
     :undoc-members:
-    :show-inheritance:
-
-Submodules
-----------
-
-.. toctree::
-
-   pygridgain.datatypes.base
-   pygridgain.datatypes.binary
-   pygridgain.datatypes.cache_config
-   pygridgain.datatypes.cache_properties
-   pygridgain.datatypes.complex
-   pygridgain.datatypes.internal
-   pygridgain.datatypes.key_value
-   pygridgain.datatypes.null_object
-   pygridgain.datatypes.primitive
-   pygridgain.datatypes.primitive_arrays
-   pygridgain.datatypes.primitive_objects
-   pygridgain.datatypes.sql
-   pygridgain.datatypes.standard
-
+    :inherited-members:

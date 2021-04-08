@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.cursors module
-=======================
+pygridgain.datatypes.primitive\_objects module
+==============================================
 
-.. automodule:: pygridgain.cursors
+.. automodule:: pygridgain.datatypes.primitive_objects
     :members:
     :undoc-members:
-    :inherited-members:
+    :show-inheritance:

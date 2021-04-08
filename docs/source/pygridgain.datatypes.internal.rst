@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.null\_object module
-======================================
+pygridgain.datatypes.internal module
+====================================
 
-.. automodule:: pygridgain.datatypes.null_object
+.. automodule:: pygridgain.datatypes.internal
     :members:
     :undoc-members:
     :show-inheritance:

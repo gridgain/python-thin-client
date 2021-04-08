@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.connection package
-===========================
+pygridgain.datatypes.binary module
+==================================
 
-.. automodule:: pygridgain.connection
+.. automodule:: pygridgain.datatypes.binary
     :members:
     :undoc-members:
     :show-inheritance:

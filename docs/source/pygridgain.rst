@@ -12,10 +12,32 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.base module
-==============================
+pygridgain package
+==================
 
-.. automodule:: pygridgain.datatypes.base
+.. automodule:: pygridgain
     :members:
     :undoc-members:
     :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pygridgain.datatypes
+    pygridgain.connection
+
+Submodules
+----------
+
+.. toctree::
+
+    pygridgain.binary
+    pygridgain.cache
+    pygridgain.aio_cache
+    pygridgain.client
+    pygridgain.aio_client
+    pygridgain.cursors
+    pygridgain.exceptions
+

@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.primitive module
-===================================
+pygridgain.binary module
+========================
 
-.. automodule:: pygridgain.datatypes.primitive
+.. automodule:: pygridgain.binary
     :members:
     :undoc-members:
     :show-inheritance:

@@ -30,9 +30,9 @@ matters.
 | name                                  | value    | type     |                                                       |
 +=======================================+==========+==========+=======================================================+
 | Read/write cache properties, used to configure cache via :py:meth:`~pygridgain.client.Client.create_cache` or       |
-| :py:meth:`~pygridgain.client.Client.get_or_create_cache`                                                     of :py:class:`~pygridgain.client.Client`                       |
-| (:py:meth:`~pygridgain.aio_client.AioClient.create_cache` or                                                          |
-| :py:meth:`~pygridgain.aio_client.AioClient.get_or_create_cache` of :py:class:`~pygridgain.aio_client.AioClient`).       |
+| :py:meth:`~pygridgain.client.Client.get_or_create_cache` of :py:class:`~pygridgain.client.Client`                   |
+| (:py:meth:`~pygridgain.aio_client.AioClient.create_cache` or                                                        |
+| :py:meth:`~pygridgain.aio_client.AioClient.get_or_create_cache` of :py:class:`~pygridgain.aio_client.AioClient`).   |
 +---------------------------------------+----------+----------+-------------------------------------------------------+
 | PROP_NAME                             |        0 | str      | Cache name. This is the only *required* property.     |
 +---------------------------------------+----------+----------+-------------------------------------------------------+

@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.exceptions module
-==========================
+pygridgain.aio_client module
+============================
 
-.. automodule:: pygridgain.exceptions
+.. automodule:: pygridgain.aio_client
     :members:
     :undoc-members:
     :show-inheritance:

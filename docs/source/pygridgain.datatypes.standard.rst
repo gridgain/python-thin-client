@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.datatypes.standard module
-==================================
+====================================
 
 .. automodule:: pygridgain.datatypes.standard
     :members:

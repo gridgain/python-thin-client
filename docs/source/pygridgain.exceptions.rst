@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.datatypes.internal module
-==================================
+pygridgain.exceptions module
+============================
 
-.. automodule:: pygridgain.datatypes.internal
+.. automodule:: pygridgain.exceptions
     :members:
     :undoc-members:
     :show-inheritance:

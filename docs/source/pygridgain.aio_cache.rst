@@ -12,10 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.client module
-======================
+pygridgain.aio_cache module
+===========================
 
-.. automodule:: pygridgain.client
+.. automodule:: pygridgain.aio_cache
     :members:
     :undoc-members:
-    :inherited-members:
+    :show-inheritance:
