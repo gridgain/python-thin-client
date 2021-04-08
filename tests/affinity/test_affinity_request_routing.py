@@ -27,7 +27,8 @@ from pygridgain.connection import Connection, AioConnection
 from pygridgain.constants import PROTOCOL_BYTE_ORDER
 from pygridgain.datatypes import String, LongObject
 from pygridgain.datatypes.cache_config import CacheMode
-from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_BACKUPS_NUMBER, PROP_CACHE_KEY_CONFIGURATION, PROP_CACHE_MODE
+from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_BACKUPS_NUMBER, PROP_CACHE_KEY_CONFIGURATION,\
+    PROP_CACHE_MODE
 from tests.util import wait_for_condition, wait_for_condition_async, start_ignite, kill_process_tree
 
 try:

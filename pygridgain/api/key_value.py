@@ -57,7 +57,8 @@ def cache_put(connection: 'Connection', cache: Union[str, int], key: Any, value:
 
 
 async def cache_put_async(connection: 'AioConnection', cache: Union[str, int], key: Any, value: Any,
-                          key_hint: 'GridGainDataType' = None, value_hint: 'GridGainDataType' = None, binary: bool = False,
+                          key_hint: 'GridGainDataType' = None, value_hint: 'GridGainDataType' = None,
+                          binary: bool = False,
                           query_id: Optional[int] = None) -> 'APIResult':
     """
     Async version of cache_put
@@ -413,7 +414,8 @@ def __cache_get_and_put(connection, cache, key, value, key_hint, value_hint, bin
 
 
 def cache_get_and_replace(connection: 'Connection', cache: Union[str, int], key: Any, value: Any,
-                          key_hint: 'GridGainDataType' = None, value_hint: 'GridGainDataType' = None, binary: bool = False,
+                          key_hint: 'GridGainDataType' = None, value_hint: 'GridGainDataType' = None,
+                          binary: bool = False,
                           query_id: Optional[int] = None) -> 'APIResult':
     """
     Puts a value with a given key to cache, returning previous value
@@ -473,7 +475,8 @@ def __cache_get_and_replace(connection, cache, key, key_hint, value, value_hint,
     )
 
 
-def cache_get_and_remove(connection: 'Connection', cache: Union[str, int], key: Any, key_hint: 'GridGainDataType' = None,
+def cache_get_and_remove(connection: 'Connection', cache: Union[str, int], key: Any,
+                         key_hint: 'GridGainDataType' = None,
                          binary: bool = False, query_id: Optional[int] = None) -> 'APIResult':
     """
     Removes the cache entry with specified key, returning the value.
@@ -740,7 +743,8 @@ def cache_replace_if_equals(connection: 'Connection', cache: Union[str, int], ke
 
 async def cache_replace_if_equals_async(
         connection: 'AioConnection', cache: Union[str, int], key: Any, sample: Any, value: Any,
-        key_hint: 'GridGainDataType' = None, sample_hint: 'GridGainDataType' = None, value_hint: 'GridGainDataType' = None,
+        key_hint: 'GridGainDataType' = None, sample_hint: 'GridGainDataType' = None,
+        value_hint: 'GridGainDataType' = None,
         binary: bool = False, query_id: Optional[int] = None) -> 'APIResult':
     """
     Async version of cache_replace_if_equals.
@@ -1259,4 +1263,5 @@ def __post_process_value_by_key(key):
             result.value = result.value[key]
 
         return result
+
     return internal

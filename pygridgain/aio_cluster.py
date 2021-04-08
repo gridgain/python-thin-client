@@ -33,7 +33,7 @@ class AioCluster:
         self._client = client
 
     @status_to_exception(ClusterError)
-    async def get_state(self):
+    async def get_state(self) -> 'ClusterState':
         """
         Gets current cluster state.
 
@@ -43,7 +43,7 @@ class AioCluster:
         return await cluster_get_state_async(await self._client.random_node())
 
     @status_to_exception(ClusterError)
-    async def set_state(self, state):
+    async def set_state(self, state: 'ClusterState'):
         """
         Changes current cluster state to the given.
 
