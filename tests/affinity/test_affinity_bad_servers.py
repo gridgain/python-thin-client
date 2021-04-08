@@ -20,6 +20,7 @@ from pygridgain.exceptions import ReconnectError, connection_errors
 from tests.affinity.conftest import CLIENT_SOCKET_TIMEOUT
 from tests.util import start_ignite, kill_process_tree
 
+
 @pytest.fixture(params=['with-partition-awareness', 'without-partition-awareness'])
 def with_partition_awareness(request):
     yield request.param == 'with-partition-awareness'

@@ -16,7 +16,7 @@
 from typing import Optional
 
 from pygridgain.connection.protocol_context import ProtocolContext
-from pygridgain.datatypes import Byte, ByteArrayObject, Int, MapObject, Short, String, UUIDObject, ByteArrayObject
+from pygridgain.datatypes import Byte, Int, MapObject, Short, String, UUIDObject, ByteArrayObject
 from pygridgain.datatypes.internal import Struct
 from pygridgain.stream import READ_BACKWARD
 
