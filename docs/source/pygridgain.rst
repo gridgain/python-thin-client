@@ -1,4 +1,4 @@
-..  Copyright 2019 GridGain Systems, Inc. and Contributors.
+..  Copyright 2021 GridGain Systems, Inc. and Contributors.
 
 ..  Licensed under the GridGain Community Edition License (the "License");
     you may not use this file except in compliance with the License.
@@ -12,22 +12,32 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-Welcome to GridGain Community Edition binary client Python API documentation!
-=============================================================================
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   readme
-   modules
-   examples
-   async_examples
-
-
-Indices and tables
+pygridgain package
 ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. automodule:: pygridgain
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pygridgain.datatypes
+    pygridgain.connection
+
+Submodules
+----------
+
+.. toctree::
+
+    pygridgain.binary
+    pygridgain.cache
+    pygridgain.aio_cache
+    pygridgain.client
+    pygridgain.aio_client
+    pygridgain.cursors
+    pygridgain.exceptions
+
