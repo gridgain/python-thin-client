@@ -61,7 +61,7 @@ def __cluster_get_state(connection, query_id):
     )
 
 
-def cluster_set_state(connection: 'Connection', state:  ClusterState, query_id=None) -> 'APIResult':
+def cluster_set_state(connection: 'Connection', state: ClusterState, query_id=None) -> 'APIResult':
     """
     Set cluster state.
 

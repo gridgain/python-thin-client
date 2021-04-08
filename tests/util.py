@@ -169,8 +169,8 @@ def start_ignite(idx=1, debug=False, use_ssl=False, use_auth=False, jvm_opts='',
 
     if debug:
         env["JVM_OPTS"] = env.get("JVM_OPTS", '') + \
-                          "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
-                          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
+            "-Djava.net.preferIPv4Stack=true -Xdebug -Xnoagent -Djava.compiler=NONE " \
+            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 "
 
     if use_auth:
         use_persistence = True

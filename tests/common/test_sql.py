@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import pytest
-from pygridgain.exceptions import SQLError
 
 from pygridgain import AioClient
 from pygridgain.aio_cache import AioCache
