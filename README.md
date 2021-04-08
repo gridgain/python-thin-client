@@ -100,7 +100,29 @@ This code implies that it is run in the environment with `pygridgain` package
 installed, and GridGain node is running on localhost:10800.
 
 ## Testing
-Run
+*NB!* It is recommended installing `pygridgain` in development mode.
+Refer to [this section](#for-developer) for instructions.
+
+Do not forget to install test requirements: 
+```bash
+$ pip install -r requirements/install.txt -r requirements/tests.txt
 ```
-$ python setup.py pytest
+
+Also, you'll need to have a binary release of Ignite with `log4j2` enabled and to set
+`IGNITE_HOME` environment variable: 
+```bash
+$ cd <ignite_binary_release>
+$ export IGNITE_HOME=$(pwd)
+$ cp -r $IGNITE_HOME/libs/optional/ignite-log4j2 $IGNITE_HOME/libs/
 ```
+### Run basic tests
+```bash
+$ pytest
+```
+### Run with examples
+```bash
+$ pytest --examples 
+```
+
+If you need to change the connection parameters, see the documentation on
+[testing](https://pygridgain.readthedocs.io/en/latest/readme.html#testing).

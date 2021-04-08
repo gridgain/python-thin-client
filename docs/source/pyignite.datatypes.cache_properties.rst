@@ -1,4 +1,4 @@
-..  Copyright 2019 GridGain Systems, Inc. and Contributors.
+..  Copyright 2021 GridGain Systems, Inc. and Contributors.
 
 ..  Licensed under the GridGain Community Edition License (the "License");
     you may not use this file except in compliance with the License.
@@ -12,22 +12,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-Welcome to GridGain Community Edition binary client Python API documentation!
-=============================================================================
+pygridgain.datatypes.cache\_properties module
+===========================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   readme
-   modules
-   examples
-   async_examples
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. automodule:: pygridgain.datatypes.cache_properties
+    :members:
+    :undoc-members:
+    :show-inheritance:

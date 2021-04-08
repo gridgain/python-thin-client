@@ -20,11 +20,13 @@ The modules and subpackages listed here are the basis of a stable API
 of `pygridgain`, intended for end users.
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Modules:
+    :maxdepth: 1
+    :caption: Modules:
 
-   Client <source/pygridgain.client>
-   Cache <source/pygridgain.cache>
-   datatypes/parsers
-   datatypes/cache_props
-   Exceptions <source/pygridgain.exceptions>
+    Client <source/pygridgain.client>
+    AioClient <source/pygridgain.aio_client>
+    Cache <source/pygridgain.cache>
+    AioCache <source/pygridgain.aio_cache>
+    datatypes/parsers
+    datatypes/cache_props
+    Exceptions <source/pygridgain.exceptions>
