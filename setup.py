@@ -112,6 +112,8 @@ def run_setup(with_binary=True):
         author='GridGain Systems',
         author_email='info@gridgain.com',
         description='GridGain binary client Python API',
+        long_description=long_description,
+        long_description_content_type='text/markdown',
         url='https://github.com/gridgain/python-thin-client',
         packages=setuptools.find_packages(),
         install_requires=requirements['install'],
@@ -120,6 +122,7 @@ def run_setup(with_binary=True):
         extras_require={
             'docs': requirements['docs'],
         },
+        license='Free for non-commercial use',
         classifiers=[
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
