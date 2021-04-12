@@ -122,7 +122,7 @@ def run_setup(with_binary=True):
         extras_require={
             'docs': requirements['docs'],
         },
-        license='Free for non-commercial use',
+        license='GridGain Community Edition License',
         classifiers=[
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
