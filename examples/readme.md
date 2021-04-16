@@ -15,3 +15,9 @@ This directory contains the following example files:
 For the explanation of the examples please refer to the
 [Examples of usage](https://pygridgain.readthedocs.io/en/latest/examples.html)
 section of the `pygridgain` documentation.
+
+You can start GridGain locally for running examples using `docker` and `docker-compose`
+```bash
+cd ./examples
+docker-compose up
+```
