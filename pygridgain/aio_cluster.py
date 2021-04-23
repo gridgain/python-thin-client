@@ -18,6 +18,7 @@ This module contains `AioCluster` that lets you get info and change state of the
 whole cluster asynchronously.
 """
 from pygridgain.api.cluster import cluster_get_state_async, cluster_set_state_async
+from pygridgain.datatypes import ClusterState
 from pygridgain.exceptions import ClusterError
 from pygridgain.utils import status_to_exception
 
@@ -30,6 +31,9 @@ class AioCluster:
     """
 
     def __init__(self, client: 'AioClient'):
+        """
+        :param client: :py:class:`~pygridgain.aio_client.AioClient` instance.
+        """
         self._client = client
 
     @status_to_exception(ClusterError)
@@ -37,8 +41,10 @@ class AioCluster:
         """
         Gets current cluster state.
 
-        :return: Current cluster state. This is one of ClusterState.INACTIVE,
-         ClusterState.ACTIVE or ClusterState.ACTIVE_READ_ONLY.
+        :return: Current cluster state. This is one of
+         :py:attr:`~pygridgain.datatypes.cluster_state.ClusterState.INACTIVE`,
+         :py:attr:`~pygridgain.datatypes.cluster_state.ClusterState.ACTIVE`,
+         :py:attr:`~pygridgain.datatypes.cluster_state.ClusterState.ACTIVE_READ_ONLY`.
         """
         return await cluster_get_state_async(await self._client.random_node())
 
@@ -50,7 +56,9 @@ class AioCluster:
         Note: Deactivation clears in-memory caches (without persistence)
          including the system caches.
 
-        :param state: New cluster state. This is one of ClusterState.INACTIVE,
-         ClusterState.ACTIVE or ClusterState.ACTIVE_READ_ONLY.
+        :param state: New cluster state. This is one of
+         :py:attr:`~pygridgain.datatypes.cluster_state.ClusterState.INACTIVE`,
+         :py:attr:`~pygridgain.datatypes.cluster_state.ClusterState.ACTIVE`,
+         :py:attr:`~pygridgain.datatypes.cluster_state.ClusterState.ACTIVE_READ_ONLY`.
         """
         return await cluster_set_state_async(await self._client.random_node(), state)

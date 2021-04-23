@@ -3,10 +3,9 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
 ## Prerequisites
 
-- Python 3.4 or above (3.6 is tested),
+- Python 3.6 or above (3.6, 3.7, 3.8 and 3.9 are tested),
 - Access to GridGain node, local or remote. The current thin client
-  version was tested on GridGain CE 8.7 (binary client protocol versions
-  1.2.0 to 1.4.0).
+  version was tested on GridGain CE 8.7 and 8.8 (binary client protocol 1.7.0).
 
 ## Installation
 

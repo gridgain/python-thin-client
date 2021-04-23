@@ -84,6 +84,33 @@ As a rule of thumb:
 Refer the :ref:`data_types` section for the full list
 of parser/constructor classes you can use as type hints.
 
+ExpiryPolicy
+============
+File: `expiry_policy.py`_.
+
+You can enable expiry policy (TTL) by two approaches.
+
+Firstly, expiry policy can be set for entire cache by setting :py:attr:`~pygridgain.datatypes.prop_codes.PROP_EXPIRY_POLICY`
+in cache settings dictionary on creation.
+
+.. literalinclude:: ../examples/expiry_policy.py
+  :language: python
+  :dedent: 12
+  :lines: 31-34
+
+.. literalinclude:: ../examples/expiry_policy.py
+  :language: python
+  :dedent: 12
+  :lines: 40-46
+
+Secondly, expiry policy can be set for all cache operations, which are done under decorator. To create it use
+:py:meth:`~pygridgain.cache.BaseCache.with_expire_policy`
+
+.. literalinclude:: ../examples/expiry_policy.py
+  :language: python
+  :dedent: 12
+  :lines: 53-60
+
 Scan
 ====
 File: `scans.py`_.
@@ -557,13 +584,13 @@ Gather 3 GridGain nodes on `localhost` into one cluster and run:
 
 .. literalinclude:: ../examples/failover.py
   :language: python
-  :lines: 16-53
+  :lines: 16-52
 
 Then try shutting down and restarting nodes, and see what happens.
 
 .. literalinclude:: ../examples/failover.py
   :language: python
-  :lines: 55-67
+  :lines: 54-66
 
 Client reconnection do not require an explicit user action, like calling
 a special method or resetting a parameter.
@@ -682,6 +709,7 @@ with the following message:
 .. _type_hints.py: https://github.com/gridgain/python-thin-client/tree/master/examples/type_hints.py
 .. _failover.py: https://github.com/gridgain/python-thin-client/tree/master/examples/failover.py
 .. _scans.py: https://github.com/gridgain/python-thin-client/tree/master/examples/scans.py
+.. _expiry_policy.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/expiry_policy.py
 .. _sql.py: https://github.com/gridgain/python-thin-client/tree/master/examples/sql.py
 .. _async_sql.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_sql.py
 .. _binary_basics.py: https://github.com/gridgain/python-thin-client/tree/master/examples/binary_basics.py
