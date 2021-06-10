@@ -21,7 +21,7 @@ Cache Properties
 The :mod:`~pygridgain.datatypes.prop_codes` module contains a list of ordinal
 values, that represent various cache settings.
 
-Please refer to the `GridGain Data Grid`_ documentation on cache
+Please refer to the `Configuring Caches`_ documentation on cache
 synchronization, rebalance, affinity and other cache configuration-related
 matters.
 
@@ -161,10 +161,10 @@ A dict of the following format:
 - `type_name`: name of the complex object,
 - `affinity_key_field_name`: name of the affinity key field.
 
-.. _GridGain Data Grid: https://www.gridgain.com/technology/in-memory-computing-platform/data-grid
+.. _Configuring Caches: https://www.gridgain.com/docs/latest/configuring-caches/configuration-overview.html
 
 Expiry policy
--------------
+-------------https://www.gridgain.com/docs/latest/developers-guide/configuring-caches/configuration-overview
 
 Set expiry policy to cache (see :py:class:`~pygridgain.datatypes.expiry_policy.ExpiryPolicy`). If set to `None`,
 expiry policy will not be set.
