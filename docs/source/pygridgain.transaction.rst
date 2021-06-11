@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.transaction module
-=========================
+===========================
 
 .. automodule:: pygridgain.transaction
     :members:

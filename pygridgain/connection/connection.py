@@ -161,12 +161,9 @@ class Connection(BaseConnection):
     def closed(self) -> bool:
         return self._socket is None
 
-    def connect(self) -> Union[dict, OrderedDict]:
+    def connect(self):
         """
         Connect to the given server node with protocol version fallback.
-
-        :param host: GridGain server node's host name or IP,
-        :param port: GridGain server node's port number.
         """
         detecting_protocol = False
 
@@ -194,7 +191,6 @@ class Connection(BaseConnection):
         self.client.protocol_context.features = features
         self.uuid = result.get('node_uuid', None)  # version-specific (1.4+)
         self.failed = False
-        return result
 
     def _connect_version(self) -> Union[dict, OrderedDict]:
         """
