@@ -15,6 +15,7 @@
 #
 import asyncio
 import time
+from datetime import timedelta
 
 from pygridgain import Client, AioClient
 from pygridgain.datatypes import ExpiryPolicy
@@ -31,7 +32,7 @@ def main():
         try:
             ttl_cache = client.create_cache({
                 PROP_NAME: 'test',
-                PROP_EXPIRY_POLICY: ExpiryPolicy(create=1.0)
+                PROP_EXPIRY_POLICY: ExpiryPolicy(create=timedelta(seconds=1.0))
             })
         except NotSupportedByClusterError:
             print("'ExpiryPolicy' API is not supported by cluster. Finishing...")
@@ -51,7 +52,7 @@ def main():
         print("Create simple Cache and set TTL through `with_expire_policy`")
         simple_cache = client.create_cache('test')
         try:
-            ttl_cache = simple_cache.with_expire_policy(access=1.0)
+            ttl_cache = simple_cache.with_expire_policy(access=timedelta(seconds=1.0))
             ttl_cache.put(1, 1)
             time.sleep(0.5)
             print(f"key = {1}, value = {ttl_cache.get(1)}")
@@ -72,7 +73,7 @@ async def async_main():
         try:
             ttl_cache = await client.create_cache({
                 PROP_NAME: 'test',
-                PROP_EXPIRY_POLICY: ExpiryPolicy(create=1.0)
+                PROP_EXPIRY_POLICY: ExpiryPolicy(create=timedelta(seconds=1.0))
             })
         except NotSupportedByClusterError:
             print("'ExpiryPolicy' API is not supported by cluster. Finishing...")
@@ -94,7 +95,7 @@ async def async_main():
         print("Create simple Cache and set TTL through `with_expire_policy`")
         simple_cache = await client.create_cache('test')
         try:
-            ttl_cache = simple_cache.with_expire_policy(access=1.0)
+            ttl_cache = simple_cache.with_expire_policy(access=timedelta(seconds=1.0))
             await ttl_cache.put(1, 1)
             await asyncio.sleep(0.5)
             value = await ttl_cache.get(1)

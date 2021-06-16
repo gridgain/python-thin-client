@@ -745,15 +745,15 @@ class Client(BaseClient):
 
     def tx_start(self, concurrency: TransactionConcurrency = TransactionConcurrency.PESSIMISTIC,
                  isolation: TransactionIsolation = TransactionIsolation.REPEATABLE_READ,
-                 timeout: Union[int, float] = 0, label: Optional[str] = None) -> 'Transaction':
+                 timeout: int = 0, label: Optional[str] = None) -> 'Transaction':
         """
         Start thin client transaction.
 
         :param concurrency: (optional) transaction concurrency, see
-                :py:class:`~pygridgain.datatypes.transactions.TransactionConcurrency`
+                :py:class:`~pygridgain.datatypes.transactions.TransactionConcurrency`,
         :param isolation: (optional) transaction isolation level, see
-                :py:class:`~pygridgain.datatypes.transactions.TransactionIsolation`
-        :param timeout: (optional) transaction timeout in seconds if float, in millis if int
+                :py:class:`~pygridgain.datatypes.transactions.TransactionIsolation`,
+        :param timeout: (optional) transaction timeout in milliseconds,
         :param label: (optional) transaction label.
         :return: :py:class:`~pygridgain.transaction.Transaction` instance.
         """
