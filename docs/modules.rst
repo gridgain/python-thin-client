@@ -30,3 +30,4 @@ of `pygridgain`, intended for end users.
     datatypes/parsers
     datatypes/cache_props
     Exceptions <source/pygridgain.exceptions>
+    Monitoring and handling events <source/pygridgain.monitoring>
