@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import random
-
 import pytest
 
 from pygridgain import Client, AioClient
+from pygridgain.datatypes.cache_config import CacheMode
+from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_CACHE_MODE
 from pygridgain.monitoring import ConnectionEventListener, ConnectionLostEvent, ConnectionClosedEvent, \
     HandshakeSuccessEvent, HandshakeFailedEvent, HandshakeStartEvent
 
@@ -66,12 +66,16 @@ def test_events(request, server2):
     with client.connect([('127.0.0.1', 10800 + idx) for idx in range(1, 3)]):
         protocol_context = client.protocol_context
         nodes = {conn.port: conn for conn in client._nodes}
-        cache = client.get_or_create_cache(request.node.name)
+        cache = client.get_or_create_cache({
+            PROP_NAME: request.node.name,
+            PROP_CACHE_MODE: CacheMode.REPLICATED,
+        })
+
         kill_process_tree(server2.pid)
 
-        while True:
+        for _ in range(0, 100):
             try:
-                cache.put(random.randint(0, 1000), 1)
+                cache.put(1, 1)
             except: # noqa 13
                 pass
 
@@ -87,12 +91,15 @@ async def test_events_async(request, server2):
     async with client.connect([('127.0.0.1', 10800 + idx) for idx in range(1, 3)]):
         protocol_context = client.protocol_context
         nodes = {conn.port: conn for conn in client._nodes}
-        cache = await client.get_or_create_cache(request.node.name)
+        cache = await client.get_or_create_cache({
+            PROP_NAME: request.node.name,
+            PROP_CACHE_MODE: CacheMode.REPLICATED,
+        })
         kill_process_tree(server2.pid)
 
-        while True:
+        for _ in range(0, 100):
             try:
-                await cache.put(random.randint(0, 1000), 1)
+                await cache.put(1, 1)
             except: # noqa 13
                 pass
 
@@ -105,7 +112,7 @@ async def test_events_async(request, server2):
 def __assert_events(nodes, protocol_context):
     assert len([e for e in events if isinstance(e, ConnectionLostEvent)]) == 1
     # ConnectionLostEvent is a subclass of ConnectionClosedEvent
-    assert len([e for e in events if type(e) == ConnectionClosedEvent]) == 1
+    assert 1 <= len([e for e in events if type(e) == ConnectionClosedEvent and e.node_uuid]) <= 2
     assert len([e for e in events if isinstance(e, HandshakeSuccessEvent)]) == 2
 
     for ev in events:
@@ -115,7 +122,6 @@ def __assert_events(nodes, protocol_context):
             assert ev.node_uuid == str(nodes[ev.port].uuid)
             assert ev.error_msg
         elif isinstance(ev, HandshakeStartEvent):
-            assert ev.protocol_context == protocol_context
             assert ev.port in {10801, 10802}
         elif isinstance(ev, HandshakeFailedEvent):
             assert ev.port == 10802
@@ -126,5 +132,6 @@ def __assert_events(nodes, protocol_context):
             assert ev.node_uuid == str(nodes[ev.port].uuid)
             assert ev.protocol_context == protocol_context
         elif isinstance(ev, ConnectionClosedEvent):
-            assert ev.port == 10801
-            assert ev.node_uuid == str(nodes[ev.port].uuid)
+            assert ev.port in {10801, 10802}
+            if ev.node_uuid:  # Possible if protocol negotiation occurred.
+                assert ev.node_uuid == str(nodes[ev.port].uuid)
