@@ -23,7 +23,7 @@ import uuid
 
 from pygridgain.constants import *
 from pygridgain.utils import datetime_hashcode, decimal_hashcode, hashcode
-from .base import IgniteDataType
+from .base import GridGainDataType
 from .type_codes import *
 from .type_ids import *
 from .type_names import *
@@ -533,7 +533,7 @@ class _StandardArrayBase:
         ]
 
 
-class StandardArray(IgniteDataType, _StandardArrayBase):
+class StandardArray(GridGainDataType, _StandardArrayBase):
     """
     Base class for array of primitives. Payload-only.
     """

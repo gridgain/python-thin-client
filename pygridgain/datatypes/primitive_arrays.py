@@ -17,7 +17,7 @@ import ctypes
 from io import SEEK_CUR
 
 from pygridgain.constants import *
-from .base import IgniteDataType
+from .base import GridGainDataType
 from .null_object import Nullable
 from .primitive import *
 from .type_codes import *
@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-class PrimitiveArray(IgniteDataType):
+class PrimitiveArray(GridGainDataType):
     """
     Base class for array of primitives. Payload-only.
     """
