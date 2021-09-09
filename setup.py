@@ -123,6 +123,7 @@ def run_setup(with_binary=True):
             'docs': requirements['docs'],
         },
         license='GridGain Community Edition License',
+        license_files=('LICENSE', 'NOTICE'),
         classifiers=[
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
