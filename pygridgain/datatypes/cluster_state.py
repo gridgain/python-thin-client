@@ -18,6 +18,10 @@ from enum import IntEnum
 
 
 class ClusterState(IntEnum):
+    """
+    Cluster states.
+    """
+
     #: Cluster deactivated. Cache operations aren't allowed.
     INACTIVE = 0
 

@@ -22,7 +22,10 @@ import attr
 
 from pygridgain.api.result import APIResult
 from pygridgain.connection import Connection, AioConnection
-from pygridgain.constants import MIN_LONG, MAX_LONG, RHF_TOPOLOGY_CHANGED
+from pygridgain.connection.protocol_context import ProtocolContext
+from pygridgain.constants import MIN_LONG, MAX_LONG, RHF_TOPOLOGY_CHANGED, PROTOCOL_BYTE_ORDER
+from pygridgain.datatypes import ExpiryPolicy
+from pygridgain.exceptions import NotSupportedByClusterError
 from pygridgain.queries.response import Response
 from pygridgain.stream import AioBinaryStream, BinaryStream, READ_BACKWARD
 
@@ -43,6 +46,34 @@ def query_perform(query_struct, conn, post_process_fun=None, **kwargs):
     if isinstance(conn, AioConnection):
         return _async_internal()
     return _internal()
+
+
+@attr.s
+class CacheInfo:
+    cache_id = attr.ib(kw_only=True, type=int)
+    expiry_policy = attr.ib(kw_only=True, type=ExpiryPolicy, default=None)
+    protocol_context = attr.ib(kw_only=True, type=ProtocolContext)
+
+    @classmethod
+    async def from_python_async(cls, stream, value):
+        return cls.from_python(stream, value)
+
+    @classmethod
+    def from_python(cls, stream, value):
+        cache_id = value.cache_id if value else 0
+        expiry_policy = value.expiry_policy if value else None
+        flags = 0
+
+        stream.write(cache_id.to_bytes(4, byteorder=PROTOCOL_BYTE_ORDER, signed=True))
+
+        if expiry_policy:
+            if not value.protocol_context.is_expiry_policy_supported():
+                raise NotSupportedByClusterError("'ExpiryPolicy' API is not supported by the cluster")
+            flags |= 0x04
+
+        stream.write(flags.to_bytes(1, byteorder=PROTOCOL_BYTE_ORDER))
+        if expiry_policy:
+            ExpiryPolicy.write_policy(stream, expiry_policy)
 
 
 @attr.s
