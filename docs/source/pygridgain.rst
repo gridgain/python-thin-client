@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain package
-==================
+================
 
 .. automodule:: pygridgain
     :members:
@@ -38,6 +38,9 @@ Submodules
     pygridgain.aio_cache
     pygridgain.client
     pygridgain.aio_client
+    pygridgain.cluster
+    pygridgain.aio_cluster
+    pygridgain.transaction
     pygridgain.cursors
     pygridgain.exceptions
 
