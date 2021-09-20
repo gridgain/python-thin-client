@@ -16,16 +16,12 @@
 
 import ctypes
 from io import SEEK_CUR
-from random import randint
 
 import attr
 
 from pygridgain.api.result import APIResult
 from pygridgain.connection import Connection, AioConnection
-from pygridgain.connection.protocol_context import ProtocolContext
-from pygridgain.constants import MIN_LONG, MAX_LONG, RHF_TOPOLOGY_CHANGED, PROTOCOL_BYTE_ORDER
-from pygridgain.datatypes import ExpiryPolicy
-from pygridgain.exceptions import NotSupportedByClusterError
+from pygridgain.constants import MAX_LONG, RHF_TOPOLOGY_CHANGED
 from pygridgain.queries.response import Response
 from pygridgain.stream import AioBinaryStream, BinaryStream, READ_BACKWARD
 
@@ -48,41 +44,28 @@ def query_perform(query_struct, conn, post_process_fun=None, **kwargs):
     return _internal()
 
 
-@attr.s
-class CacheInfo:
-    cache_id = attr.ib(kw_only=True, type=int)
-    expiry_policy = attr.ib(kw_only=True, type=ExpiryPolicy, default=None)
-    protocol_context = attr.ib(kw_only=True, type=ProtocolContext)
+_QUERY_COUNTER = 0
 
-    @classmethod
-    async def from_python_async(cls, stream, value):
-        return cls.from_python(stream, value)
 
-    @classmethod
-    def from_python(cls, stream, value):
-        cache_id = value.cache_id if value else 0
-        expiry_policy = value.expiry_policy if value else None
-        flags = 0
-
-        stream.write(cache_id.to_bytes(4, byteorder=PROTOCOL_BYTE_ORDER, signed=True))
-
-        if expiry_policy:
-            if not value.protocol_context.is_expiry_policy_supported():
-                raise NotSupportedByClusterError("'ExpiryPolicy' API is not supported by the cluster")
-            flags |= 0x04
-
-        stream.write(flags.to_bytes(1, byteorder=PROTOCOL_BYTE_ORDER))
-        if expiry_policy:
-            ExpiryPolicy.write_policy(stream, expiry_policy)
+def _get_query_id():
+    global _QUERY_COUNTER
+    if _QUERY_COUNTER >= MAX_LONG:
+        return 0
+    _QUERY_COUNTER += 1
+    return _QUERY_COUNTER
 
 
 @attr.s
 class Query:
     op_code = attr.ib(type=int)
     following = attr.ib(type=list, factory=list)
-    query_id = attr.ib(type=int, default=None)
+    query_id = attr.ib(type=int)
     response_type = attr.ib(type=type(Response), default=Response)
     _query_c_type = None
+
+    @query_id.default
+    def _set_query_id(self):
+        return _get_query_id()
 
     @classmethod
     def build_c_type(cls):
@@ -120,14 +103,14 @@ class Query:
         self.__write_header(stream, header, init_pos)
 
     def _build_header(self, stream):
+        global _QUERY_COUNTER
         header_class = self.build_c_type()
         header_len = ctypes.sizeof(header_class)
         stream.seek(header_len, SEEK_CUR)
 
         header = header_class()
         header.op_code = self.op_code
-        if self.query_id is None:
-            header.query_id = randint(MIN_LONG, MAX_LONG)
+        header.query_id = self.query_id
 
         return header
 
@@ -186,7 +169,7 @@ class Query:
         """
         with AioBinaryStream(conn.client) as stream:
             await self.from_python_async(stream, query_params)
-            data = await conn.request(stream.getvalue())
+            data = await conn.request(self.query_id, stream.getvalue())
 
         response_struct = self.response_type(protocol_context=conn.protocol_context,
                                              following=response_config, **kwargs)

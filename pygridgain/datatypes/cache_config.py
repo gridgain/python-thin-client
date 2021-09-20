@@ -22,6 +22,7 @@ from .primitive import *
 __all__ = [
     'get_cache_config_struct', 'CacheMode', 'PartitionLossPolicy',
     'RebalanceMode', 'WriteSynchronizationMode', 'IndexType',
+    'CacheAtomicityMode'
 ]
 
 

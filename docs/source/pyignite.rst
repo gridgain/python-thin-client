@@ -40,6 +40,7 @@ Submodules
     pygridgain.aio_client
     pygridgain.cluster
     pygridgain.aio_cluster
+    pygridgain.transaction
     pygridgain.cursors
     pygridgain.exceptions
 
