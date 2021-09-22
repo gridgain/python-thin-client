@@ -214,7 +214,7 @@ Finally, delete the tables used in this example with the following queries:
 
 
 
-.. _expiry_policy.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/expiry_policy.py
-.. _async_key_value.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_key_value.py
-.. _async_sql.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_sql.py
-.. _transactions.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/transactions.py
+.. _expiry_policy.py: https://github.com/gridgain/python-thin-client/blob/master/examples/expiry_policy.py
+.. _async_key_value.py: https://github.com/gridgain/python-thin-client/blob/master/examples/async_key_value.py
+.. _async_sql.py: https://github.com/gridgain/python-thin-client/blob/master/examples/async_sql.py
+.. _transactions.py: https://github.com/gridgain/python-thin-client/blob/master/examples/transactions.py

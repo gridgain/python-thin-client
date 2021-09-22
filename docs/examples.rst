@@ -750,27 +750,26 @@ with the following message:
     # pygridgain.exceptions.HandshakeError: Handshake error: Unauthenticated sessions are prohibited.
 
 .. _get_and_put.py: https://github.com/gridgain/python-thin-client/tree/master/examples/get_and_put.py
-.. _async_key_value.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_key_value.py
+.. _async_key_value.py: https://github.com/gridgain/python-thin-client/blob/master/examples/async_key_value.py
 .. _type_hints.py: https://github.com/gridgain/python-thin-client/tree/master/examples/type_hints.py
 .. _failover.py: https://github.com/gridgain/python-thin-client/tree/master/examples/failover.py
 .. _scans.py: https://github.com/gridgain/python-thin-client/tree/master/examples/scans.py
-.. _expiry_policy.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/expiry_policy.py
+.. _expiry_policy.py: https://github.com/gridgain/python-thin-client/blob/master/examples/expiry_policy.py
 .. _sql.py: https://github.com/gridgain/python-thin-client/tree/master/examples/sql.py
-.. _async_sql.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_sql.py
+.. _async_sql.py: https://github.com/gridgain/python-thin-client/blob/master/examples/async_sql.py
 .. _binary_basics.py: https://github.com/gridgain/python-thin-client/tree/master/examples/binary_basics.py
 .. _read_binary.py: https://github.com/gridgain/python-thin-client/tree/master/examples/read_binary.py
 .. _create_binary.py: https://github.com/gridgain/python-thin-client/tree/master/examples/create_binary.py
 .. _migrate_binary.py: https://github.com/gridgain/python-thin-client/tree/master/examples/migrate_binary.py
-.. _transactions.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/transactions.py
-.. _Getting Started: https://ignite.apache.org/docs/latest/quick-start/sql
+.. _transactions.py: https://github.com/gridgain/python-thin-client/blob/master/examples/transactions.py
+.. _Getting Started: https://www.gridgain.com/docs/latest/getting-started/quick-start/sql
 .. _GridGain CE GitHub repository: https://github.com/gridgain/gridgain/blob/master/examples/sql/world.sql
 .. _Complex object: https://ignite.apache.org/docs/latest/binary-client-protocol/data-format#complex-object
 .. _Java keytool: https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html
-.. _Securing Connection Between Nodes: https://ignite.apache.org/docs/latest/security/ssl-tls#ssltls-for-nodes
+.. _Securing Connection Between Nodes: https://www.gridgain.com/docs/latest/administrators-guide/security/ssl-tls#ssltls-for-nodes
 .. _ClientConnectorConfiguration: https://www.gridgain.com/sdk/latest/javadoc/org/apache/ignite/configuration/ClientConnectorConfiguration.html
 .. _openssl: https://www.openssl.org/docs/manmaster/man1/openssl.html
-.. _Authentication: https://ignite.apache.org/docs/latest/security/authentication
+.. _Authentication: https://www.gridgain.com/docs/latest/administrators-guide/security/authentication
 .. _attrs: https://pypi.org/project/attrs/
 .. _get_and_put_complex.py: https://github.com/gridgain/python-thin-client/tree/master/examples/get_and_put_complex.py
 .. _Collection: https://ignite.apache.org/docs/latest/binary-client-protocol/data-format#collection
-.. _simple class names: https://ignite.apache.org/docs/latest/data-modeling/binary-marshaller#binary-name-mapper-and-binary-id-mapper
