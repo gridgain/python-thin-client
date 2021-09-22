@@ -41,6 +41,8 @@ class BaseConnection:
         self.password = password
         self.uuid = None
 
+        self.timezone = get_localzone().tzname(None)
+
         check_ssl_params(ssl_params)
 
         if self.username and self.password and 'use_ssl' not in ssl_params:
@@ -207,13 +209,11 @@ class Connection(BaseConnection):
 
         protocol_context = self.client.protocol_context
 
-        timezone = get_localzone().tzname(None)
-
         hs_request = HandshakeRequest(
             protocol_context=protocol_context,
             username=self.username,
             password=self.password,
-            timezone=timezone,
+            timezone=self.timezone,
         )
 
         with BinaryStream(self.client) as stream:

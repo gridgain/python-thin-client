@@ -12,35 +12,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain package
-================
+pygridgain.datatypes.transactions module
+=======================================
 
-.. automodule:: pygridgain
+.. automodule:: pygridgain.datatypes.transactions
     :members:
-    :undoc-members:
     :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    pygridgain.datatypes
-    pygridgain.connection
-
-Submodules
-----------
-
-.. toctree::
-
-    pygridgain.binary
-    pygridgain.cache
-    pygridgain.aio_cache
-    pygridgain.client
-    pygridgain.aio_client
-    pygridgain.cluster
-    pygridgain.aio_cluster
-    pygridgain.transaction
-    pygridgain.cursors
-    pygridgain.exceptions
-

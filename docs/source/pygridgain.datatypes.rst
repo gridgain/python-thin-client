@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.datatypes package
-============================
+==========================
 
 .. automodule:: pygridgain.datatypes
     :members:
@@ -30,6 +30,8 @@ Submodules
    pygridgain.datatypes.cache_config
    pygridgain.datatypes.cache_properties
    pygridgain.datatypes.complex
+   pygridgain.datatypes.cluster_state
+   pygridgain.datatypes.expiry_policy
    pygridgain.datatypes.internal
    pygridgain.datatypes.key_value
    pygridgain.datatypes.null_object
@@ -38,4 +40,3 @@ Submodules
    pygridgain.datatypes.primitive_objects
    pygridgain.datatypes.sql
    pygridgain.datatypes.standard
-
