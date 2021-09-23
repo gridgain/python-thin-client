@@ -77,6 +77,50 @@ Secondly, expiry policy can be set for all cache operations, which are done unde
   :dedent: 12
   :lines: 96-105
 
+Transactions
+------------
+File: `transactions.py`_.
+
+Client transactions are supported for caches with
+:py:attr:`~pygridgain.datatypes.cache_config.CacheAtomicityMode.TRANSACTIONAL` mode.
+
+Let's create transactional cache:
+
+.. literalinclude:: ../examples/transactions.py
+  :language: python
+  :dedent: 8
+  :lines: 30-33
+
+Let's start a transaction and commit it:
+
+.. literalinclude:: ../examples/transactions.py
+  :language: python
+  :dedent: 8
+  :lines: 36-41
+
+Let's check that the transaction was committed successfully:
+
+.. literalinclude:: ../examples/transactions.py
+  :language: python
+  :dedent: 8
+  :lines: 44-45
+
+Let's check that raising exception inside `async with` block leads to transaction's rollback
+
+.. literalinclude:: ../examples/transactions.py
+  :language: python
+  :dedent: 8
+  :lines: 48-59
+
+Let's check that timed out transaction is successfully rolled back
+
+.. literalinclude:: ../examples/transactions.py
+  :language: python
+  :dedent: 8
+  :lines: 62-73
+
+See more info about transaction's parameters in a documentation of :py:meth:`~pygridgain.aio_client.AioClient.tx_start`
+
 SQL
 ---
 File: `async_sql.py`_.
@@ -170,6 +214,7 @@ Finally, delete the tables used in this example with the following queries:
 
 
 
-.. _expiry_policy.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/expiry_policy.py
-.. _async_key_value.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_key_value.py
-.. _async_sql.py: https://github.com/apache/ignite-python-thin-client/blob/master/examples/async_sql.py
+.. _expiry_policy.py: https://github.com/gridgain/python-thin-client/blob/master/examples/expiry_policy.py
+.. _async_key_value.py: https://github.com/gridgain/python-thin-client/blob/master/examples/async_key_value.py
+.. _async_sql.py: https://github.com/gridgain/python-thin-client/blob/master/examples/async_sql.py
+.. _transactions.py: https://github.com/gridgain/python-thin-client/blob/master/examples/transactions.py
