@@ -21,6 +21,7 @@ Welcome to GridGain Community Edition binary client Python API documentation!
 
    readme
    modules
+   partition_awareness
    examples
    async_examples
 
