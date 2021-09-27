@@ -62,12 +62,12 @@ in cache settings dictionary on creation.
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 72-75
+  :lines: 73-76
 
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 81-89
+  :lines: 82-90
 
 Secondly, expiry policy can be set for all cache operations, which are done under decorator. To create it use
 :py:meth:`~pygridgain.cache.BaseCache.with_expire_policy`
@@ -75,7 +75,7 @@ Secondly, expiry policy can be set for all cache operations, which are done unde
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 96-105
+  :lines: 97-106
 
 Transactions
 ------------
