@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import logging
+import re
+
 import pytest
 
 from pygridgain import Client, AioClient
@@ -73,17 +76,26 @@ invalid_params = [
 
 
 @pytest.mark.parametrize('invalid_ssl_params', invalid_params)
-def test_connection_error_with_incorrect_config(invalid_ssl_params):
+def test_connection_error_with_incorrect_config(invalid_ssl_params, caplog):
     with pytest.raises(ReconnectError):
         client = Client(**invalid_ssl_params)
         with client.connect([("127.0.0.1", 10801)]):
             pass
 
+        __assert_handshake_failed_log(caplog)
+
 
 @pytest.mark.parametrize('invalid_ssl_params', invalid_params)
 @pytest.mark.asyncio
-async def test_connection_error_with_incorrect_config_async(invalid_ssl_params):
+async def test_connection_error_with_incorrect_config_async(invalid_ssl_params, caplog):
     with pytest.raises(ReconnectError):
         client = AioClient(**invalid_ssl_params)
         async with client.connect([("127.0.0.1", 10801)]):
             pass
+
+        __assert_handshake_failed_log(caplog)
+
+
+def __assert_handshake_failed_log(caplog):
+    pattern = r'Failed to perform handshake, connection to node\(address=127.0.0.1,\s+port=10801.*failed:'
+    assert any(re.match(pattern, r.message) and r.levelname == logging.ERROR for r in caplog.records)
