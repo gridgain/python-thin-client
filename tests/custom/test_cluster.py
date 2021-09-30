@@ -50,7 +50,7 @@ def cluster_api_supported(request, server1):
     client = Client()
     with client.connect('127.0.0.1', 10801):
         if not client.protocol_context.is_cluster_api_supported():
-            pytest.skip(f'skipped {request.node.name}, ExpiryPolicy APIis not supported.')
+            pytest.skip(f'skipped {request.node.name}, Cluster API is not supported.')
 
 
 def check_cluster_state_error(cluster, state: int):
