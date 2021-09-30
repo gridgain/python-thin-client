@@ -12,16 +12,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-pygridgain.connection package
-=============================
+pygridgain.monitoring module
+===========================
 
-.. automodule:: pygridgain.connection
+.. automodule:: pygridgain.monitoring
     :members:
-    :undoc-members:
-    :show-inheritance:
-
-Submodules
-----------
-
-.. toctree::
-    pygridgain.connection.protocol_context
+    :member-order: bysource

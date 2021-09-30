@@ -43,4 +43,5 @@ Submodules
     pygridgain.transaction
     pygridgain.cursors
     pygridgain.exceptions
+    pygridgain.monitoring
 

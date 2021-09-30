@@ -23,12 +23,10 @@ import pytest
 
 from pygridgain import GenericObjectMeta, AioClient, Client
 from pygridgain.aio_cache import AioCache
-from pygridgain.connection import Connection, AioConnection
-from pygridgain.constants import PROTOCOL_BYTE_ORDER
 from pygridgain.datatypes import String, LongObject
 from pygridgain.datatypes.cache_config import CacheMode
-from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_BACKUPS_NUMBER, PROP_CACHE_KEY_CONFIGURATION,\
-    PROP_CACHE_MODE
+from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_BACKUPS_NUMBER, PROP_CACHE_KEY_CONFIGURATION, PROP_CACHE_MODE
+from pygridgain.monitoring import QueryEventListener
 from tests.util import wait_for_condition, wait_for_condition_async, start_ignite, kill_process_tree
 
 try:
@@ -37,41 +35,37 @@ except ImportError:
     from async_generator import asynccontextmanager
 
 requests = deque()
-old_send = Connection.send
-old_send_async = AioConnection._send
 
 
-def patched_send(self, *args, **kwargs):
-    """Patched send function that push to queue idx of server to which request is routed."""
-    buf = args[0]
-    if buf and len(buf) >= 6:
-        op_code = int.from_bytes(buf[4:6], byteorder=PROTOCOL_BYTE_ORDER)
-        # Filter only caches operation.
-        if 1000 <= op_code < 1100:
-            requests.append(self.port % 100)
-    return old_send(self, *args, **kwargs)
+class QueryRouteListener(QueryEventListener):
+    def on_query_start(self, event):
+        if 1000 <= event.op_code < 1100:
+            requests.append(event.port % 100)
 
 
-async def patched_send_async(self, *args, **kwargs):
-    """Patched send function that push to queue idx of server to which request is routed."""
-    buf = args[1]
-    if buf and len(buf) >= 6:
-        op_code = int.from_bytes(buf[4:6], byteorder=PROTOCOL_BYTE_ORDER)
-        # Filter only caches operation.
-        if 1000 <= op_code < 1100:
-            requests.append(self.port % 100)
-    return await old_send_async(self, *args, **kwargs)
+client_connection_string = [('127.0.0.1', 10800 + idx) for idx in range(1, 5)]
 
 
-def setup_function():
-    requests.clear()
-    Connection.send = patched_send
-    AioConnection._send = patched_send_async
+@pytest.fixture
+def client():
+    client = Client(partition_aware=True, event_listeners=[QueryRouteListener()])
+    try:
+        client.connect(client_connection_string)
+        yield client
+    finally:
+        requests.clear()
+        client.close()
 
 
-def teardown_function():
-    Connection.send = old_send
-    AioConnection.send = old_send_async
+@pytest.fixture
+async def async_client(event_loop):
+    client = AioClient(partition_aware=True, event_listeners=[QueryRouteListener()])
+    try:
+        await client.connect(client_connection_string)
+        yield client
+    finally:
+        requests.clear()
+        await client.close()
 
 
 def wait_for_affinity_distribution(cache, key, node_idx, timeout=30):
@@ -114,7 +108,8 @@ async def wait_for_affinity_distribution_async(cache, key, node_idx, timeout=30)
 
 @pytest.mark.parametrize("key,grid_idx", [(1, 1), (2, 2), (3, 3), (4, 1), (5, 1), (6, 2), (11, 1), (13, 1), (19, 1)])
 @pytest.mark.parametrize("backups", [0, 1, 2, 3])
-def test_cache_operation_on_primitive_key_routes_request_to_primary_node(request, key, grid_idx, backups, client):
+def test_cache_operation_on_primitive_key_routes_request_to_primary_node(request, key, grid_idx, backups,
+                                                                         client):
     cache = client.get_or_create_cache({
         PROP_NAME: request.node.name + str(backups),
         PROP_BACKUPS_NUMBER: backups,
@@ -212,47 +207,24 @@ def test_cache_operation_on_custom_affinity_key_routes_request_to_primary_node(r
     assert requests.pop() == grid_idx
 
 
-client_routed_connection_string = [('127.0.0.1', 10800 + idx) for idx in range(1, 5)]
+@pytest.fixture
+def client_cache(client, request):
+    yield client.get_or_create_cache(request.node.name)
 
 
 @pytest.fixture
-def client_routed():
-    client = Client(partition_aware=True)
-    try:
-        client.connect(client_routed_connection_string)
-        yield client
-    finally:
-        client.close()
-
-
-@pytest.fixture
-def client_routed_cache(client_routed, request):
-    yield client_routed.get_or_create_cache(request.node.name)
-
-
-@pytest.fixture
-async def async_client_routed(event_loop):
-    client = AioClient(partition_aware=True)
-    try:
-        await client.connect(client_routed_connection_string)
-        yield client
-    finally:
-        await client.close()
-
-
-@pytest.fixture
-async def async_client_routed_cache(async_client_routed, request):
-    cache = await async_client_routed.get_or_create_cache(request.node.name)
+async def async_client_cache(async_client, request):
+    cache = await async_client.get_or_create_cache(request.node.name)
     yield cache
 
 
-def test_cache_operation_routed_to_new_cluster_node(client_routed_cache):
-    __perform_cache_operation_routed_to_new_node(client_routed_cache)
+def test_cache_operation_routed_to_new_cluster_node(client_cache):
+    __perform_cache_operation_routed_to_new_node(client_cache)
 
 
 @pytest.mark.asyncio
-async def test_cache_operation_routed_to_new_cluster_node_async(async_client_routed_cache):
-    await __perform_cache_operation_routed_to_new_node(async_client_routed_cache)
+async def test_cache_operation_routed_to_new_cluster_node_async(async_client_cache):
+    await __perform_cache_operation_routed_to_new_node(async_client_cache)
 
 
 def __perform_cache_operation_routed_to_new_node(cache):
@@ -328,6 +300,55 @@ def test_replicated_cache_operation_routed_to_random_node(replicated_cache):
 @pytest.mark.asyncio
 async def test_replicated_cache_operation_routed_to_random_node_async(async_replicated_cache):
     await verify_random_node(async_replicated_cache)
+
+
+def test_replicated_cache_operation_not_routed_to_failed_node(replicated_cache):
+    srv = start_ignite(idx=4)
+    try:
+        while True:
+            replicated_cache.put(1, 1)
+
+            if requests.pop() == 4:
+                break
+
+        kill_process_tree(srv.pid)
+
+        num_failures = 0
+        for i in range(100):
+            # Request may fail one time, because query can be requested before affinity update or connection
+            # lost will be detected.
+            try:
+                replicated_cache.put(1, 1)
+            except:  # noqa 13
+                num_failures += 1
+                assert num_failures <= 1, "Expected no more than 1 failure."
+    finally:
+        kill_process_tree(srv.pid)
+
+
+@pytest.mark.asyncio
+async def test_replicated_cache_operation_not_routed_to_failed_node_async(async_replicated_cache):
+    srv = start_ignite(idx=4)
+    try:
+        while True:
+            await async_replicated_cache.put(1, 1)
+
+            if requests.pop() == 4:
+                break
+
+        kill_process_tree(srv.pid)
+
+        num_failures = 0
+        for i in range(100):
+            # Request may fail one time, because query can be requested before affinity update or connection
+            # lost will be detected.
+            try:
+                await async_replicated_cache.put(1, 1)
+            except:  # noqa 13
+                num_failures += 1
+                assert num_failures <= 1, "Expected no more than 1 failure."
+    finally:
+        kill_process_tree(srv.pid)
 
 
 def verify_random_node(cache):
@@ -425,8 +446,8 @@ async def test_new_registered_cache_affinity_async(async_client):
             assert requests.pop() == 3
 
 
-def test_all_registered_cache_updated_on_new_server(client_routed):
-    with create_caches(client_routed) as caches:
+def test_all_registered_cache_updated_on_new_server(client):
+    with create_caches(client) as caches:
         key = 12
         test_cache = random.choice(caches)
         wait_for_affinity_distribution(test_cache, key, 3)
@@ -446,8 +467,8 @@ def test_all_registered_cache_updated_on_new_server(client_routed):
 
 
 @pytest.mark.asyncio
-async def test_all_registered_cache_updated_on_new_server_async(async_client_routed):
-    async with create_caches_async(async_client_routed) as caches:
+async def test_all_registered_cache_updated_on_new_server_async(async_client):
+    async with create_caches_async(async_client) as caches:
         key = 12
         test_cache = random.choice(caches)
         await wait_for_affinity_distribution_async(test_cache, key, 3)
