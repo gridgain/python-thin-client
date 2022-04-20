@@ -73,7 +73,7 @@ pip install pygridgain
 To install a specific version:
 
 ```
-pip install pygridgain==1.2.0
+pip install pygridgain==1.4.0
 ```
 
 ## Documentation
