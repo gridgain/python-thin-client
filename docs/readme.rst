@@ -34,7 +34,7 @@ through a raw TCP socket.
 Prerequisites
 -------------
 
-- *Python 3.6* or above (3.6, 3.7, 3.8 and 3.9 are tested),
+- *Python 3.7* or above (3.7, 3.8, 3.9 and 3.10 are tested),
 - Access to *GridGain* node, local or remote. The current thin client
   version was tested on *GridGain CE 8.7* (binary client protocols 1.2.0
   to 1.7.0).
