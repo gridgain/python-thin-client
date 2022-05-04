@@ -94,8 +94,7 @@ in your browser.
 
 ## Examples
 Some examples of using pygridgain are provided in
-`pygridgain/examples` folder. They are extensively
-commented in the
+`examples` folder. They are extensively commented in the
 “[Examples of usage](https://pygridgain.readthedocs.io/en/latest/examples.html)”
 section of the documentation.
 
