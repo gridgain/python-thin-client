@@ -83,13 +83,13 @@ at *RTD* for your convenience.
 If you want to build the documentation from source, do the developer
 installation as described above, then run the following commands:
 ```
-$ cd pygridgain
+$ cd <client_root_directory>
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make html
 ```
 
-Then open `pygridgain/docs/generated/html/index.html`
+Then open `<client_root_directory>/docs/generated/html/index.html`
 in your browser.
 
 ## Examples
