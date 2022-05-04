@@ -56,8 +56,6 @@ Event listeners can be registered by passing parameter to :class:`~pygridgain.cl
 
 .. note:: Debug logging is also available, standard ``logging`` is used. Just set ``DEBUG`` level to
     *pygridgain* logger.
-|
-|
 """
 from typing import Optional, Sequence
 
