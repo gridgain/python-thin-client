@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.datatypes.cluster_state module
-=======================================
+=========================================
 
 .. automodule:: pygridgain.datatypes.cluster_state
     :members:

@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.aio_cluster module
-===========================
+=============================
 
 .. automodule:: pygridgain.aio_cluster
     :members:

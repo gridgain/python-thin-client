@@ -3,7 +3,7 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
 ## Prerequisites
 
-- Python 3.6 or above (3.6, 3.7, 3.8 and 3.9 are tested),
+- Python 3.7 or above (3.7, 3.8, 3.9 and 3.10 are tested),
 - Access to GridGain node, local or remote. The current thin client
   version was tested on GridGain CE 8.7 and 8.8 (binary client protocol 1.7.0).
 
@@ -49,12 +49,12 @@ There is an optional C extension to speedup some computational intensive tasks. 
   
   ***NB!* Docker is required.**
   
-- On Windows MSVC 14.x required, and it should be in path, also python versions 3.6, 3.7, 3.8 and 3.9 both for x86 and 
+- On Windows MSVC 14.x required, and it should be in path, also python versions 3.7, 3.8, 3.9 and 3.10 both for x86 and
   x86-64 should be installed. You can disable some of these versions but you'd need to edit script for that.
 - For building `wheels` for Windows, invoke script `.\scripts\BuildWheels.ps1` using PowerShell. Just make sure that
   your execution policy allows execution of scripts in your environment.
   
-  Ready wheels for `x86` and `x86-64` for different python versions (3.6, 3.7, 3.8 and 3.9) will be
+  Ready wheels for `x86` and `x86-64` for different python versions (3.7, 3.8, 3.9 and 3.10) will be
   located in `distr` directory.
 
 ### Updating from older version
@@ -83,19 +83,18 @@ at *RTD* for your convenience.
 If you want to build the documentation from source, do the developer
 installation as described above, then run the following commands:
 ```
-$ cd pygridgain
+$ cd <client_root_directory>
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make html
 ```
 
-Then open `pygridgain/docs/generated/html/index.html`
+Then open `<client_root_directory>/docs/generated/html/index.html`
 in your browser.
 
 ## Examples
 Some examples of using pygridgain are provided in
-`pygridgain/examples` folder. They are extensively
-commented in the
+`examples` folder. They are extensively commented in the
 “[Examples of usage](https://pygridgain.readthedocs.io/en/latest/examples.html)”
 section of the documentation.
 

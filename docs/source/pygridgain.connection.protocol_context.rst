@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.connection.protocol_context package
-===========================
+==============================================
 
 .. automodule:: pygridgain.connection.protocol_context
     :members:

@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.monitoring module
-===========================
+============================
 
 .. automodule:: pygridgain.monitoring
     :members:

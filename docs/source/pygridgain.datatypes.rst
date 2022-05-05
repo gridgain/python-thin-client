@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.datatypes package
-==========================
+============================
 
 .. automodule:: pygridgain.datatypes
     :members:
@@ -40,3 +40,4 @@ Submodules
    pygridgain.datatypes.primitive_objects
    pygridgain.datatypes.sql
    pygridgain.datatypes.standard
+   pygridgain.datatypes.transactions
