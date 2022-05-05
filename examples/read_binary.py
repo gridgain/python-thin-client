@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 from decimal import Decimal
+from pprint import pprint
 
 from pygridgain import Client
 from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_QUERY_ENTITIES
-
 
 COUNTRY_TABLE_NAME = 'Country'
 CITY_TABLE_NAME = 'City'
@@ -191,11 +191,9 @@ LANGUAGE_DATA = [
     ['CHN', 'Zhuang', False, Decimal('1.4')],
 ]
 
-
 # establish connection
 client = Client()
 with client.connect('127.0.0.1', 10800):
-
     # create tables
     for query in [
         COUNTRY_CREATE_TABLE_QUERY,
@@ -220,67 +218,72 @@ with client.connect('127.0.0.1', 10800):
 
     # examine the storage
     result = client.get_cache_names()
-    print(result)
-    # [
-    #     'SQL_PUBLIC_CITY',
-    #     'SQL_PUBLIC_COUNTRY',
-    #     'PUBLIC',
-    #     'SQL_PUBLIC_COUNTRYLANGUAGE'
-    # ]
+    pprint(result)
+    # ['SQL_PUBLIC_CITY', 'SQL_PUBLIC_COUNTRY', 'SQL_PUBLIC_COUNTRYLANGUAGE']
 
     city_cache = client.get_or_create_cache('SQL_PUBLIC_CITY')
-    print(city_cache.settings[PROP_NAME])
+    pprint(city_cache.settings[PROP_NAME])
     # 'SQL_PUBLIC_CITY'
 
-    print(city_cache.settings[PROP_QUERY_ENTITIES])
-    # {
-    #     'key_type_name': (
-    #         'SQL_PUBLIC_CITY_9ac8e17a_2f99_45b7_958e_06da32882e9d_KEY'
-    #     ),
-    #     'value_type_name': (
-    #         'SQL_PUBLIC_CITY_9ac8e17a_2f99_45b7_958e_06da32882e9d'
-    #     ),
-    #     'table_name': 'CITY',
-    #     'query_fields': [
-    #         ...
-    #     ],
-    #     'field_name_aliases': [
-    #         ...
-    #     ],
-    #     'query_indexes': []
-    # }
+    pprint(city_cache.settings[PROP_QUERY_ENTITIES])
+    # [{'field_name_aliases': [{'alias': 'DISTRICT', 'field_name': 'DISTRICT'},
+    #                              {'alias': 'POPULATION', 'field_name': 'POPULATION'},
+    #                              {'alias': 'COUNTRYCODE', 'field_name': 'COUNTRYCODE'},
+    #                              {'alias': 'ID', 'field_name': 'ID'},
+    #                              {'alias': 'NAME', 'field_name': 'NAME'}],
+    #       'key_field_name': None,
+    #       'key_type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY',
+    #       'query_fields': [{'default_value': None,
+    #                         'is_key_field': True,
+    #                         'is_notnull_constraint_field': False,
+    #                         'name': 'ID',
+    #                         'precision': -1,
+    #                         'scale': -1,
+    #                         'type_name': 'java.lang.Integer'},
+    #                        {'default_value': None,
+    #                         'is_key_field': False,
+    #                         'is_notnull_constraint_field': False,
+    #                         'name': 'NAME',
+    #                         'precision': 35,
+    #                         'scale': -1,
+    #                         'type_name': 'java.lang.String'},
+    #                        {'default_value': None,
+    #                         'is_key_field': True,
+    #                         'is_notnull_constraint_field': False,
+    #                         'name': 'COUNTRYCODE',
+    #                         'precision': 3,
+    #                         'scale': -1,
+    #                         'type_name': 'java.lang.String'},
+    #                        {'default_value': None,
+    #                         'is_key_field': False,
+    #                         'is_notnull_constraint_field': False,
+    #                         'name': 'DISTRICT',
+    #                         'precision': 20,
+    #                         'scale': -1,
+    #                         'type_name': 'java.lang.String'},
+    #                        {'default_value': None,
+    #                         'is_key_field': False,
+    #                         'is_notnull_constraint_field': False,
+    #                         'name': 'POPULATION',
+    #                         'precision': -1,
+    #                         'scale': -1,
+    #                         'type_name': 'java.lang.Integer'}],
+    #       'query_indexes': [],
+    #       'table_name': 'CITY',
+    #       'value_field_name': None,
+    #       'value_type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497'}]
 
     with city_cache.scan() as cursor:
-        print(next(cursor))
-    # (
-    #     SQL_PUBLIC_CITY_6fe650e1_700f_4e74_867d_58f52f433c43_KEY(
-    #         ID=1890,
-    #         COUNTRYCODE='CHN',
-    #         version=1
-    #     ),
-    #     SQL_PUBLIC_CITY_6fe650e1_700f_4e74_867d_58f52f433c43(
-    #         NAME='Shanghai',
-    #         DISTRICT='Shanghai',
-    #         POPULATION=9696300,
-    #         version=1
-    #     )
-    # )
+        pprint(next(cursor))
+    # (SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY(ID=1890, COUNTRYCODE='CHN', version=1),
+    #  SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497(NAME='Shanghai', DISTRICT='Shanghai', POPULATION=9696300,
+    #                                                   version=1))
 
     with client.sql('SELECT _KEY, _VAL FROM CITY WHERE ID = ?', query_args=[1890]) as cursor:
-        print(next(cursor))
-    # (
-    #     SQL_PUBLIC_CITY_6fe650e1_700f_4e74_867d_58f52f433c43_KEY(
-    #         ID=1890,
-    #         COUNTRYCODE='CHN',
-    #         version=1
-    #     ),
-    #     SQL_PUBLIC_CITY_6fe650e1_700f_4e74_867d_58f52f433c43(
-    #         NAME='Shanghai',
-    #         DISTRICT='Shanghai',
-    #         POPULATION=9696300,
-    #         version=1
-    #     )
-    # )
+        pprint(next(cursor))
+    # [SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY(ID=1890, COUNTRYCODE='CHN', version=1),
+    #  SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497(NAME='Shanghai', DISTRICT='Shanghai', POPULATION=9696300,
+    #                                                   version=1)]
 
     # clean up
     for table_name in [

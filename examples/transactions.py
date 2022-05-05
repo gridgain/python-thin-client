@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import asyncio
 import sys
 import time
+from asyncio import run, sleep
 
 from pygridgain import AioClient, Client
 from pygridgain.datatypes import TransactionIsolation, TransactionConcurrency
-from pygridgain.datatypes.prop_codes import PROP_CACHE_ATOMICITY_MODE, PROP_NAME
 from pygridgain.datatypes.cache_config import CacheAtomicityMode
+from pygridgain.datatypes.prop_codes import PROP_CACHE_ATOMICITY_MODE, PROP_NAME
 from pygridgain.exceptions import CacheError
 
 
@@ -64,7 +64,7 @@ async def async_example():
         try:
             async with client.tx_start(timeout=1000, label='long-tx') as tx:
                 await cache.put(key, 'fail')
-                await asyncio.sleep(2.0)
+                await sleep(2.0)
                 await tx.commit()
         except CacheError as e:
             # Cache transaction timed out: GridNearTxLocal[...timeout=1000, ... label=long-tx]
@@ -129,17 +129,20 @@ def sync_example():
         cache.destroy()
 
 
-if __name__ == '__main__':
+def check_is_transactions_supported():
     client = Client()
     with client.connect('127.0.0.1', 10800):
         if not client.protocol_context.is_transactions_supported():
             print("'Transactions' API is not supported by cluster. Finishing...")
             exit(0)
 
+
+if __name__ == '__main__':
+    check_is_transactions_supported()
+
     print("Starting sync example")
     sync_example()
 
     if sys.version_info >= (3, 7):
         print("Starting async example")
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(async_example())
+        run(async_example())

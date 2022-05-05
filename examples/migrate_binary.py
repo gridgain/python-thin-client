@@ -18,10 +18,7 @@ from datetime import date
 from decimal import Decimal
 
 from pygridgain import Client, GenericObjectMeta
-from pygridgain.datatypes import (
-    BoolObject, DateObject, DecimalObject, LongObject, String,
-)
-
+from pygridgain.datatypes import BoolObject, DateObject, DecimalObject, LongObject, String
 
 # prepare old data
 old_schema = OrderedDict([
@@ -83,6 +80,7 @@ old_data = [
         'cashier_id': 10,
     }),
 ]
+
 
 # - add `report_date`
 # - set `report_date` to the current date if `reported` is True, None if False
