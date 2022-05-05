@@ -31,14 +31,14 @@ Firstly, import dependencies.
 
 .. literalinclude:: ../examples/async_key_value.py
   :language: python
-  :lines: 18
+  :lines: 19
 
 Let's connect to cluster and perform key-value queries.
 
 .. literalinclude:: ../examples/async_key_value.py
   :language: python
   :dedent: 4
-  :lines: 22-37
+  :lines: 24-47
 
 Scan
 ====
@@ -48,7 +48,7 @@ that yields the resulting rows.
 .. literalinclude:: ../examples/async_key_value.py
   :language: python
   :dedent: 8
-  :lines: 39-50
+  :lines: 49-60
 
 ExpiryPolicy
 ============
@@ -131,41 +131,44 @@ First let us establish a connection.
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 4
-  :lines: 197-198
+  :lines: 25-26
 
 Then create tables. Begin with `Country` table, than proceed with related
 tables `City` and `CountryLanguage`.
 
-.. literalinclude:: ../examples/async_sql.py
+.. literalinclude:: ../examples/helpers/sql_helper.py
   :language: python
-  :lines: 25-42, 51-59, 67-74
+  :dedent: 4
+  :lines: 28-44, 54-61, 69-75
 
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 4
-  :lines: 199-205
+  :lines: 28-33
 
 Create indexes.
 
-.. literalinclude:: ../examples/async_sql.py
+.. literalinclude:: ../examples/helpers/sql_helper.py
   :language: python
-  :lines: 60-62, 75-77
+  :dedent: 4
+  :lines: 63, 77
 
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 8
-  :lines: 207-209
+  :lines: 36-37
 
 Fill tables with data.
 
-.. literalinclude:: ../examples/async_sql.py
+.. literalinclude:: ../examples/helpers/sql_helper.py
   :language: python
-  :lines: 43-50, 63-66, 78-81
+  :dedent: 4
+  :lines: 46-52, 65-67, 79-81
 
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 8
-  :lines: 212-223
+  :lines: 40-50
 
 Now let us answer some questions.
 
@@ -175,7 +178,7 @@ What are the 10 largest cities in our data sample (population-wise)?
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 8
-  :lines: 225-243
+  :lines: 53-67
 
 The :py:meth:`~pygridgain.aio_client.AioClient.sql` method returns :py:class:`~pygridgain.cursors.AioSqlFieldsCursor`,
 that yields the resulting rows.
@@ -192,7 +195,7 @@ of :py:class:`~pygridgain.cursors.AioSqlFieldsCursor`
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 8
-  :lines: 246-271
+  :lines: 70-96
 
 Display all the information about a given city
 ==============================================
@@ -200,18 +203,19 @@ Display all the information about a given city
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 8
-  :lines: 273-288
+  :lines: 99-111
 
 Finally, delete the tables used in this example with the following queries:
 
-.. literalinclude:: ../examples/async_sql.py
+.. literalinclude:: ../examples/helpers/sql_helper.py
   :language: python
+  :dedent: 4
   :lines: 83
 
 .. literalinclude:: ../examples/async_sql.py
   :language: python
   :dedent: 8
-  :lines: 290-297
+  :lines: 114-116
 
 
 

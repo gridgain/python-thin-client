@@ -103,7 +103,7 @@ installed, and GridGain node is running on localhost:10800.
 
 ## Testing
 *NB!* It is recommended installing `pygridgain` in development mode.
-Refer to [this section](#for-developer) for instructions.
+Refer to [this section](#from-sources) for instructions.
 
 Do not forget to install test requirements: 
 ```bash

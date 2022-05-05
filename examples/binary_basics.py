@@ -18,7 +18,11 @@ from pygridgain import Client, GenericObjectMeta
 from pygridgain.datatypes import String, IntObject
 
 
-class Person(metaclass=GenericObjectMeta, schema={'first_name': String, 'last_name': String, 'age': IntObject}):
+class Person(metaclass=GenericObjectMeta, schema={
+    'first_name': String,
+    'last_name': String,
+    'age': IntObject
+}):
     pass
 
 
