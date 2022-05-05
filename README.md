@@ -83,7 +83,6 @@ at *RTD* for your convenience.
 If you want to build the documentation from source, do the developer
 installation as described above, then run the following commands:
 ```
-$ cd <client_root_directory>
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make html
@@ -113,7 +112,7 @@ $ pip install -r requirements/install.txt -r requirements/tests.txt
 Also, you'll need to have a binary release of Ignite with `log4j2` enabled and to set
 `IGNITE_HOME` environment variable: 
 ```bash
-$ cd <ignite_binary_release>
+$ cd <gridgain_binary_release>
 $ export IGNITE_HOME=$(pwd)
 $ cp -r $IGNITE_HOME/libs/optional/ignite-log4j2 $IGNITE_HOME/libs/
 ```
