@@ -1,5 +1,5 @@
 #
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+# Copyright 2022 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,29 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from collections import OrderedDict
 
 from pygridgain import Client
 from pygridgain.datatypes import CollectionObject, MapObject, ObjectArrayObject
-
 
 client = Client()
 with client.connect('127.0.0.1', 10800):
     my_cache = client.get_or_create_cache('my cache')
 
-    value = OrderedDict([(1, 'test'), ('key', 2.0)])
+    value = {1: 'test', 'key': 2.0}
 
     # saving ordered dictionary
     type_id = MapObject.LINKED_HASH_MAP
     my_cache.put('my dict', (type_id, value))
     result = my_cache.get('my dict')
-    print(result)  # (2, OrderedDict([(1, 'test'), ('key', 2.0)]))
+    print(result)  # (2, {1: 'test', 'key': 2.0})
 
     # saving unordered dictionary
     type_id = MapObject.HASH_MAP
     my_cache.put('my dict', (type_id, value))
     result = my_cache.get('my dict')
-    print(result)  # (1, {'key': 2.0, 1: 'test'})
+    print(result)  # (1, {1: 'test', 'key': 2.0})
 
     type_id = CollectionObject.LINKED_LIST
     value = [1, '2', 3.0]

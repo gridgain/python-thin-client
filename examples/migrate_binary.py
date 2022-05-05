@@ -1,5 +1,5 @@
 #
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+# Copyright 2022 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,76 +13,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 
 from pygridgain import Client, GenericObjectMeta
-from pygridgain.datatypes import (
-    BoolObject, DateObject, DecimalObject, LongObject, String,
-)
-
+from pygridgain.datatypes import BoolObject, DateObject, DecimalObject, LongObject, String
 
 # prepare old data
-old_schema = OrderedDict([
-    ('date', DateObject),
-    ('reported', BoolObject),
-    ('purpose', String),
-    ('sum', DecimalObject),
-    ('recipient', String),
-    ('cashier_id', LongObject),
-])
+old_schema = {'date': DateObject,
+              'reported': BoolObject,
+              'purpose': String,
+              'sum': DecimalObject,
+              'recipient': String,
+              'cashier_id': LongObject
+              }
 
-old_data = [
-    (1, {
+old_data = {
+    1: {
         'date': date(2017, 9, 21),
         'reported': True,
         'purpose': 'Praesent eget fermentum massa',
         'sum': Decimal('666.67'),
         'recipient': 'John Doe',
         'cashier_id': 8,
-    }),
-    (2, {
+    },
+    2: {
         'date': date(2017, 10, 11),
         'reported': True,
         'purpose': 'Proin in bibendum nulla',
         'sum': Decimal('333.33'),
         'recipient': 'Jane Roe',
         'cashier_id': 9,
-    }),
-    (3, {
+    },
+    3: {
         'date': date(2017, 10, 11),
         'reported': True,
         'purpose': 'Suspendisse nec dolor auctor, scelerisque ex eu, iaculis odio',
         'sum': Decimal('400.0'),
         'recipient': 'Jane Roe',
         'cashier_id': 8,
-    }),
-    (4, {
+    },
+    4: {
         'date': date(2017, 10, 24),
         'reported': False,
         'purpose': 'Quisque ut leo ligula',
         'sum': Decimal('1234.5'),
         'recipient': 'Joe Bloggs',
         'cashier_id': 10,
-    }),
-    (5, {
+    },
+    5: {
         'date': date(2017, 12, 1),
         'reported': True,
         'purpose': 'Quisque ut leo ligula',
         'sum': Decimal('800.0'),
         'recipient': 'Richard Public',
         'cashier_id': 12,
-    }),
-    (6, {
+    },
+    6: {
         'date': date(2017, 12, 1),
         'reported': True,
         'purpose': 'Aenean eget bibendum lorem, a luctus libero',
         'sum': Decimal('135.79'),
         'recipient': 'Joe Bloggs',
         'cashier_id': 10,
-    }),
-]
+    }
+}
+
 
 # - add `report_date`
 # - set `report_date` to the current date if `reported` is True, None if False
@@ -110,13 +106,14 @@ client = Client()
 with client.connect('127.0.0.1', 10800):
     accounting = client.get_or_create_cache('accounting')
 
-    for key, value in old_data:
-        accounting.put(key, ExpenseVoucher(**value))
+    for item, value in old_data.items():
+        print(item)
+        accounting.put(item, ExpenseVoucher(**value))
 
     data_classes = client.query_binary_type('ExpenseVoucher')
     print(data_classes)
     # {
-    #     -231598180: <class '__main__.ExpenseVoucher'>
+    #     {547629991: <class 'pygridgain.binary.ExpenseVoucher'>, -231598180: <class '__main__.ExpenseVoucher'>}
     # }
 
 s_id, data_class = data_classes.popitem()
