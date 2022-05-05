@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.datatypes.transactions module
-=======================================
+========================================
 
 .. automodule:: pygridgain.datatypes.transactions
     :members:

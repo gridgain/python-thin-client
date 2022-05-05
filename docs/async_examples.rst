@@ -38,7 +38,7 @@ Let's connect to cluster and perform key-value queries.
 .. literalinclude:: ../examples/async_key_value.py
   :language: python
   :dedent: 4
-  :lines: 23-38
+  :lines: 22-37
 
 Scan
 ====
@@ -62,12 +62,12 @@ in cache settings dictionary on creation.
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 73-76
+  :lines: 74-77
 
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 82-90
+  :lines: 83-91
 
 Secondly, expiry policy can be set for all cache operations, which are done under decorator. To create it use
 :py:meth:`~pygridgain.cache.BaseCache.with_expire_policy`
@@ -75,7 +75,7 @@ Secondly, expiry policy can be set for all cache operations, which are done unde
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 97-106
+  :lines: 98-107
 
 Transactions
 ------------

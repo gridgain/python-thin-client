@@ -96,12 +96,12 @@ in cache settings dictionary on creation.
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 32-35
+  :lines: 33-36
 
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 41-47
+  :lines: 42-48
 
 Secondly, expiry policy can be set for all cache operations, which are done under decorator. To create it use
 :py:meth:`~pygridgain.cache.BaseCache.with_expire_policy`
@@ -109,7 +109,7 @@ Secondly, expiry policy can be set for all cache operations, which are done unde
 .. literalinclude:: ../examples/expiry_policy.py
   :language: python
   :dedent: 12
-  :lines: 54-61
+  :lines: 55-62
 
 Scan
 ====
@@ -773,3 +773,4 @@ with the following message:
 .. _attrs: https://pypi.org/project/attrs/
 .. _get_and_put_complex.py: https://github.com/gridgain/python-thin-client/tree/master/examples/get_and_put_complex.py
 .. _Collection: https://ignite.apache.org/docs/latest/binary-client-protocol/data-format#collection
+.. _simple class names: https://ignite.apache.org/docs/latest/data-modeling/binary-marshaller#binary-name-mapper-and-binary-id-mapper

@@ -13,7 +13,7 @@
     limitations under the License.
 
 pygridgain.datatypes.expiry_policy module
-=======================================
+=========================================
 
 .. automodule:: pygridgain.datatypes.expiry_policy
     :members:
