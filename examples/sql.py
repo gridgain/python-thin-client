@@ -1,5 +1,5 @@
 #
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+# Copyright 2022 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ with client.connect('127.0.0.1', 10800):
     # ['Calcutta [Kolkata]', 4399819]
     # ['Wuhan', 4344600]
     # ['Harbin', 4289800]
-    print('-'*20)
+    print('-' * 20)
     # 10 most populated cities in 3 countries (with pagination and header row)
     MOST_POPULATED_IN_3_COUNTRIES = '''
     SELECT country.name as country_name, city.name as city_name, MAX(city.population) AS max_pop FROM country
@@ -70,7 +70,7 @@ with client.connect('127.0.0.1', 10800):
         print('Most 10 populated cities in USA, India and China:')
         table_str_pattern = '{:15}\t| {:20}\t| {}'
         print(table_str_pattern.format(*next(cursor)))
-        print('*'*50)
+        print('*' * 50)
         for row in cursor:
             print(table_str_pattern.format(*row))
     # Most 10 populated cities in USA, India and China:
@@ -86,7 +86,7 @@ with client.connect('127.0.0.1', 10800):
     # India          	| Calcutta [Kolkata]  	| 4399819
     # China          	| Wuhan               	| 4344600
     # China          	| Harbin              	| 4289800
-    print('-'*20)
+    print('-' * 20)
 
     # Show city info
     with client.sql('SELECT * FROM City WHERE id = ?', query_args=[3802], include_field_names=True) as cursor:

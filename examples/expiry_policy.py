@@ -1,5 +1,5 @@
 #
-# Copyright 2021 GridGain Systems, Inc. and Contributors.
+# Copyright 2022 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_EXPIRY_POLICY
 from pygridgain.exceptions import NotSupportedByClusterError
 
 
-def main():
+def sync_actions():
     print("Running sync ExpiryPolicy example.")
 
     client = Client()
@@ -64,7 +64,7 @@ def main():
             simple_cache.destroy()
 
 
-async def async_main():
+async def async_actions():
     print("Running async ExpiryPolicy example.")
 
     client = AioClient()
@@ -108,8 +108,24 @@ async def async_main():
         finally:
             await simple_cache.destroy()
 
-if __name__ == '__main__':
-    main()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(async_main())
+if __name__ == '__main__':
+    sync_actions()
+    print('-' * 20)
+    asyncio.run(async_actions())
+
+# Running sync ExpiryPolicy example.
+# Create cache with expiry policy.
+# key = 1, value = 1
+# key = 1, value = None
+# Create simple Cache and set TTL through `with_expire_policy`
+# key = 1, value = 1
+# key = 1, value = None
+# --------------------
+# Running async ExpiryPolicy example.
+# Create cache with expiry policy.
+# key = 1, value = 1
+# key = 1, value = None
+# Create simple Cache and set TTL through `with_expire_policy`
+# key = 1, value = 1
+# key = 1, value = None
