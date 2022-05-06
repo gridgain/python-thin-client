@@ -1,5 +1,5 @@
 #
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+# Copyright 2022 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,13 +18,11 @@ from pygridgain.datatypes.cache_config import CacheMode
 from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_CACHE_MODE, PROP_BACKUPS_NUMBER
 from pygridgain.exceptions import SocketError
 
-
 nodes = [
     ('127.0.0.1', 10800),
     ('127.0.0.1', 10801),
     ('127.0.0.1', 10802),
 ]
-
 
 client = Client(timeout=4.0)
 with client.connect(nodes):
