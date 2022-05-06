@@ -527,13 +527,13 @@ These are the necessary steps to perform the task.
 .. literalinclude:: ../examples/create_binary.py
   :language: python
   :dedent: 4
-  :lines: 31-70
+  :lines: 31-69
 
 2. Define Complex object data class.
 
 .. literalinclude:: ../examples/create_binary.py
   :language: python
-  :lines: 21-27
+  :lines: 21-26
 
 3. Insert row.
 
@@ -575,7 +575,7 @@ First get the vouchers' cache.
 .. literalinclude:: ../examples/migrate_binary.py
   :language: python
   :dedent: 4
-  :lines: 107
+  :lines: 109
 
 If you do not store the schema of the Complex object in code, you can obtain
 it as a dataclass property with
@@ -584,20 +584,20 @@ it as a dataclass property with
 .. literalinclude:: ../examples/migrate_binary.py
   :language: python
   :dedent: 4
-  :lines: 113-117
+  :lines: 115-119
 
 Let us modify the schema and create a new Complex object class with an updated
 schema.
 
 .. literalinclude:: ../examples/migrate_binary.py
   :language: python
-  :lines: 119-135
+  :lines: 121-137
 
 Now migrate the data from the old schema to the new one.
 
 .. literalinclude:: ../examples/migrate_binary.py
   :language: python
-  :lines: 138-187
+  :lines: 140-190
 
 At this moment all the fields, defined in both of our schemas, can be
 available in the resulting binary object, depending on which schema was used
