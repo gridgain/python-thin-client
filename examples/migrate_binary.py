@@ -15,7 +15,9 @@
 #
 from datetime import date
 from decimal import Decimal
+from pprint import pprint
 
+from helpers.converters import obj_to_dict
 from pygridgain import Client, GenericObjectMeta
 from pygridgain.datatypes import BoolObject, DateObject, DecimalObject, LongObject, String
 
@@ -139,17 +141,8 @@ def migrate(cache, data, new_class):
     """ Migrate given data pages. """
     for key, old_value in data:
         # read data
-        print(old_value)
-        # ExpenseVoucher(
-        #     date=datetime(2017, 9, 21, 0, 0),
-        #     reported=True,
-        #     purpose='Praesent eget fermentum massa',
-        #     sum=Decimal('666.67'),
-        #     recipient='John Doe',
-        #     cashier_id=8,
-        #     version=1
-        # )
-
+        print('Old value:')
+        pprint(obj_to_dict(old_value))
         # create new binary object
         new_value = new_class()
 
@@ -166,16 +159,28 @@ def migrate(cache, data, new_class):
 
         # verify data
         verify = cache.get(key)
-        print(verify)
-        # ExpenseVoucherV2(
-        #     purpose='Praesent eget fermentum massa',
-        #     sum=Decimal('666.67'),
-        #     recipient='John Doe',
-        #     cashier_id=8,
-        #     expense_date=datetime(2017, 9, 21, 0, 0),
-        #     report_date=datetime(2018, 8, 29, 0, 0),
-        #     version=1,
-        # )
+        print('New value:')
+        pprint(obj_to_dict(verify))
+        print('-' * 20)
+
+        # --------------------
+        # Old value:
+        # {'cashier_id': 10,
+        #  'date': datetime.datetime(2017, 12, 1, 0, 0),
+        #  'purpose': 'Aenean eget bibendum lorem, a luctus libero',
+        #  'recipient': 'Joe Bloggs',
+        #  'reported': True,
+        #  'sum': Decimal('135.79'),
+        #  'type_name': 'ExpenseVoucher'}
+        # New value:
+        # {'cashier_id': 10,
+        #  'expense_date': datetime.datetime(2017, 12, 1, 0, 0),
+        #  'purpose': 'Aenean eget bibendum lorem, a luctus libero',
+        #  'recipient': 'Joe Bloggs',
+        #  'report_date': datetime.datetime(2022, 5, 6, 0, 0),
+        #  'sum': Decimal('135.79'),
+        #  'type_name': 'ExpenseVoucher'}
+        # --------------------
 
 
 # migrate data

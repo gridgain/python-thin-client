@@ -15,6 +15,7 @@
 #
 from pprint import pprint
 
+from helpers.converters import obj_to_dict
 from helpers.sql_helper import TableNames, Query, TestData
 from pygridgain import Client
 from pygridgain.datatypes.prop_codes import PROP_NAME, PROP_QUERY_ENTITIES
@@ -101,17 +102,30 @@ with client.connect('127.0.0.1', 10800):
     #       'value_field_name': None,
     #       'value_type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497'}]
 
+    print('-' * 20)
     with city_cache.scan() as cursor:
-        pprint(next(cursor))
-    # (SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY(ID=1890, COUNTRYCODE='CHN', version=1),
-    #  SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497(NAME='Shanghai', DISTRICT='Shanghai', POPULATION=9696300,
-    #                                                   version=1))
+        for line in next(cursor):
+            pprint(obj_to_dict(line))
 
+    # {'COUNTRYCODE': 'USA',
+    #  'ID': 3793,
+    #  'type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY'}
+    # {'DISTRICT': 'New York',
+    #  'NAME': 'New York',
+    #  'POPULATION': 8008278,
+    #  'type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497'}
+
+    print('-' * 20)
     with client.sql('SELECT _KEY, _VAL FROM CITY WHERE ID = ?', query_args=[1890]) as cursor:
-        pprint(next(cursor))
-    # [SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY(ID=1890, COUNTRYCODE='CHN', version=1),
-    #  SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497(NAME='Shanghai', DISTRICT='Shanghai', POPULATION=9696300,
-    #                                                   version=1)]
+        for line in next(cursor):
+            pprint(obj_to_dict(line))
+    # {'COUNTRYCODE': 'CHN',
+    #  'ID': 1890,
+    #  'type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497_KEY'}
+    # {'DISTRICT': 'Shanghai',
+    #  'NAME': 'Shanghai',
+    #  'POPULATION': 9696300,
+    #  'type_name': 'SQL_PUBLIC_CITY_081f37cc8ac72b10f08ab1273b744497'}
 
     # clean up
     for table_name in TableNames:
