@@ -25,11 +25,11 @@ services:
   ignite_1:
     image: gridgain/community:latest
     ports:
-      - 10801:10801
+      - 10801:10800
     restart: always
 
   ignite_2:
     image: gridgain/community:latest
     ports:
-      - 10802:10802
+      - 10802:10800
     restart: always
