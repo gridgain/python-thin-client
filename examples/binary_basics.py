@@ -1,5 +1,5 @@
 #
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+# Copyright 2022 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,17 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from collections import OrderedDict
 
 from pygridgain import Client, GenericObjectMeta
 from pygridgain.datatypes import String, IntObject
 
 
-class Person(metaclass=GenericObjectMeta, schema=OrderedDict([
-    ('first_name', String),
-    ('last_name', String),
-    ('age', IntObject),
-])):
+class Person(metaclass=GenericObjectMeta, schema={
+    'first_name': String,
+    'last_name': String,
+    'age': IntObject
+}):
     pass
 
 
@@ -50,3 +49,5 @@ with client.connect('localhost', 10800):
     client.register_binary_type(Person)
 
     Person = person.__class__
+    # cleanup
+    person_cache.destroy()

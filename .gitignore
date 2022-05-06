@@ -13,3 +13,4 @@ junit*.xml
 pygridgain.egg-info
 ignite-log-*
 __pycache__
+venv

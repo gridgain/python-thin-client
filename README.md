@@ -5,7 +5,7 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
 - Python 3.7 or above (3.7, 3.8, 3.9 and 3.10 are tested),
 - Access to GridGain node, local or remote. The current thin client
-  version was tested on GridGain CE 8.7 and 8.8 (binary client protocol 1.7.0).
+  version was tested on GridGain CE 8.7 and 8.8 (binary client protocol 1.7.1).
 
 ## Installation
 
@@ -83,7 +83,6 @@ at *RTD* for your convenience.
 If you want to build the documentation from source, do the developer
 installation as described above, then run the following commands:
 ```
-$ cd <client_root_directory>
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make html
@@ -103,7 +102,7 @@ installed, and GridGain node is running on localhost:10800.
 
 ## Testing
 *NB!* It is recommended installing `pygridgain` in development mode.
-Refer to [this section](#for-developer) for instructions.
+Refer to [this section](#from-sources) for instructions.
 
 Do not forget to install test requirements: 
 ```bash
@@ -113,7 +112,7 @@ $ pip install -r requirements/install.txt -r requirements/tests.txt
 Also, you'll need to have a binary release of Ignite with `log4j2` enabled and to set
 `IGNITE_HOME` environment variable: 
 ```bash
-$ cd <ignite_binary_release>
+$ cd <gridgain_binary_release>
 $ export IGNITE_HOME=$(pwd)
 $ cp -r $IGNITE_HOME/libs/optional/ignite-log4j2 $IGNITE_HOME/libs/
 ```

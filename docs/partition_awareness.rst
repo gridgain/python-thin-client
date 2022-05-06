@@ -31,7 +31,7 @@ With partition awareness in place, the thin client can directly route queries an
   :alt: With partition awareness
 
 Partition awareness can be enabled or disabled by setting `partition_aware` parameter in
-:meth:`pygridgain.client.Client.__init__` or :meth:`pygridgain.aio_client.AioClient.__init__` to `True` (by default)
+:meth:`pygridgain.c297lient.Client.__init__` or :meth:`pygridgain.aio_client.AioClient.__init__` to `True` (by default)
 or `False`.
 
 Also, it is recommended to pass list of address and port pairs of all server nodes
