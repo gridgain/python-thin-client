@@ -108,11 +108,11 @@ Testing
 
 Create and activate virtualenv_ environment.
 
-Install a binary release of Ignite with `log4j2` enabled and set `IGNITE_HOME` environment variable.
+Install a binary release of GridGain with `log4j2` enabled and set `IGNITE_HOME` environment variable.
 
 ::
 
-$ cd <ignite_binary_release>
+$ cd <gridgain_binary_release>
 $ export IGNITE_HOME=$(pwd)
 $ cp -r $IGNITE_HOME/libs/optional/ignite-log4j2 $IGNITE_HOME/libs/
 
