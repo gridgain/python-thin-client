@@ -2,4 +2,4 @@
 
 attrs>=20.3.0
 contextvars>=2.4;python_version<"3.7"
-tzlocal==2.1
+tzlocal==5.2
