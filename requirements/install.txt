@@ -1,5 +1,5 @@
 # these pip packages are necessary for the pygridgain to run
 
-attrs>=20.3.0
-contextvars>=2.4;python_version<"3.7"
-tzlocal==2.1
+attrs==23.1.0
+contextvars==2.4
+tzlocal==4.3.1
