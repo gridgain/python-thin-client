@@ -492,17 +492,17 @@ class AioCache(BaseCache):
         """
         return AioScanCursor(self.client, self.cache_info, page_size, partitions, local)
 
-    def vector(self, type_name: str, field: str, cause: Union[str, List[float]],
+    def vector(self, type_name: str, field: str, clause_vector: List[float],
                k: int, page_size: int = 1) -> AioVectorCursor:
         """
         Ignite supports vector queries based on Apache Lucene engine.
 
         :param type_name: Name of the type.
         :param field: Name of the field.
-        :param cause: Search string or a vector.
+        :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
         :param page_size: (optional) page size. Default size is 1 (slowest
          and safest),
         :return: Scan query cursor.
         """
-        return AioVectorCursor(self.client, self.cache_info, page_size, type_name, field, cause, k)
+        return AioVectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k)

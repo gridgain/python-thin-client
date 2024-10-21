@@ -446,7 +446,7 @@ def __post_process_sql_fields_cursor(result):
 
 
 def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
-           type_name: str, field: str, cause: Union[str, List[float]], k: int) -> APIResult:
+           type_name: str, field: str, clause_vector: List[float], k: int) -> APIResult:
     """
     Performs vector query.
     Vector queries based on Apache Lucene engine.
@@ -456,7 +456,7 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
     :param page_size: cursor page size.
     :param type_name: Name of the type.
     :param field: Name of the field.
-    :param cause: Search string or a vector.
+    :param clause_vector: Search vector.
     :param k: [K]NN, how many vectors to return.
     :return: API result data object. Contains zero status and a value
      of type dict with results on success, non-zero status and an error
@@ -469,18 +469,18 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
      * `more`: bool, True if more data is available for subsequent
        ‘vector_cursor_get_page’ calls.
     """
-    return __vector(conn, cache_info, page_size, type_name, field, cause, k)
+    return __vector(conn, cache_info, page_size, type_name, field, clause_vector, k)
 
 
 async def vector_async(conn: 'AioConnection', cache_info: CacheInfo, page_size: int,
-                       type_name: str, field: str, cause: Union[str, List[float]], k: int) -> APIResult:
+                       type_name: str, field: str, clause_vector: List[float], k: int) -> APIResult:
     """
     Async version of vector.
     """
-    return await __vector(conn, cache_info, page_size, type_name, field, cause, k)
+    return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k)
 
 
-def __vector(conn, cache_info, page_size, type_name, field, cause, k):
+def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k):
     query_struct = Query(
         OP_QUERY_VECTOR,
         [
@@ -488,17 +488,10 @@ def __vector(conn, cache_info, page_size, type_name, field, cause, k):
             ('page_size', Int),
             ('type_name', String),
             ('field', String),
-            ('cause', String),
             ('clause_vector', FloatArray),
             ('k', Int),
         ]
     )
-    cause_str = None
-    clause_vector = None
-    if isinstance(cause, str):
-        cause_str = cause
-    else:
-        clause_vector = cause
 
     return query_perform(
         query_struct, conn,
@@ -507,7 +500,6 @@ def __vector(conn, cache_info, page_size, type_name, field, cause, k):
             'page_size': page_size,
             'type_name': type_name,
             'field': field,
-            'cause': cause_str,
             'clause_vector': clause_vector,
             'k': k,
         },
