@@ -24,6 +24,7 @@ from pygridgain.api import (
     scan, scan_cursor_get_page, resource_close, scan_async, scan_cursor_get_page_async, resource_close_async, sql,
     sql_cursor_get_page, sql_fields, sql_fields_cursor_get_page, sql_fields_cursor_get_page_async, sql_fields_async
 )
+from pygridgain.api.sql import vector, vector_cursor_get_page, vector_async, vector_cursor_get_page_async
 from pygridgain.exceptions import CacheError, SQLError
 
 
@@ -383,3 +384,112 @@ class AioSqlFieldsCursor(AbstractSqlFieldsCursor, AioCursorMixin):
 
         self.connection = await self.client.random_node()
         self._finalize_init(await sql_fields_async(self.connection, self.cache_info, *args, **kwargs))
+
+
+class AbstractVectorCursor:
+    def __init__(self, client, cache_info, page_size, type_name, field, cause, k):
+        self.client = client
+        self.cache_info = cache_info
+        self._page_size = page_size
+        self._type_name = type_name
+        self._field = field
+        self._cause = cause
+        self._k = k
+
+    def _finalize_init(self, result):
+        if result.status != 0:
+            raise CacheError(result.message)
+
+        self.cursor_id, self.more = result.value['cursor'], result.value['more']
+        self.data = iter(result.value['data'].items())
+
+    def _process_page_response(self, result):
+        if result.status != 0:
+            raise CacheError(result.message)
+
+        self.data, self.more = iter(result.value['data'].items()), result.value['more']
+
+
+class VectorCursor(AbstractVectorCursor, CursorMixin):
+    """
+    Synchronous vector cursor.
+    """
+    def __init__(self, client, cache_info, page_size, type_name, field, cause, k):
+        """
+        :param client: Synchronous client.
+        :param cache_info: Cache meta info.
+        :param page_size: page size.
+        :param type_name: Name of the type.
+        :param field: Name of the field.
+        :param cause: Search string or a vector.
+        :param k: [K]NN, how many vectors to return.
+        """
+        super().__init__(client, cache_info, page_size, type_name, field, cause, k)
+
+        self.connection = self.client.random_node
+        result = vector(self.connection, self.cache_info, self._page_size,
+                        self._type_name, self._field, self._cause, self._k)
+        self._finalize_init(result)
+
+    def __next__(self):
+        if not self.data:
+            raise StopIteration
+
+        try:
+            k, v = next(self.data)
+        except StopIteration:
+            if self.more:
+                self._process_page_response(vector_cursor_get_page(self.connection, self.cursor_id))
+                k, v = next(self.data)
+            else:
+                raise StopIteration
+
+        return self.client.unwrap_binary(k), self.client.unwrap_binary(v)
+
+
+class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
+    """
+    Asynchronous vector query cursor.
+    """
+    def __init__(self, client, cache_info, page_size, type_name, field, cause, k):
+        """
+        :param client: Asynchronous client.
+        :param cache_info: Cache meta info.
+        :param page_size: page size.
+        :param type_name: Name of the type.
+        :param field: Name of the field.
+        :param cause: Search string or a vector.
+        :param k: [K]NN, how many vectors to return.
+        """
+        super().__init__(client, cache_info, page_size, type_name, field, cause, k)
+
+    async def __aenter__(self):
+        if not self.connection:
+            self.connection = await self.client.random_node()
+            result = await vector_async(self.connection, self.cache_info, self._page_size,
+                                        self._type_name, self._field, self._cause, self._k)
+            self._finalize_init(result)
+        return self
+
+    async def __anext__(self):
+        if not self.connection:
+            raise CacheError("Using uninitialized cursor, initialize it using async with expression.")
+
+        if not self.data:
+            raise StopAsyncIteration
+
+        try:
+            k, v = next(self.data)
+        except StopIteration:
+            if self.more:
+                self._process_page_response(await vector_cursor_get_page_async(self.connection, self.cursor_id))
+                try:
+                    k, v = next(self.data)
+                except StopIteration:
+                    raise StopAsyncIteration
+            else:
+                raise StopAsyncIteration
+
+        return await asyncio.gather(
+            *[self.client.unwrap_binary(k), self.client.unwrap_binary(v)]
+        )

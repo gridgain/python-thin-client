@@ -13,14 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from typing import Union, List
 
 from pygridgain.connection import AioConnection, Connection
-from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Int, Long, Map, Null, String, StructArray
+from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Int, Long, Map, Null, String, StructArray, \
+    FloatArray
 from pygridgain.datatypes.sql import StatementType
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.op_codes import (
     OP_QUERY_SCAN, OP_QUERY_SCAN_CURSOR_GET_PAGE, OP_QUERY_SQL, OP_QUERY_SQL_CURSOR_GET_PAGE, OP_QUERY_SQL_FIELDS,
-    OP_QUERY_SQL_FIELDS_CURSOR_GET_PAGE, OP_RESOURCE_CLOSE
+    OP_QUERY_SQL_FIELDS_CURSOR_GET_PAGE, OP_RESOURCE_CLOSE, OP_QUERY_VECTOR, OP_QUERY_VECTOR_CURSOR_GET_PAGE
 )
 from pygridgain.utils import deprecated
 from .result import APIResult
@@ -441,6 +443,125 @@ def __post_process_sql_fields_cursor(result):
     for row_dict in value['data']:
         result.value['data'].append(list(row_dict.values()))
     return result
+
+
+def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
+           type_name: str, field: str, cause: Union[str, List[float]], k: int) -> APIResult:
+    """
+    Performs vector query.
+    Vector queries based on Apache Lucene engine.
+
+    :param conn: connection to GridGain server,
+    :param cache_info: cache meta info.
+    :param page_size: cursor page size.
+    :param type_name: Name of the type.
+    :param field: Name of the field.
+    :param cause: Search string or a vector.
+    :param k: [K]NN, how many vectors to return.
+    :return: API result data object. Contains zero status and a value
+     of type dict with results on success, non-zero status and an error
+     description otherwise.
+
+     Value dict is of following format:
+
+     * `cursor`: int, cursor ID,
+     * `data`: dict, result rows as key-value pairs,
+     * `more`: bool, True if more data is available for subsequent
+       ‘vector_cursor_get_page’ calls.
+    """
+    return __vector(conn, cache_info, page_size, type_name, field, cause, k)
+
+
+async def vector_async(conn: 'AioConnection', cache_info: CacheInfo, page_size: int,
+                       type_name: str, field: str, cause: Union[str, List[float]], k: int) -> APIResult:
+    """
+    Async version of vector.
+    """
+    return await __vector(conn, cache_info, page_size, type_name, field, cause, k)
+
+
+def __vector(conn, cache_info, page_size, type_name, field, cause, k):
+    query_struct = Query(
+        OP_QUERY_VECTOR,
+        [
+            ('cache_info', CacheInfo),
+            ('page_size', Int),
+            ('type_name', String),
+            ('field', String),
+            ('cause', String),
+            ('clause_vector', FloatArray),
+            ('k', Int),
+        ]
+    )
+    cause_str = None
+    clause_vector = None
+    if isinstance(cause, str):
+        cause_str = cause
+    else:
+        clause_vector = cause
+
+    return query_perform(
+        query_struct, conn,
+        query_params={
+            'cache_info': cache_info,
+            'page_size': page_size,
+            'type_name': type_name,
+            'field': field,
+            'cause': cause_str,
+            'clause_vector': clause_vector,
+            'k': k,
+        },
+        response_config=[
+            ('cursor', Long),
+            ('data', Map),
+            ('more', Bool),
+        ],
+        post_process_fun=__query_result_post_process
+    )
+
+
+def vector_cursor_get_page(conn: 'Connection', cursor: int) -> APIResult:
+    """
+    Fetches the next vector query cursor page by cursor ID that is obtained
+    from `vector` function.
+
+    :param conn: connection to GridGain server,
+    :param cursor: cursor ID,
+    :return: API result data object. Contains zero status and a value
+     of type dict with results on success, non-zero status and an error
+     description otherwise.
+
+     Value dict is of following format:
+
+     * `data`: dict, result rows as key-value pairs,
+     * `more`: bool, True if more data is available for subsequent
+       ‘vector_cursor_get_page’ calls.
+    """
+    return __vector_cursor_get_page(conn, cursor)
+
+
+async def vector_cursor_get_page_async(conn: 'AioConnection', cursor: int) -> APIResult:
+    return await __vector_cursor_get_page(conn, cursor)
+
+
+def __vector_cursor_get_page(conn, cursor):
+    query_struct = Query(
+        OP_QUERY_VECTOR_CURSOR_GET_PAGE,
+        [
+            ('cursor', Long),
+        ]
+    )
+    return query_perform(
+        query_struct, conn,
+        query_params={
+            'cursor': cursor,
+        },
+        response_config=[
+            ('data', Map),
+            ('more', Bool),
+        ],
+        post_process_fun=__query_result_post_process
+    )
 
 
 def resource_close(conn: 'Connection', cursor: int) -> APIResult:
