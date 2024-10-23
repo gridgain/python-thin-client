@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import asyncio
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable, Optional, Union, List
 
 from .api.tx_api import get_tx_connection
 from .datatypes import ExpiryPolicy
@@ -32,7 +32,7 @@ from .api.key_value import (
     cache_get_and_replace_async, cache_remove_key_async, cache_remove_keys_async, cache_remove_all_async,
     cache_remove_if_equals_async, cache_replace_if_equals_async, cache_get_size_async,
 )
-from .cursors import AioScanCursor
+from .cursors import AioScanCursor, AioVectorCursor
 from .cache import __parse_settings, BaseCache
 
 
@@ -491,3 +491,18 @@ class AioCache(BaseCache):
         :return: async scan query cursor
         """
         return AioScanCursor(self.client, self.cache_info, page_size, partitions, local)
+
+    def vector(self, type_name: str, field: str, clause_vector: List[float],
+               k: int, page_size: int = 1) -> AioVectorCursor:
+        """
+        Ignite supports vector queries based on Apache Lucene engine.
+
+        :param type_name: Name of the type.
+        :param field: Name of the field.
+        :param clause_vector: Search vector.
+        :param k: [K]NN, how many vectors to return.
+        :param page_size: (optional) page size. Default size is 1 (slowest
+         and safest),
+        :return: Scan query cursor.
+        """
+        return AioVectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k)
