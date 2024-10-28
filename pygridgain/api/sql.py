@@ -17,7 +17,7 @@ from typing import Union, List
 
 from pygridgain.connection import AioConnection, Connection
 from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Int, Long, Map, Null, String, StructArray, \
-    FloatArray
+    FloatArrayObject
 from pygridgain.datatypes.sql import StatementType
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.op_codes import (
@@ -488,7 +488,7 @@ def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k):
             ('page_size', Int),
             ('type_name', String),
             ('field', String),
-            ('clause_vector', FloatArray),
+            ('clause_vector', FloatArrayObject),
             ('k', Int),
         ]
     )
