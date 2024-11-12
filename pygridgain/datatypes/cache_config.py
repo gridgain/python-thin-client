@@ -56,6 +56,7 @@ class IndexType(Byte):
     SORTED = 0
     FULLTEXT = 1
     GEOSPATIAL = 2
+    VECTOR = 3
 
 
 class CacheAtomicityMode(Int):
