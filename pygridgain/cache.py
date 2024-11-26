@@ -659,7 +659,7 @@ class Cache(BaseCache):
                          distributed_joins, replicated_only, local, timeout)
 
     def vector(self, type_name: str, field: str, clause_vector: List[float],
-               k: int, page_size: int = 1) -> VectorCursor:
+               k: int, threshold: float, page_size: int = 1) -> VectorCursor:
         """
         Ignite supports vector queries based on Apache Lucene engine.
 
@@ -671,4 +671,4 @@ class Cache(BaseCache):
          and safest),
         :return: Scan query cursor.
         """
-        return VectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k)
+        return VectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k, threshold)

@@ -18,6 +18,7 @@ from typing import Union, List
 from pygridgain.connection import AioConnection, Connection
 from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Int, Long, Map, Null, String, StructArray, \
     FloatArrayObject
+from pygridgain.datatypes import Float as PyFloat
 from pygridgain.datatypes.sql import StatementType
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.op_codes import (
@@ -25,6 +26,7 @@ from pygridgain.queries.op_codes import (
     OP_QUERY_SQL_FIELDS_CURSOR_GET_PAGE, OP_RESOURCE_CLOSE, OP_QUERY_VECTOR, OP_QUERY_VECTOR_CURSOR_GET_PAGE
 )
 from pygridgain.utils import deprecated
+from traitlets import Float
 from .result import APIResult
 from ..queries.cache_info import CacheInfo
 from ..queries.response import SQLResponse
@@ -446,7 +448,7 @@ def __post_process_sql_fields_cursor(result):
 
 
 def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
-           type_name: str, field: str, clause_vector: List[float], k: int) -> APIResult:
+           type_name: str, field: str, clause_vector: List[float], k: int, threshold: float) -> APIResult:
     """
     Performs vector query.
     Vector queries based on Apache Lucene engine.
@@ -469,18 +471,18 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
      * `more`: bool, True if more data is available for subsequent
        ‘vector_cursor_get_page’ calls.
     """
-    return __vector(conn, cache_info, page_size, type_name, field, clause_vector, k)
+    return __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold)
 
 
 async def vector_async(conn: 'AioConnection', cache_info: CacheInfo, page_size: int,
-                       type_name: str, field: str, clause_vector: List[float], k: int) -> APIResult:
+                       type_name: str, field: str, clause_vector: List[float], k: int, threshold: float) -> APIResult:
     """
     Async version of vector.
     """
-    return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k)
+    return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold)
 
 
-def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k):
+def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold):
     query_struct = Query(
         OP_QUERY_VECTOR,
         [
@@ -490,6 +492,7 @@ def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k):
             ('field', String),
             ('clause_vector', FloatArrayObject),
             ('k', Int),
+            ('threshold', PyFloat),
         ]
     )
 
@@ -502,6 +505,7 @@ def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k):
             'field': field,
             'clause_vector': clause_vector,
             'k': k,
+            'threshold': threshold,
         },
         response_config=[
             ('cursor', Long),
