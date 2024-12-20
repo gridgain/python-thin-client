@@ -448,7 +448,6 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
                 # Simple case - v is binary article
                 binary_article = v
 
-            print(f"binary_article is {binary_article}")
             article = self.client.unwrap_binary(binary_article)
             return unwrapped_key, article, score
 
