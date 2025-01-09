@@ -468,7 +468,7 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
         if not self.connection:
             self.connection = await self.client.random_node()
             result = await vector_async(self.connection, self.cache_info, self._page_size,
-                                        self._type_name, self._field, self._clause_vector, self._k)
+                                        self._type_name, self._field, self._clause_vector, self._k, self._threshold)
             self._finalize_init(result)
         return self
 
