@@ -387,7 +387,7 @@ class AioSqlFieldsCursor(AbstractSqlFieldsCursor, AioCursorMixin):
 
 
 class AbstractVectorCursor:
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
         self.client = client
         self.cache_info = cache_info
         self._page_size = page_size
@@ -395,6 +395,7 @@ class AbstractVectorCursor:
         self._field = field
         self._clause_vector = clause_vector
         self._k = k
+        self._threshold = threshold
 
     def _finalize_init(self, result):
         if result.status != 0:
@@ -414,7 +415,7 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
     """
     Synchronous vector cursor.
     """
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
         """
         :param client: Synchronous client.
         :param cache_info: Cache meta info.
@@ -424,34 +425,44 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
         """
-        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k)
+        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold)
 
         self.connection = self.client.random_node
         result = vector(self.connection, self.cache_info, self._page_size,
-                        self._type_name, self._field, self._clause_vector, self._k)
+                        self._type_name, self._field, self._clause_vector, self._k, self._threshold)
         self._finalize_init(result)
 
     def __next__(self):
         if not self.data:
             raise StopIteration
-
         try:
             k, v = next(self.data)
+            unwrapped_key = self.client.unwrap_binary(k)
+            score = 1
+            
+            # Check if it's scored result (tuple with dict)
+            if isinstance(v, tuple) and len(v) == 2 and isinstance(v[1], dict):
+                score_dict = v[1]
+                binary_article, score = next(iter(score_dict.items()))
+            else:
+                # Simple case - v is binary article
+                binary_article = v
+
+            article = self.client.unwrap_binary(binary_article)
+            return unwrapped_key, article, score
+
         except StopIteration:
             if self.more:
                 self._process_page_response(vector_cursor_get_page(self.connection, self.cursor_id))
-                k, v = next(self.data)
-            else:
-                raise StopIteration
-
-        return self.client.unwrap_binary(k), self.client.unwrap_binary(v)
+                return self.__next__()
+            raise
 
 
 class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
     """
     Asynchronous vector query cursor.
     """
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
         """
         :param client: Asynchronous client.
         :param cache_info: Cache meta info.
@@ -461,7 +472,7 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
         """
-        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k)
+        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold)
 
     async def __aenter__(self):
         if not self.connection:
