@@ -26,7 +26,6 @@ from pygridgain.queries.op_codes import (
     OP_QUERY_SQL_FIELDS_CURSOR_GET_PAGE, OP_RESOURCE_CLOSE, OP_QUERY_VECTOR, OP_QUERY_VECTOR_CURSOR_GET_PAGE
 )
 from pygridgain.utils import deprecated
-from traitlets import Float
 from .result import APIResult
 from ..queries.cache_info import CacheInfo
 from ..queries.response import SQLResponse
