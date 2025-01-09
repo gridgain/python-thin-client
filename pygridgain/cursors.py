@@ -387,7 +387,7 @@ class AioSqlFieldsCursor(AbstractSqlFieldsCursor, AioCursorMixin):
 
 
 class AbstractVectorCursor:
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
         self.client = client
         self.cache_info = cache_info
         self._page_size = page_size
@@ -395,6 +395,7 @@ class AbstractVectorCursor:
         self._field = field
         self._clause_vector = clause_vector
         self._k = k
+        self._threshold = threshold
 
     def _finalize_init(self, result):
         if result.status != 0:
@@ -414,7 +415,7 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
     """
     Synchronous vector cursor.
     """
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
         """
         :param client: Synchronous client.
         :param cache_info: Cache meta info.
@@ -424,11 +425,11 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
         """
-        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k)
+        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold)
 
         self.connection = self.client.random_node
         result = vector(self.connection, self.cache_info, self._page_size,
-                        self._type_name, self._field, self._clause_vector, self._k)
+                        self._type_name, self._field, self._clause_vector, self._k, self._threshold)
         self._finalize_init(result)
 
     def __next__(self):
@@ -451,7 +452,7 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
     """
     Asynchronous vector query cursor.
     """
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
         """
         :param client: Asynchronous client.
         :param cache_info: Cache meta info.
@@ -461,13 +462,13 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
         """
-        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k)
+        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold)
 
     async def __aenter__(self):
         if not self.connection:
             self.connection = await self.client.random_node()
             result = await vector_async(self.connection, self.cache_info, self._page_size,
-                                        self._type_name, self._field, self._clause_vector, self._k)
+                                        self._type_name, self._field, self._clause_vector, self._k, self._threshold)
             self._finalize_init(result)
         return self
 
