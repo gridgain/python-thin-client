@@ -22,6 +22,7 @@ from pygridgain.constants import PROTOCOL_BYTE_ORDER
 
 class BitmaskFeature(IntFlag):
     CLUSTER_API = 1 << 2
+    QUERY_INDEX_VECTOR_SIMILARITY = 1 << 47
 
     def __bytes__(self) -> bytes:
         """
