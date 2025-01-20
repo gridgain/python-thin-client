@@ -438,15 +438,25 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
 
         try:
             k, v = next(self.data)
+            unwrapped_key = self.client.unwrap_binary(k)
+            score = 1
+            
+            # Check if it's scored result (tuple with dict)
+            if isinstance(v, tuple) and len(v) == 2 and isinstance(v[1], dict):
+                score_dict = v[1]
+                binary_article, score = next(iter(score_dict.items()))
+            else:
+                # Simple case - v is binary article
+                binary_article = v
+
+            article = self.client.unwrap_binary(binary_article)
+            return unwrapped_key, article, score
+
         except StopIteration:
             if self.more:
                 self._process_page_response(vector_cursor_get_page(self.connection, self.cursor_id))
-                k, v = next(self.data)
-            else:
-                raise StopIteration
-
-        return self.client.unwrap_binary(k), self.client.unwrap_binary(v)
-
+                return self.__next__()
+            raise
 
 class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
     """
@@ -481,16 +491,22 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
 
         try:
             k, v = next(self.data)
+            unwrapped_key = self.client.unwrap_binary(k)
+            score = 1
+            
+            # Check if it's scored result (tuple with dict)
+            if isinstance(v, tuple) and len(v) == 2 and isinstance(v[1], dict):
+                score_dict = v[1]
+                binary_article, score = next(iter(score_dict.items()))
+            else:
+                # Simple case - v is binary article
+                binary_article = v
+
+            article = self.client.unwrap_binary(binary_article)
+            return unwrapped_key, article, score
+
         except StopIteration:
             if self.more:
                 self._process_page_response(await vector_cursor_get_page_async(self.connection, self.cursor_id))
-                try:
-                    k, v = next(self.data)
-                except StopIteration:
-                    raise StopAsyncIteration
-            else:
-                raise StopAsyncIteration
-
-        return await asyncio.gather(
-            *[self.client.unwrap_binary(k), self.client.unwrap_binary(v)]
-        )
+                return await self.__anext__()
+            raise StopAsyncIteration
