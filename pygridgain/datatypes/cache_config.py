@@ -99,6 +99,7 @@ QueryIndexes = StructArray([
     ('index_name', String),
     ('index_type', IndexType),
     ('inline_size', Int),
+    ('similarity_function', Int),
     ('fields', Fields),
 ])
 
