@@ -3,7 +3,7 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
 ## Prerequisites
 
-- Python 3.9 or above (3.9, 3.10, 3.11 and 3.12 are tested),
+- Python 3.9 or above (3.9, 3.10, 3.11, 3.12 and 3.13 are tested),
 - Access to GridGain node, local or remote. The current thin client
   version was tested on GridGain CE 8.8 and 8.9 (binary client protocol 1.7.1).
 
@@ -49,12 +49,12 @@ There is an optional C extension to speedup some computational intensive tasks. 
   
   ***NB!* Docker is required.**
   
-- On Windows MSVC 14.x required, and it should be in path, also python versions 3.9, 3.10, 3.11 and 3.12 both for x86 and
+- On Windows MSVC 14.x required, and it should be in path, also python versions 3.9, 3.10, 3.11, 3.12 and 3.13 both for x86 and
   x86-64 should be installed. You can disable some of these versions but you'd need to edit script for that.
 - For building `wheels` for Windows, invoke script `.\scripts\BuildWheels.ps1` using PowerShell. Just make sure that
   your execution policy allows execution of scripts in your environment.
   
-  Ready wheels for `x86` and `x86-64` for different python versions (3.9, 3.10, 3.11 and 3.12) will be
+  Ready wheels for `x86` and `x86-64` for different python versions (3.9, 3.10, 3.11, 3.12 and 3.13) will be
   located in `distr` directory.
 
 ### Updating from older version

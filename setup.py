@@ -112,6 +112,7 @@ def run_setup(with_binary=True):
             'Programming Language :: Python :: 3.10',
             'Programming Language :: Python :: 3.11',
             'Programming Language :: Python :: 3.12',
+            'Programming Language :: Python :: 3.13',
             'Programming Language :: Python :: 3 :: Only',
             'Intended Audience :: Developers',
             'Topic :: Database :: Front-Ends',

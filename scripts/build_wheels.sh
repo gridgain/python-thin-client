@@ -28,7 +28,7 @@ function repair_wheel {
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    if [[ $PYBIN =~ ^(.*)cp3[7891](.*)$ ]]; then
+    if [[ $PYBIN =~ ^(.*)cp39(.*)$ ]] || [[ $PYBIN =~ ^(.*)cp31[0123](.*)$ ]]; then
         "${PYBIN}/pip" wheel /pygridgain/ --no-deps -w /wheels
     fi
 done
