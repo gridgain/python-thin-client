@@ -17,4 +17,4 @@ from pygridgain.client import Client
 from pygridgain.aio_client import AioClient
 from pygridgain.binary import GenericObjectMeta
 
-__version__ = '1.5.0-dev'
+__version__ = '1.5.0'
