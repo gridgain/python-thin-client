@@ -15,9 +15,10 @@
 # limitations under the License.
 #
 
+PACKAGE_NAME=pygridgain
 DISTR_DIR="$(pwd)/distr/"
 SRC_DIR="$(pwd)"
-DEFAULT_DOCKER_IMAGE="quay.io/pypa/manylinux2010_x86_64"
+DEFAULT_DOCKER_IMAGE="quay.io/pypa/manylinux2014_x86_64"
 
 usage() {
     cat <<EOF
@@ -49,11 +50,11 @@ normalize_path() {
 
 run_wheel_arch() {
     if [[ $1 =~ ^(i686|x86)$ ]]; then
-        PLAT="manylinux1_i686"
+        PLAT="manylinux2014_i686"
         PRE_CMD="linux32"
-        DOCKER_IMAGE="quay.io/pypa/manylinux2010_i686"
+        DOCKER_IMAGE="quay.io/pypa/manylinux2014_i686"
     elif [[ $1 =~ ^(x86_64)$ ]]; then
-        PLAT="manylinux1_x86_64"
+        PLAT="manylinux2014_x86_64"
         PRE_CMD=""
         DOCKER_IMAGE="$DEFAULT_DOCKER_IMAGE"
     else
@@ -63,7 +64,7 @@ run_wheel_arch() {
 
     WHEEL_DIR="$DISTR_DIR/$1"
     mkdir -p "$WHEEL_DIR"
-    docker run --rm -e PLAT=$PLAT -v "$SRC_DIR":/pygridgain -v "$WHEEL_DIR":/wheels $DOCKER_IMAGE $PRE_CMD /pygridgain/scripts/build_wheels.sh
+    docker run --rm -e PLAT=$PLAT -v "$SRC_DIR":/$PACKAGE_NAME -v "$WHEEL_DIR":/wheels $DOCKER_IMAGE $PRE_CMD /$PACKAGE_NAME/scripts/build_wheels.sh
 }
 
 while [[ $# -ge 1 ]]; do
@@ -77,7 +78,7 @@ done
 
 normalize_path
 
-docker run --rm -v "$SRC_DIR":/pygridgain -v "$DISTR_DIR":/dist $DEFAULT_DOCKER_IMAGE /pygridgain/scripts/create_sdist.sh
+docker run --rm -v "$SRC_DIR":/$PACKAGE_NAME -v "$DISTR_DIR":/dist $DEFAULT_DOCKER_IMAGE /$PACKAGE_NAME/scripts/create_sdist.sh
 
 if [[ -n "$ARCH" ]]; then
     run_wheel_arch "$ARCH"
@@ -85,3 +86,4 @@ else
     run_wheel_arch "x86"
     run_wheel_arch "x86_64"
 fi
+
