@@ -18,7 +18,10 @@
 PACKAGE_NAME=pygridgain
 DISTR_DIR="$(pwd)/distr/"
 SRC_DIR="$(pwd)"
-DEFAULT_DOCKER_IMAGE="quay.io/pypa/manylinux2014_x86_64"
+PLATFORM_X86="manylinux2014_i686"
+PLATFORM_X86_64="manylinux2014_x86_64"
+DOCKER_IMAGE_X86="quay.io/pypa/$PLATFORM_X86"
+DOCKER_IMAGE_X86_64="quay.io/pypa/$PLATFORM_X86_64"
 
 usage() {
     cat <<EOF
@@ -50,13 +53,13 @@ normalize_path() {
 
 run_wheel_arch() {
     if [[ $1 =~ ^(i686|x86)$ ]]; then
-        PLAT="manylinux2014_i686"
+        PLAT=$PLATFORM_X86
         PRE_CMD="linux32"
-        DOCKER_IMAGE="quay.io/pypa/manylinux2014_i686"
+        DOCKER_IMAGE=$DOCKER_IMAGE_X86
     elif [[ $1 =~ ^(x86_64)$ ]]; then
-        PLAT="manylinux2014_x86_64"
+        PLAT=$PLATFORM_X86_64
         PRE_CMD=""
-        DOCKER_IMAGE="$DEFAULT_DOCKER_IMAGE"
+        DOCKER_IMAGE="$DOCKER_IMAGE_X86_64"
     else
         echo "unsupported architecture $1, only x86(i686) and x86_64 supported"
         exit 1
@@ -78,7 +81,7 @@ done
 
 normalize_path
 
-docker run --rm -v "$SRC_DIR":/$PACKAGE_NAME -v "$DISTR_DIR":/dist $DEFAULT_DOCKER_IMAGE /$PACKAGE_NAME/scripts/create_sdist.sh
+docker run --rm -v "$SRC_DIR":/$PACKAGE_NAME -v "$DISTR_DIR":/dist $DOCKER_IMAGE_X86_64 /$PACKAGE_NAME/scripts/create_sdist.sh
 
 if [[ -n "$ARCH" ]]; then
     run_wheel_arch "$ARCH"
