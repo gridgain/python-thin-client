@@ -17,10 +17,12 @@
 
 set -e -u -x
 
+PACKAGE_NAME=pygridgain
+
 # Create source dist.
 for PYBIN in /opt/python/*/bin; do
     if [[ $PYBIN =~ ^(.*)cp39(.*)$ ]] || [[ $PYBIN =~ ^(.*)cp31[0123](.*)$ ]]; then
-        cd pygridgain
+        cd $PACKAGE_NAME
         "${PYBIN}/python" setup.py sdist --formats=gztar,zip --dist-dir /dist
         break;
     fi
@@ -28,5 +30,5 @@ done
 
 chown -R `stat -c "%u:%g" /dist/` /dist/*
 
-rm -rf /pygridgain/*.egg-info
-rm -rf /pygridgain/.eggs
+rm -rf /$PACKAGE_NAME/*.egg-info
+rm -rf /$PACKAGE_NAME/.eggs
