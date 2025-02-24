@@ -501,6 +501,16 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
             else:
                 raise StopAsyncIteration
 
-        return await asyncio.gather(
-            *[self.client.unwrap_binary(k), self.client.unwrap_binary(v)]
-        )
+        unwrapped_key = await self.client.unwrap_binary(k)
+        score = 1
+        
+        # Check if it's scored result (tuple with dict)
+        if isinstance(v, tuple) and len(v) == 2 and isinstance(v[1], dict):
+            score_dict = v[1]
+            binary_article, score = next(iter(score_dict.items()))
+        else:
+            # Simple case - v is binary article
+            binary_article = v
+
+        article = await self.client.unwrap_binary(binary_article)
+        return unwrapped_key, article, score
