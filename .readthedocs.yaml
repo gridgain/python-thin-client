@@ -1,5 +1,4 @@
-#
-# Copyright 2019 GridGain Systems, Inc. and Contributors.
+## Copyright 2025 GridGain Systems, Inc. and Contributors.
 #
 # Licensed under the GridGain Community Edition License (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from pygridgain.client import Client
-from pygridgain.aio_client import AioClient
-from pygridgain.binary import GenericObjectMeta
 
-__version__ = '1.5.0-dev'
+# Required
+version: 2
+
+# Set the version of Python and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+
+python:
+  install:
+  - requirements: requirements/docs.txt
