@@ -113,7 +113,7 @@ class ProtocolContext:
         """
         Check whether user attributes supported by the current protocol.
         """
-        return self.version >= (1, 7, 1)
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_SIMILARITY in self.features
 
     def is_cluster_api_supported(self) -> bool:
         """

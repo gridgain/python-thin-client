@@ -101,7 +101,9 @@ QueryIndexes = StructArray([
     ('inline_size', Int),
     ('similarity_function', Int),
     ('fields', Fields),
-])
+], defaults={
+    'similarity_function': -1,
+})
 
 
 QueryEntities = StructArray([
