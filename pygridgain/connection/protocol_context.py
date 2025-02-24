@@ -113,7 +113,7 @@ class ProtocolContext:
         """
         Check whether user attributes supported by the current protocol.
         """
-        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_SIMILARITY in self.features
+        return self.version >= (1, 7, 1)
 
     def is_cluster_api_supported(self) -> bool:
         """
@@ -125,7 +125,7 @@ class ProtocolContext:
         """
         Check whether cluster API supported by the current protocol.
         """
-        return self.version >= (1, 7, 1)
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_SIMILARITY in self.features
 
     def is_expiry_policy_supported(self) -> bool:
         return self.version >= (1, 6, 0)
