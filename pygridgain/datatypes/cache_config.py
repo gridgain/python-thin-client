@@ -94,7 +94,6 @@ Fields = StructArray([
     'is_descending': False,
 })
 
-
 QueryIndexes = StructArray([
     ('index_name', String),
     ('index_type', IndexType),
@@ -104,8 +103,6 @@ QueryIndexes = StructArray([
 ], defaults={
     'similarity_function': -1,
 })
-
-
 QueryEntities = StructArray([
     ('key_type_name', String),
     ('value_type_name', String),
@@ -125,6 +122,7 @@ CacheKeyConfiguration = StructArray([
 
 
 def get_cache_config_struct(protocol_context):
+    _initialize_query_structures(protocol_context)
     fields = [
         ('length', Int),
         ('cache_atomicity_mode', CacheAtomicityMode),
@@ -160,4 +158,29 @@ def get_cache_config_struct(protocol_context):
     ]
     if protocol_context.is_expiry_policy_supported():
         fields.append(('expiry_policy', ExpiryPolicy))
+    
     return Struct(fields=fields)
+
+def _initialize_query_structures(protocol_context):
+    global QueryIndexes
+    global QueryEntities
+    
+    if not protocol_context.is_query_index_vector_similarity_supported():
+        QueryIndexes = StructArray([
+            ('index_name', String),
+            ('index_type', IndexType),
+            ('inline_size', Int),
+            ('fields', Fields)
+        ])
+
+        QueryEntities = StructArray([
+            ('key_type_name', String),
+            ('value_type_name', String),
+            ('table_name', String),
+            ('key_field_name', String),
+            ('value_field_name', String),
+            ('query_fields', QueryFields),
+            ('field_name_aliases', FieldNameAliases),
+            ('query_indexes', QueryIndexes),
+        ])
+        
