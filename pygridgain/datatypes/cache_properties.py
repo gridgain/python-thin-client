@@ -21,7 +21,7 @@ from . import ExpiryPolicy
 from .prop_codes import *
 from .cache_config import (
     CacheMode, CacheAtomicityMode, PartitionLossPolicy, RebalanceMode,
-    WriteSynchronizationMode, QueryEntities, CacheKeyConfiguration,
+    WriteSynchronizationMode, CacheKeyConfiguration,get_query_entities_struct
 )
 from .primitive import *
 from .standard import *
@@ -200,7 +200,7 @@ class PropIsOnheapCacheEnabled(PropBase):
 
 class PropQueryEntities(PropBase):
     prop_code = PROP_QUERY_ENTITIES
-    prop_data_class = QueryEntities
+    prop_data_class = get_query_entities_struct(None)
 
 
 class PropQueryParallelism(PropBase):
