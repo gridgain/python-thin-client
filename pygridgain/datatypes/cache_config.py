@@ -94,26 +94,31 @@ Fields = StructArray([
     'is_descending': False,
 })
 
-QueryIndexes = StructArray([
-    ('index_name', String),
-    ('index_type', IndexType),
-    ('inline_size', Int),
-    ('similarity_function', Int),
-    ('fields', Fields),
-], defaults={
-    'similarity_function': -1,
-})
-QueryEntities = StructArray([
-    ('key_type_name', String),
-    ('value_type_name', String),
-    ('table_name', String),
-    ('key_field_name', String),
-    ('value_field_name', String),
-    ('query_fields', QueryFields),
-    ('field_name_aliases', FieldNameAliases),
-    ('query_indexes', QueryIndexes),
-])
+def get_query_indexes_struct(protocol_context):
+    fields = [
+        ('index_name', String),
+        ('index_type', IndexType),
+        ('inline_size', Int),
+        ('similarity_function', Int),
+        ('fields', Fields),
+    ]
 
+    if protocol_context.is_query_index_vector_similarity_supported():
+        fields.append(('similarity_function', Int))
+
+    return StructArray(fields, defaults={'similarity_function': -1})
+
+def get_query_entities_struct(protocol_context):
+    return StructArray([
+        ('key_type_name', String),
+        ('value_type_name', String),
+        ('table_name', String),
+        ('key_field_name', String),
+        ('value_field_name', String),
+        ('query_fields', QueryFields),
+        ('field_name_aliases', FieldNameAliases),
+        ('query_indexes', get_query_indexes_struct(protocol_context)),
+    ])
 
 CacheKeyConfiguration = StructArray([
     ('type_name', String),
@@ -122,7 +127,6 @@ CacheKeyConfiguration = StructArray([
 
 
 def get_cache_config_struct(protocol_context):
-    _initialize_query_structures(protocol_context)
     fields = [
         ('length', Int),
         ('cache_atomicity_mode', CacheAtomicityMode),
@@ -154,33 +158,11 @@ def get_cache_config_struct(protocol_context):
         ('sql_schema', String),
         ('write_synchronization_mode', WriteSynchronizationMode),
         ('cache_key_configuration', CacheKeyConfiguration),
-        ('query_entities', QueryEntities),
+        ('query_entities', get_query_entities_struct(protocol_context)),
     ]
     if protocol_context.is_expiry_policy_supported():
         fields.append(('expiry_policy', ExpiryPolicy))
     
     return Struct(fields=fields)
 
-def _initialize_query_structures(protocol_context):
-    global QueryIndexes
-    global QueryEntities
-    
-    if not protocol_context.is_query_index_vector_similarity_supported():
-        QueryIndexes = StructArray([
-            ('index_name', String),
-            ('index_type', IndexType),
-            ('inline_size', Int),
-            ('fields', Fields)
-        ])
-
-        QueryEntities = StructArray([
-            ('key_type_name', String),
-            ('value_type_name', String),
-            ('table_name', String),
-            ('key_field_name', String),
-            ('value_field_name', String),
-            ('query_fields', QueryFields),
-            ('field_name_aliases', FieldNameAliases),
-            ('query_indexes', QueryIndexes),
-        ])
         
