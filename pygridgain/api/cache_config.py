@@ -260,7 +260,7 @@ def __cache_create_with_config(op_code, connection, cache_props):
             raise NotSupportedByClusterError("'ExpiryPolicy' API is not supported by the cluster")
 
         prop_name = 'property_{}'.format(i)
-        prop_types[prop_name] = prop_map(prop_code)
+        prop_types[prop_name] = prop_map(prop_code, connection.protocol_context)
         prop_values[prop_name] = prop_value
     prop_values['param_count'] = len(cache_props)
 

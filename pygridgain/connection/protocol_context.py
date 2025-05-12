@@ -120,6 +120,12 @@ class ProtocolContext:
         Check whether cluster API supported by the current protocol.
         """
         return self.features and BitmaskFeature.CLUSTER_API in self.features
+    
+    def is_query_index_vector_similarity_supported(self) -> bool:
+        """
+        Check whether query index vector similarity supported by the current protocol.
+        """
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_SIMILARITY in self.features
 
     def is_expiry_policy_supported(self) -> bool:
         return self.version >= (1, 6, 0)
