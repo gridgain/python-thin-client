@@ -100,8 +100,8 @@ QueryIndexes = StructArray([
     ('index_name', String),
     ('index_type', IndexType),
     ('inline_size', Int),
-    ('similarity_function', Int),
     ('fields', Fields),
+    ('similarity_function', Int),
 ], defaults={
     'similarity_function': 1,
 })
@@ -178,10 +178,10 @@ def get_cache_config_struct(protocol_context):
         ('write_synchronization_mode', WriteSynchronizationMode),
         ('cache_key_configuration', CacheKeyConfiguration),
     ]
-    if protocol_context.is_expiry_policy_supported():
-        fields.append(('expiry_policy', ExpiryPolicy))
     if protocol_context.is_query_index_vector_similarity_supported():
         fields.append(('query_entities', QueryEntities))
     else:
         fields.append(('query_entities', QueryEntitiesNoSimilarity))
+    if protocol_context.is_expiry_policy_supported():
+        fields.append(('expiry_policy', ExpiryPolicy))
     return Struct(fields=fields)
