@@ -95,7 +95,6 @@ Fields = StructArray([
 })
 
 
-# Original QueryIndexes with similarity_function
 QueryIndexes = StructArray([
     ('index_name', String),
     ('index_type', IndexType),
@@ -106,7 +105,6 @@ QueryIndexes = StructArray([
     'similarity_function': 1,
 })
 
-# Version without similarity_function
 QueryIndexesNoSimilarity = StructArray([
     ('index_name', String),
     ('index_type', IndexType),
@@ -114,7 +112,6 @@ QueryIndexesNoSimilarity = StructArray([
     ('fields', Fields),
 ])
 
-# Original QueryEntities with similarity_function
 QueryEntities = StructArray([
     ('key_type_name', String),
     ('value_type_name', String),
@@ -126,7 +123,6 @@ QueryEntities = StructArray([
     ('query_indexes', QueryIndexes),
 ])
 
-# Version without similarity_function
 QueryEntitiesNoSimilarity = StructArray([
     ('key_type_name', String),
     ('value_type_name', String),
