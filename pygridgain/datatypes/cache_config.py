@@ -102,7 +102,7 @@ QueryIndexes = StructArray([
     ('fields', Fields),
     ('similarity_function', Int),
 ], defaults={
-    'similarity_function': 1,
+    'similarity_function': 0,
 })
 
 QueryIndexesNoSimilarity = StructArray([
