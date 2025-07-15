@@ -100,8 +100,17 @@ QueryIndexes = StructArray([
     ('index_type', IndexType),
     ('inline_size', Int),
     ('fields', Fields),
-])
+    ('similarity_function', Int),
+], defaults={
+    'similarity_function': 0,
+})
 
+QueryIndexesNoSimilarity = StructArray([
+    ('index_name', String),
+    ('index_type', IndexType),
+    ('inline_size', Int),
+    ('fields', Fields),
+])
 
 QueryEntities = StructArray([
     ('key_type_name', String),
@@ -112,6 +121,17 @@ QueryEntities = StructArray([
     ('query_fields', QueryFields),
     ('field_name_aliases', FieldNameAliases),
     ('query_indexes', QueryIndexes),
+])
+
+QueryEntitiesNoSimilarity = StructArray([
+    ('key_type_name', String),
+    ('value_type_name', String),
+    ('table_name', String),
+    ('key_field_name', String),
+    ('value_field_name', String),
+    ('query_fields', QueryFields),
+    ('field_name_aliases', FieldNameAliases),
+    ('query_indexes', QueryIndexesNoSimilarity),
 ])
 
 
@@ -153,8 +173,11 @@ def get_cache_config_struct(protocol_context):
         ('sql_schema', String),
         ('write_synchronization_mode', WriteSynchronizationMode),
         ('cache_key_configuration', CacheKeyConfiguration),
-        ('query_entities', QueryEntities),
     ]
+    if protocol_context.is_query_index_vector_similarity_supported():
+        fields.append(('query_entities', QueryEntities))
+    else:
+        fields.append(('query_entities', QueryEntitiesNoSimilarity))
     if protocol_context.is_expiry_policy_supported():
         fields.append(('expiry_policy', ExpiryPolicy))
     return Struct(fields=fields)

@@ -21,7 +21,7 @@ from . import ExpiryPolicy
 from .prop_codes import *
 from .cache_config import (
     CacheMode, CacheAtomicityMode, PartitionLossPolicy, RebalanceMode,
-    WriteSynchronizationMode, QueryEntities, CacheKeyConfiguration,
+    WriteSynchronizationMode, QueryEntities, QueryEntitiesNoSimilarity, CacheKeyConfiguration,
 )
 from .primitive import *
 from .standard import *
@@ -41,7 +41,10 @@ __all__ = [
 ]
 
 
-def prop_map(code: int):
+def prop_map(code: int, protocol_context=None):
+    if code == PROP_QUERY_ENTITIES and protocol_context and not protocol_context.is_query_index_vector_similarity_supported():
+        return PropQueryEntitiesNoSimilarity
+    
     return {
         PROP_NAME: PropName,
         PROP_CACHE_MODE: PropCacheMode,
@@ -202,6 +205,9 @@ class PropQueryEntities(PropBase):
     prop_code = PROP_QUERY_ENTITIES
     prop_data_class = QueryEntities
 
+class PropQueryEntitiesNoSimilarity(PropBase):
+    prop_code = PROP_QUERY_ENTITIES
+    prop_data_class = QueryEntitiesNoSimilarity
 
 class PropQueryParallelism(PropBase):
     prop_code = PROP_QUERY_PARALLELISM
