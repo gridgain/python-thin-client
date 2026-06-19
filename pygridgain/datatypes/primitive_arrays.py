@@ -185,7 +185,12 @@ class PrimitiveArrayObject(Nullable):
 
     @classmethod
     def to_python_not_null(cls, ctypes_object, **kwargs):
-        return [ctypes_object.data[i] for i in range(ctypes_object.length)]
+        # Bulk buffer decode instead of an element-wise Python list comprehension over the
+        # ctypes array (~the dominant client cost for large float vectors). Cast through bytes
+        # to the native element format (ctypes LittleEndianStructure reports e.g. '<f', which
+        # memoryview.tolist() rejects); correct on little-endian platforms.
+        mv = memoryview(ctypes_object.data)
+        return mv.cast('B').cast(mv.format.lstrip('<>=!@')).tolist()
 
     @classmethod
     def from_python_not_null(cls, stream, value, **kwargs):
