@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import ctypes
+import sys
 from io import SEEK_CUR
 
 from pygridgain.constants import *
@@ -31,6 +32,28 @@ __all__ = [
     'FloatArray', 'FloatArrayObject', 'DoubleArray', 'DoubleArrayObject',
     'CharArray', 'CharArrayObject', 'BoolArray', 'BoolArrayObject',
 ]
+
+
+def _bulk_to_python(ctypes_object):
+    """
+    Decode a ctypes primitive array into a Python list in a single C-level pass.
+
+    Replaces the element-wise ``[data[i] for i in range(length)]`` comprehension,
+    which is the dominant client cost for large primitive arrays (e.g. the 1536-d
+    float vector returned per vector-query result row): ``memoryview.tolist()``
+    unpacks the whole buffer in one C loop instead of one ctypes ``__getitem__``
+    (offset + bounds-check + box) per element.
+
+    ``memoryview.cast()`` only accepts a native byte-order format, while the array
+    is a ``LittleEndianStructure`` that reports an explicit prefix (e.g. ``'<f'``).
+    On a little-endian host the reinterpret is a no-op, so we strip the prefix and
+    bulk-decode; on a big-endian host that would misread the bytes, so we keep the
+    correct (and there, equally cheap relative to the byte-swap) element-wise path.
+    """
+    if sys.byteorder == 'little':
+        mv = memoryview(ctypes_object.data)
+        return mv.cast('B').cast(mv.format.lstrip('<>=!@')).tolist()
+    return [ctypes_object.data[i] for i in range(ctypes_object.length)]
 
 
 class PrimitiveArray(GridGainDataType):
@@ -68,7 +91,7 @@ class PrimitiveArray(GridGainDataType):
 
     @classmethod
     def to_python(cls, ctypes_object, **kwargs):
-        return [ctypes_object.data[i] for i in range(ctypes_object.length)]
+        return _bulk_to_python(ctypes_object)
 
     @classmethod
     def _write_header(cls, stream, value):
@@ -185,7 +208,7 @@ class PrimitiveArrayObject(Nullable):
 
     @classmethod
     def to_python_not_null(cls, ctypes_object, **kwargs):
-        return [ctypes_object.data[i] for i in range(ctypes_object.length)]
+        return _bulk_to_python(ctypes_object)
 
     @classmethod
     def from_python_not_null(cls, stream, value, **kwargs):
