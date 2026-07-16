@@ -32,6 +32,7 @@ from ..queries.cache_info import CacheInfo
 from ..queries.response import SQLResponse
 
 #: Vector query flag: append the engine similarity score to every result row.
+#: Scores are raw engine (Lucene) values: similarity-function-dependent and not normalized.
 VECTOR_FLAG_WITH_SCORES = 1
 
 #: Vector query flag: omit value objects from result rows (keys, and optionally scores, only).

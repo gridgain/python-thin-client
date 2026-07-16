@@ -677,6 +677,7 @@ class Cache(BaseCache):
          below k are treated as k; 0 or negative (the default) means the engine default.
          Requires the QUERY_VECTOR_EXTENDED cluster feature.
         :param with_scores: (optional) append the engine similarity score to every result row.
+         Scores are raw engine (Lucene) values: similarity-function-dependent and not normalized.
          Requires the QUERY_VECTOR_EXTENDED cluster feature.
         :param no_content: (optional) omit values from result rows - the cheapest response shape.
          Requires the QUERY_VECTOR_EXTENDED cluster feature.
