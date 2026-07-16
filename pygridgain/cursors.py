@@ -24,7 +24,10 @@ from pygridgain.api import (
     scan, scan_cursor_get_page, resource_close, scan_async, scan_cursor_get_page_async, resource_close_async, sql,
     sql_cursor_get_page, sql_fields, sql_fields_cursor_get_page, sql_fields_cursor_get_page_async, sql_fields_async
 )
-from pygridgain.api.sql import vector, vector_cursor_get_page, vector_async, vector_cursor_get_page_async
+from pygridgain.api.sql import (
+    VECTOR_FLAG_NOCONTENT, VECTOR_FLAG_WITH_SCORES, vector, vector_cursor_get_page, vector_async,
+    vector_cursor_get_page_async
+)
 from pygridgain.exceptions import CacheError, SQLError
 
 
@@ -387,7 +390,8 @@ class AioSqlFieldsCursor(AbstractSqlFieldsCursor, AioCursorMixin):
 
 
 class AbstractVectorCursor:
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                 ef_search=0, query_flags=0):
         self.client = client
         self.cache_info = cache_info
         self._page_size = page_size
@@ -396,26 +400,33 @@ class AbstractVectorCursor:
         self._clause_vector = clause_vector
         self._k = k
         self._threshold = threshold
+        self._ef_search = ef_search
+        self._query_flags = query_flags
 
     def _finalize_init(self, result):
         if result.status != 0:
             raise CacheError(result.message)
 
         self.cursor_id, self.more = result.value['cursor'], result.value['more']
-        self.data = iter(result.value['data'].items())
+        self.data = self._rows_iter(result.value['data'])
 
     def _process_page_response(self, result):
         if result.status != 0:
             raise CacheError(result.message)
 
-        self.data, self.more = iter(result.value['data'].items()), result.value['more']
+        self.data, self.more = self._rows_iter(result.value['data']), result.value['more']
+
+    def _rows_iter(self, data):
+        # Legacy responses are key-value maps; flagged responses are lists of per-row dicts.
+        return iter(data if self._query_flags else data.items())
 
 
 class VectorCursor(AbstractVectorCursor, CursorMixin):
     """
     Synchronous vector cursor.
     """
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                 ef_search=0, query_flags=0):
         """
         :param client: Synchronous client.
         :param cache_info: Cache meta info.
@@ -424,12 +435,16 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
         :param field: Name of the field.
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
+        :param ef_search: search beam width, 0 or negative means the engine default.
+        :param query_flags: combination of VECTOR_FLAG_WITH_SCORES and VECTOR_FLAG_NOCONTENT.
         """
-        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold)
+        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                         ef_search, query_flags)
 
         self.connection = self.client.random_node
         result = vector(self.connection, self.cache_info, self._page_size,
-                        self._type_name, self._field, self._clause_vector, self._k, self._threshold)
+                        self._type_name, self._field, self._clause_vector, self._k, self._threshold,
+                        self._ef_search, self._query_flags)
         self._finalize_init(result)
 
     def __next__(self):
@@ -437,22 +452,38 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
             raise StopIteration
 
         try:
-            k, v = next(self.data)
+            row = next(self.data)
         except StopIteration:
             if self.more:
-                self._process_page_response(vector_cursor_get_page(self.connection, self.cursor_id))
-                k, v = next(self.data)
+                self._process_page_response(
+                    vector_cursor_get_page(self.connection, self.cursor_id, self._query_flags))
+                row = next(self.data)
             else:
                 raise StopIteration
 
-        return self.client.unwrap_binary(k), self.client.unwrap_binary(v)
+        if not self._query_flags:
+            k, v = row
+            return self.client.unwrap_binary(k), self.client.unwrap_binary(v)
+
+        key = self.client.unwrap_binary(row['key'])
+
+        if self._query_flags & VECTOR_FLAG_NOCONTENT:
+            if self._query_flags & VECTOR_FLAG_WITH_SCORES:
+                return key, row['score']
+
+            return key
+
+        value = self.client.unwrap_binary(row['value'])
+
+        return key, value, row['score']
 
 
 class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
     """
     Asynchronous vector query cursor.
     """
-    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold):
+    def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                 ef_search=0, query_flags=0):
         """
         :param client: Asynchronous client.
         :param cache_info: Cache meta info.
@@ -461,14 +492,18 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
         :param field: Name of the field.
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
+        :param ef_search: search beam width, 0 or negative means the engine default.
+        :param query_flags: combination of VECTOR_FLAG_WITH_SCORES and VECTOR_FLAG_NOCONTENT.
         """
-        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold)
+        super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                         ef_search, query_flags)
 
     async def __aenter__(self):
         if not self.connection:
             self.connection = await self.client.random_node()
             result = await vector_async(self.connection, self.cache_info, self._page_size,
-                                        self._type_name, self._field, self._clause_vector, self._k, self._threshold)
+                                        self._type_name, self._field, self._clause_vector, self._k, self._threshold,
+                                        self._ef_search, self._query_flags)
             self._finalize_init(result)
         return self
 
@@ -480,17 +515,32 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
             raise StopAsyncIteration
 
         try:
-            k, v = next(self.data)
+            row = next(self.data)
         except StopIteration:
             if self.more:
-                self._process_page_response(await vector_cursor_get_page_async(self.connection, self.cursor_id))
+                self._process_page_response(
+                    await vector_cursor_get_page_async(self.connection, self.cursor_id, self._query_flags))
                 try:
-                    k, v = next(self.data)
+                    row = next(self.data)
                 except StopIteration:
                     raise StopAsyncIteration
             else:
                 raise StopAsyncIteration
 
-        return await asyncio.gather(
-            *[self.client.unwrap_binary(k), self.client.unwrap_binary(v)]
-        )
+        if not self._query_flags:
+            k, v = row
+            return await asyncio.gather(
+                *[self.client.unwrap_binary(k), self.client.unwrap_binary(v)]
+            )
+
+        key = await self.client.unwrap_binary(row['key'])
+
+        if self._query_flags & VECTOR_FLAG_NOCONTENT:
+            if self._query_flags & VECTOR_FLAG_WITH_SCORES:
+                return key, row['score']
+
+            return key
+
+        value = await self.client.unwrap_binary(row['value'])
+
+        return key, value, row['score']

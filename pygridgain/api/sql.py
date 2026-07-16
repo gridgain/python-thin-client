@@ -16,10 +16,11 @@
 from typing import Union, List
 
 from pygridgain.connection import AioConnection, Connection
-from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Int, Long, Map, Null, String, StructArray, \
+from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Byte, Int, Long, Map, Null, String, StructArray, \
     FloatArrayObject
 from pygridgain.datatypes import Float as PyFloat
 from pygridgain.datatypes.sql import StatementType
+from pygridgain.exceptions import NotSupportedByClusterError
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.op_codes import (
     OP_QUERY_SCAN, OP_QUERY_SCAN_CURSOR_GET_PAGE, OP_QUERY_SQL, OP_QUERY_SQL_CURSOR_GET_PAGE, OP_QUERY_SQL_FIELDS,
@@ -29,6 +30,12 @@ from pygridgain.utils import deprecated
 from .result import APIResult
 from ..queries.cache_info import CacheInfo
 from ..queries.response import SQLResponse
+
+#: Vector query flag: append the engine similarity score to every result row.
+VECTOR_FLAG_WITH_SCORES = 1
+
+#: Vector query flag: omit value objects from result rows (keys, and optionally scores, only).
+VECTOR_FLAG_NOCONTENT = 2
 
 
 def scan(conn: 'Connection', cache_info: CacheInfo, page_size: int, partitions: int = -1,
@@ -447,7 +454,8 @@ def __post_process_sql_fields_cursor(result):
 
 
 def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
-           type_name: str, field: str, clause_vector: List[float], k: int, threshold: float) -> APIResult:
+           type_name: str, field: str, clause_vector: List[float], k: int, threshold: float,
+           ef_search: int = 0, query_flags: int = 0) -> APIResult:
     """
     Performs vector query.
     Vector queries based on Apache Lucene engine.
@@ -459,6 +467,11 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
     :param field: Name of the field.
     :param clause_vector: Search vector.
     :param k: [K]NN, how many vectors to return.
+    :param threshold: similarity threshold, non-positive values disable it.
+    :param ef_search: (optional) search beam width, 0 or negative means the engine default.
+     Requires the QUERY_VECTOR_EXTENDED cluster feature.
+    :param query_flags: (optional) combination of VECTOR_FLAG_WITH_SCORES and VECTOR_FLAG_NOCONTENT.
+     Requires the QUERY_VECTOR_EXTENDED cluster feature.
     :return: API result data object. Contains zero status and a value
      of type dict with results on success, non-zero status and an error
      description otherwise.
@@ -466,80 +479,119 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
      Value dict is of following format:
 
      * `cursor`: int, cursor ID,
-     * `data`: dict, result rows as key-value pairs,
+     * `data`: result rows - a dict of key-value pairs when `query_flags` is 0, otherwise
+       a list of per-row dicts with `key`, optionally `value` (no VECTOR_FLAG_NOCONTENT) and
+       optionally `score` (VECTOR_FLAG_WITH_SCORES) entries,
      * `more`: bool, True if more data is available for subsequent
        ‘vector_cursor_get_page’ calls.
     """
-    return __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold)
+    return __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                    ef_search, query_flags)
 
 
 async def vector_async(conn: 'AioConnection', cache_info: CacheInfo, page_size: int,
-                       type_name: str, field: str, clause_vector: List[float], k: int, threshold: float) -> APIResult:
+                       type_name: str, field: str, clause_vector: List[float], k: int, threshold: float,
+                       ef_search: int = 0, query_flags: int = 0) -> APIResult:
     """
     Async version of vector.
     """
-    return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold)
+    return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                          ef_search, query_flags)
 
 
-def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold):
-    query_struct = Query(
-        OP_QUERY_VECTOR,
-        [
-            ('cache_info', CacheInfo),
-            ('page_size', Int),
-            ('type_name', String),
-            ('field', String),
-            ('clause_vector', FloatArrayObject),
-            ('k', Int),
-            ('threshold', PyFloat),
+def __vector_rows_type(query_flags):
+    """
+    Response rows encoding: a plain key-value sequence for legacy queries, a row struct shaped
+    by the flags otherwise.
+    """
+    if not query_flags:
+        return Map
+
+    row = [('key', AnyDataObject)]
+
+    if not query_flags & VECTOR_FLAG_NOCONTENT:
+        row.append(('value', AnyDataObject))
+
+    if query_flags & VECTOR_FLAG_WITH_SCORES:
+        row.append(('score', PyFloat))
+
+    return StructArray(row)
+
+
+def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold, ef_search, query_flags):
+    fields = [
+        ('cache_info', CacheInfo),
+        ('page_size', Int),
+        ('type_name', String),
+        ('field', String),
+        ('clause_vector', FloatArrayObject),
+        ('k', Int),
+        ('threshold', PyFloat),
+    ]
+
+    query_params = {
+        'cache_info': cache_info,
+        'page_size': page_size,
+        'type_name': type_name,
+        'field': field,
+        'clause_vector': clause_vector,
+        'k': k,
+        'threshold': threshold,
+    }
+
+    if conn.protocol_context.is_query_vector_extended_supported():
+        # The extended fields are mandatory on the wire once the feature is negotiated.
+        fields += [
+            ('ef_search', Int),
+            ('query_flags', Byte),
         ]
-    )
+
+        query_params['ef_search'] = ef_search
+        query_params['query_flags'] = query_flags
+    elif ef_search > 0 or query_flags:
+        raise NotSupportedByClusterError('The cluster does not support extended vector queries '
+                                         '(efSearch, scores, NOCONTENT) - QUERY_VECTOR_EXTENDED feature is absent.')
+
+    query_struct = Query(OP_QUERY_VECTOR, fields)
 
     return query_perform(
         query_struct, conn,
-        query_params={
-            'cache_info': cache_info,
-            'page_size': page_size,
-            'type_name': type_name,
-            'field': field,
-            'clause_vector': clause_vector,
-            'k': k,
-            'threshold': threshold,
-        },
+        query_params=query_params,
         response_config=[
             ('cursor', Long),
-            ('data', Map),
+            ('data', __vector_rows_type(query_flags)),
             ('more', Bool),
         ],
         post_process_fun=__query_result_post_process
     )
 
 
-def vector_cursor_get_page(conn: 'Connection', cursor: int) -> APIResult:
+def vector_cursor_get_page(conn: 'Connection', cursor: int, query_flags: int = 0) -> APIResult:
     """
     Fetches the next vector query cursor page by cursor ID that is obtained
     from `vector` function.
 
     :param conn: connection to GridGain server,
     :param cursor: cursor ID,
+    :param query_flags: (optional) the flags of the originating query - pages keep its row shape.
     :return: API result data object. Contains zero status and a value
      of type dict with results on success, non-zero status and an error
      description otherwise.
 
      Value dict is of following format:
 
-     * `data`: dict, result rows as key-value pairs,
+     * `data`: result rows, shaped as in the `vector` function response,
      * `more`: bool, True if more data is available for subsequent
        ‘vector_cursor_get_page’ calls.
     """
-    return __vector_cursor_get_page(conn, cursor)
+    return __vector_cursor_get_page(conn, cursor, query_flags)
 
 
-async def vector_cursor_get_page_async(conn: 'AioConnection', cursor: int) -> APIResult:
-    return await __vector_cursor_get_page(conn, cursor)
+async def vector_cursor_get_page_async(conn: 'AioConnection', cursor: int, query_flags: int = 0) -> APIResult:
+    return await __vector_cursor_get_page(conn, cursor, query_flags)
 
 
-def __vector_cursor_get_page(conn, cursor):
+def __vector_cursor_get_page(conn, cursor, query_flags):
     query_struct = Query(
         OP_QUERY_VECTOR_CURSOR_GET_PAGE,
         [
@@ -552,7 +604,7 @@ def __vector_cursor_get_page(conn, cursor):
             'cursor': cursor,
         },
         response_config=[
-            ('data', Map),
+            ('data', __vector_rows_type(query_flags)),
             ('more', Bool),
         ],
         post_process_fun=__query_result_post_process
