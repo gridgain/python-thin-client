@@ -506,10 +506,12 @@ class AioCache(BaseCache):
         :param threshold: similarity threshold, non-positive values disable it.
         :param page_size: (optional) page size. Default size is 1 (slowest
          and safest),
-        :param ef_search: (optional) search beam width: how many graph candidates the engine
-         examines while searching. Larger values improve recall at the cost of latency; values
-         below k are treated as k; 0 or negative (the default) means the engine default.
-         Requires the QUERY_VECTOR_EXTENDED cluster feature.
+        :param ef_search: (optional) search beam width: how many candidate vectors the engine
+         keeps while traversing the index graph. The engine returns the k best of those
+         candidates, so k controls the result size while the beam controls the search quality:
+         a beam wider than k improves recall at the cost of latency, and a beam below k could
+         not even hold k results, so such values are treated as k. 0 or negative (the default)
+         means the engine default. Requires the QUERY_VECTOR_EXTENDED cluster feature.
         :param with_scores: (optional) append the engine similarity score to every result row.
          Scores are raw engine (Lucene) values: similarity-function-dependent and not normalized.
          Requires the QUERY_VECTOR_EXTENDED cluster feature.
