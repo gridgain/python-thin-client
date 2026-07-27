@@ -127,5 +127,12 @@ class ProtocolContext:
         """
         return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_SIMILARITY in self.features
 
+    def is_query_vector_extended_supported(self) -> bool:
+        """
+        Check whether the extended vector query (efSearch, scores, NOCONTENT) is supported
+        by the cluster.
+        """
+        return self.features and BitmaskFeature.QUERY_VECTOR_EXTENDED in self.features
+
     def is_expiry_policy_supported(self) -> bool:
         return self.version >= (1, 6, 0)

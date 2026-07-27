@@ -33,6 +33,7 @@ from .api.key_value import (
     cache_remove_if_equals_async, cache_replace_if_equals_async, cache_get_size_async,
 )
 from .cursors import AioScanCursor, AioVectorCursor
+from .api.sql import VECTOR_FLAG_NOCONTENT, VECTOR_FLAG_WITH_SCORES
 from .cache import __parse_settings, BaseCache
 
 
@@ -493,7 +494,8 @@ class AioCache(BaseCache):
         return AioScanCursor(self.client, self.cache_info, page_size, partitions, local)
 
     def vector(self, type_name: str, field: str, clause_vector: List[float],
-               k: int, threshold: float, page_size: int = 1) -> AioVectorCursor:
+               k: int, threshold: float, page_size: int = 1, ef_search: int = 0,
+               with_scores: bool = False, no_content: bool = False) -> AioVectorCursor:
         """
         Ignite supports vector queries based on Apache Lucene engine.
 
@@ -501,8 +503,26 @@ class AioCache(BaseCache):
         :param field: Name of the field.
         :param clause_vector: Search vector.
         :param k: [K]NN, how many vectors to return.
+        :param threshold: similarity threshold, non-positive values disable it.
         :param page_size: (optional) page size. Default size is 1 (slowest
          and safest),
-        :return: Scan query cursor.
+        :param ef_search: (optional) search beam width: how many candidate vectors the engine
+         keeps while traversing the index graph. The engine returns the k best of those
+         candidates, so k controls the result size while the beam controls the search quality:
+         a beam wider than k improves recall at the cost of latency, and a beam below k could
+         not even hold k results, so such values are treated as k. 0 or negative (the default)
+         means the engine default. Requires the QUERY_VECTOR_EXTENDED cluster feature.
+        :param with_scores: (optional) append the engine similarity score to every result row.
+         Scores are raw engine (Lucene) values: similarity-function-dependent and not normalized.
+         Requires the QUERY_VECTOR_EXTENDED cluster feature.
+        :param no_content: (optional) omit values from result rows - the cheapest response shape.
+         Requires the QUERY_VECTOR_EXTENDED cluster feature.
+        :return: Async vector query cursor. Rows are shaped by the flags: `(key, value)` by default,
+         `(key, value, score)` with `with_scores`, bare `key` with `no_content`, and
+         `(key, score)` with both.
         """
-        return AioVectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k, threshold)
+        query_flags = ((VECTOR_FLAG_WITH_SCORES if with_scores else 0)
+                       | (VECTOR_FLAG_NOCONTENT if no_content else 0))
+
+        return AioVectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k, threshold,
+                               ef_search, query_flags)
