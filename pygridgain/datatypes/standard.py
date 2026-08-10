@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import ctypes
+import functools
 from datetime import date, datetime, time, timedelta
 import decimal
 from io import SEEK_CUR
@@ -60,6 +61,24 @@ class StandardObject(Nullable):
         return data_type
 
 
+@functools.lru_cache(maxsize=1024)
+def _cached_string_c_type(cls, length: int):
+    """One ctypes Structure per (string type, length). Bounded: string lengths vary, so this is a
+    cache rather than a table, and eviction is fine — a miss just rebuilds the class."""
+    return type(
+        cls.__name__,
+        (ctypes.LittleEndianStructure,),
+        {
+            '_pack_': 1,
+            '_fields_': [
+                ('type_code', ctypes.c_byte),
+                ('length', ctypes.c_int),
+                ('data', ctypes.c_char * length),
+            ],
+        },
+    )
+
+
 class String(Nullable):
     """
     Pascal-style string: `c_int` counter, followed by count*bytes.
@@ -76,18 +95,10 @@ class String(Nullable):
 
     @classmethod
     def build_c_type(cls, length: int):
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': [
-                    ('type_code', ctypes.c_byte),
-                    ('length', ctypes.c_int),
-                    ('data', ctypes.c_char * length),
-                ],
-            },
-        )
+        # Memoized for the same reason as Struct.build_c_type: one class creation per string field
+        # per response, all identical for a given length. Keyed on the class too, since subclasses
+        # inherit this and the generated class takes its name from cls.
+        return _cached_string_c_type(cls, length)
 
     @classmethod
     def parse_not_null(cls, stream):
