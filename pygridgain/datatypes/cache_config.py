@@ -13,8 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import asyncio
+import ctypes
 from functools import lru_cache
+from io import SEEK_CUR
 
+import attr
+
+from pygridgain.constants import PROTOCOL_BYTE_ORDER
+from ..stream import READ_BACKWARD
 from . import ExpiryPolicy
 from .standard import String
 from .internal import AnyDataObject, Struct, StructArray
@@ -110,13 +117,115 @@ Fields = StructArray([
 })
 
 
-def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> StructArray:
+@attr.s
+class QueryIndexArray(StructArray):
+    """
+    Query indexes, whose trailing fields belong to VECTOR indexes only.
+
+    The server appends ``similarity_function`` and the HNSW build parameters to an index only
+    when the matching feature bit was negotiated **and** that index is a VECTOR index, so the
+    element layout varies within one array. A flat layout breaks both directions: writing the
+    fields on a non-VECTOR index leaves bytes the server never reads, and parsing them where
+    the server never wrote them consumes the head of the next index — which then yields an
+    absurd field count rather than an error.
+    """
+
+    #: Names the server writes for VECTOR indexes only, in wire order.
+    vector_only = attr.ib(type=tuple, default=())
+
+    def _following_for(self, index_type) -> list:
+        if index_type == IndexType.VECTOR:
+            return self.following
+        return [(name, el) for name, el in self.following if name not in self.vector_only]
+
+    def _apply_defaults(self, value) -> list:
+        following = self._following_for(value.get('index_type'))
+        for name, _ in following:
+            if name in self.defaults:
+                value.setdefault(name, self.defaults[name])
+        return following
+
+    def _write_length(self, stream, length):
+        stream.write(length.to_bytes(ctypes.sizeof(self.counter_type), byteorder=PROTOCOL_BYTE_ORDER))
+
+    def _read_length(self, stream):
+        counter_sz = ctypes.sizeof(self.counter_type)
+        length = int.from_bytes(stream.slice(offset=counter_sz), byteorder=PROTOCOL_BYTE_ORDER)
+        stream.seek(counter_sz, SEEK_CUR)
+        return [('length', self.counter_type)], length
+
+    def _element_following(self, element) -> list:
+        present = {field[0] for field in element._fields_}
+        return [(name, el) for name, el in self.following if name in present]
+
+    def from_python(self, stream, value):
+        self._write_length(stream, len(value))
+
+        for v in value:
+            for name, el_class in self._apply_defaults(v):
+                el_class.from_python(stream, v[name])
+
+    async def from_python_async(self, stream, value):
+        self._write_length(stream, len(value))
+
+        for v in value:
+            for name, el_class in self._apply_defaults(v):
+                await el_class.from_python_async(stream, v[name])
+
+    def parse(self, stream):
+        fields, length = self._read_length(stream)
+
+        for i in range(length):
+            el_fields, index_type = [], None
+            for name, el_class in self.following:
+                if name in self.vector_only and index_type != IndexType.VECTOR:
+                    continue
+                c_type = el_class.parse(stream)
+                el_fields.append((name, c_type))
+                if name == 'index_type':
+                    index_type = stream.read_ctype(c_type, direction=READ_BACKWARD).value
+            fields.append((f'element_{i}', Struct.build_c_type(el_fields)))
+
+        return self.build_c_type(fields)
+
+    async def parse_async(self, stream):
+        fields, length = self._read_length(stream)
+
+        for i in range(length):
+            el_fields, index_type = [], None
+            for name, el_class in self.following:
+                if name in self.vector_only and index_type != IndexType.VECTOR:
+                    continue
+                c_type = await el_class.parse_async(stream)
+                el_fields.append((name, c_type))
+                if name == 'index_type':
+                    index_type = stream.read_ctype(c_type, direction=READ_BACKWARD).value
+            fields.append((f'element_{i}', Struct.build_c_type(el_fields)))
+
+        return self.build_c_type(fields)
+
+    def to_python(self, ctypes_object, **kwargs):
+        length = getattr(ctypes_object, 'length', 0)
+        return [
+            Struct(self._element_following(el), dict_type=dict).to_python(el, **kwargs)
+            for el in (getattr(ctypes_object, f'element_{i}') for i in range(length))
+        ]
+
+    async def to_python_async(self, ctypes_object, **kwargs):
+        length = getattr(ctypes_object, 'length', 0)
+        result_coro = [
+            Struct(self._element_following(el), dict_type=dict).to_python_async(el, **kwargs)
+            for el in (getattr(ctypes_object, f'element_{i}') for i in range(length))
+        ]
+        return await asyncio.gather(*result_coro)
+
+
+def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArray:
     """
     Build the query index layout that the negotiated protocol actually puts on the wire.
 
-    The server appends ``similarity_function`` and the two HNSW build parameters to a query
-    index only when the matching feature bit was negotiated, so this layout has to track the
-    negotiated set exactly: one field too many or too few desynchronises the whole stream.
+    Which trailing fields exist at all is decided by the negotiated feature bits; whether a
+    given index carries them is decided per index by :class:`QueryIndexArray`.
     """
     following = [
         ('index_name', String),
@@ -125,18 +234,21 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> StructArray:
         ('fields', Fields),
     ]
     defaults = {}
+    vector_only = []
 
     if has_similarity:
         following.append(('similarity_function', Int))
         defaults['similarity_function'] = 0
+        vector_only.append('similarity_function')
 
     if has_hnsw_params:
         following.append(('hnsw_m', Int))
         following.append(('hnsw_ef_construction', Int))
         defaults['hnsw_m'] = HNSW_ENGINE_DEFAULT
         defaults['hnsw_ef_construction'] = HNSW_ENGINE_DEFAULT
+        vector_only.extend(('hnsw_m', 'hnsw_ef_construction'))
 
-    return StructArray(following, defaults=defaults)
+    return QueryIndexArray(following, defaults=defaults, vector_only=tuple(vector_only))
 
 
 @lru_cache(maxsize=None)
