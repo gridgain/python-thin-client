@@ -222,8 +222,10 @@ def _prop_query_entities(has_similarity: bool, has_hnsw_params: bool):
     """
     The query entities property whose payload matches what the connection negotiated.
 
-    The two pre-HNSW combinations keep their named classes so that behaviour against an
-    older cluster stays byte-for-byte what it was; the rest are generated on demand.
+    The two combinations that predate the HNSW build parameters keep their named classes;
+    the rest are generated on demand. Note this is not a byte-for-byte promise: the layouts
+    they carry now gate the trailing fields on the index being a VECTOR index, which is what
+    the server has always required.
     """
     if not has_hnsw_params:
         return PropQueryEntities if has_similarity else PropQueryEntitiesNoSimilarity

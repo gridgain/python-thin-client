@@ -156,7 +156,7 @@ class StructArray:
     defaults = attr.ib(type=dict, default={})
 
     def parse(self, stream):
-        fields, length = self.__parse_header(stream)
+        fields, length = self._parse_header(stream)
 
         for i in range(length):
             c_type = Struct(self.following).parse(stream)
@@ -165,7 +165,7 @@ class StructArray:
         return self.build_c_type(fields)
 
     async def parse_async(self, stream):
-        fields, length = self.__parse_header(stream)
+        fields, length = self._parse_header(stream)
 
         for i in range(length):
             c_type = await Struct(self.following).parse_async(stream)
@@ -173,7 +173,7 @@ class StructArray:
 
         return self.build_c_type(fields)
 
-    def __parse_header(self, stream):
+    def _parse_header(self, stream):
         counter_sz = ctypes.sizeof(self.counter_type)
         length = int.from_bytes(
             stream.slice(offset=counter_sz),
@@ -209,7 +209,7 @@ class StructArray:
         return await asyncio.gather(*result_coro)
 
     def from_python(self, stream, value):
-        self.__write_header(stream, len(value))
+        self._write_header(stream, len(value))
 
         for v in value:
             for default_key, default_value in self.defaults.items():
@@ -218,7 +218,7 @@ class StructArray:
                 el_class.from_python(stream, v[name])
 
     async def from_python_async(self, stream, value):
-        self.__write_header(stream, len(value))
+        self._write_header(stream, len(value))
 
         for v in value:
             for default_key, default_value in self.defaults.items():
@@ -226,7 +226,7 @@ class StructArray:
             for name, el_class in self.following:
                 await el_class.from_python_async(stream, v[name])
 
-    def __write_header(self, stream, length):
+    def _write_header(self, stream, length):
         stream.write(
             length.to_bytes(ctypes.sizeof(self.counter_type),
                             byteorder=PROTOCOL_BYTE_ORDER)

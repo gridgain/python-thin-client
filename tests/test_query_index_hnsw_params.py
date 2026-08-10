@@ -36,6 +36,8 @@ from pygridgain.datatypes.cache_config import (
 )
 from pygridgain.datatypes.cache_properties import prop_map
 from pygridgain.datatypes.prop_codes import PROP_QUERY_ENTITIES
+from pygridgain.exceptions import NotSupportedByClusterError
+from pygridgain.stream import AioBinaryStream
 from pygridgain.stream.binary_stream import BinaryStream
 
 # Feature flags only exist from 1.7.0; ProtocolContext drops them below that.
@@ -53,6 +55,12 @@ SORTED_INDEX = {'index_name': 'by_name', 'index_type': IndexType.SORTED, 'inline
 VECTOR_INDEX = {'index_name': 'by_embedding', 'index_type': IndexType.VECTOR, 'inline_size': -1,
                 'fields': [{'name': 'embedding'}], 'similarity_function': 1,
                 'hnsw_m': 16, 'hnsw_ef_construction': 100}
+
+VECTOR_INDEX_NO_HNSW = {k: v for k, v in VECTOR_INDEX.items() if not k.startswith('hnsw_')}
+
+# Every index type that is NOT a vector index carries no trailing fields at all. Covering
+# more than SORTED is what stops the gate degrading into "anything but SORTED".
+NON_VECTOR_TYPES = [IndexType.SORTED, IndexType.FULLTEXT, IndexType.GEOSPATIAL]
 
 
 def context(*features):
@@ -125,11 +133,14 @@ def test_feature_is_not_reported_below_1_7_0():
 # --- what actually goes on the wire ----------------------------------------------------
 
 @pytest.mark.parametrize('has_similarity, has_hnsw_params', ALL_COMBINATIONS)
-def test_non_vector_index_is_byte_identical_whatever_was_negotiated(has_similarity, has_hnsw_params):
-    # The server writes and reads no trailing fields for a SORTED index under any feature
-    # bit, so neither may the client: stray bytes here displace every index after them.
-    baseline = serialize(False, False, [SORTED_INDEX])
-    assert serialize(has_similarity, has_hnsw_params, [SORTED_INDEX]) == baseline
+@pytest.mark.parametrize('index_type', NON_VECTOR_TYPES)
+def test_non_vector_index_is_byte_identical_whatever_was_negotiated(
+        index_type, has_similarity, has_hnsw_params):
+    # The server writes and reads no trailing fields for a non-vector index under any
+    # feature bit, so neither may the client: stray bytes displace every index after them.
+    index = dict(SORTED_INDEX, index_type=index_type)
+    baseline = serialize(False, False, [index])
+    assert serialize(has_similarity, has_hnsw_params, [index]) == baseline
 
 
 @pytest.mark.parametrize(
@@ -142,8 +153,19 @@ def test_non_vector_index_is_byte_identical_whatever_was_negotiated(has_similari
     ],
 )
 def test_vector_index_gains_exactly_the_negotiated_fields(has_similarity, has_hnsw_params, extra_bytes):
-    baseline = len(serialize(False, False, [VECTOR_INDEX]))
-    assert len(serialize(has_similarity, has_hnsw_params, [VECTOR_INDEX])) == baseline + extra_bytes
+    # Only ask for the parameters the layout can carry; asking for more is refused, and is
+    # covered by test_hnsw_params_are_refused_when_the_cluster_cannot_carry_them.
+    index = VECTOR_INDEX if has_hnsw_params else VECTOR_INDEX_NO_HNSW
+    baseline = len(serialize(False, False, [VECTOR_INDEX_NO_HNSW]))
+    assert len(serialize(has_similarity, has_hnsw_params, [index])) == baseline + extra_bytes
+
+
+@pytest.mark.parametrize('index_type', NON_VECTOR_TYPES)
+@pytest.mark.parametrize('order', ['non_vector_first', 'vector_first'])
+def test_mixed_index_array_round_trips_for_every_non_vector_type(index_type, order):
+    other = dict(SORTED_INDEX, index_type=index_type)
+    indexes = [other, VECTOR_INDEX] if order == 'non_vector_first' else [VECTOR_INDEX, other]
+    _assert_round_trip(indexes)
 
 
 @pytest.mark.parametrize('indexes', [
@@ -151,6 +173,10 @@ def test_vector_index_gains_exactly_the_negotiated_fields(has_similarity, has_hn
     [VECTOR_INDEX, SORTED_INDEX],
 ])
 def test_mixed_index_array_round_trips(indexes):
+    _assert_round_trip(indexes)
+
+
+def _assert_round_trip(indexes):
     # The regression that a flat layout causes: the trailing fields of one index get read
     # as the head of the next, and the array length of a later field becomes garbage.
     parsed = round_trip(True, True, indexes)
@@ -231,12 +257,70 @@ def test_cache_config_struct_selects_the_negotiated_layout(features, has_similar
     assert dict(struct.fields)['query_entities'] is query_entities_struct(has_similarity, has_hnsw_params)
 
 
-def test_bytes_are_unchanged_against_a_cluster_without_bit_38():
-    # Compatibility promise: a cluster that predates bit 38 must see exactly what it saw
-    # before this change, for vector and non-vector indexes alike.
+def test_vector_index_bytes_are_unchanged_against_a_cluster_without_bit_38():
+    # A cluster that predates bit 38 must see exactly the bytes it saw before: base fields
+    # plus the similarity int, and nothing else.
     ctx = context(SIMILARITY)
     assert prop_map(PROP_QUERY_ENTITIES, ctx).prop_data_class is query_entities_struct(True, False)
-    assert declared_fields(True, False) == BASE_INDEX_FIELDS + ['similarity_function']
+
+    with_bit_33 = serialize(True, False, [VECTOR_INDEX_NO_HNSW])
+    assert len(with_bit_33) == len(serialize(False, False, [VECTOR_INDEX_NO_HNSW])) + 4
+    # ...and the similarity value is the last four bytes of the index record.
+    assert with_bit_33.endswith((1).to_bytes(4, byteorder='little'))
+
+
+def test_non_vector_index_under_bit_33_carries_no_similarity_int():
+    # The pre-existing shape this change corrects: the server has gated similarity on
+    # indexType == VECTOR since it was introduced, so a SORTED index never carried it.
+    assert serialize(True, False, [SORTED_INDEX]) == serialize(False, False, [SORTED_INDEX])
+
+
+def test_hnsw_params_are_refused_when_the_cluster_cannot_carry_them():
+    # Dropping them silently would build a graph the caller did not ask for. Mirrors the
+    # Java thin client, and this client's own handling of efSearch in GG-49286.
+    with pytest.raises(NotSupportedByClusterError):
+        serialize(True, False, [dict(VECTOR_INDEX, hnsw_m=64)])
+
+    with pytest.raises(NotSupportedByClusterError):
+        serialize(True, False, [dict(VECTOR_INDEX, hnsw_ef_construction=400)])
+
+
+def test_engine_default_hnsw_params_are_accepted_without_the_feature():
+    # Asking for nothing is not asking for something unsupported.
+    index = dict(VECTOR_INDEX, hnsw_m=HNSW_ENGINE_DEFAULT,
+                 hnsw_ef_construction=HNSW_ENGINE_DEFAULT)
+    assert serialize(True, False, [index]) == serialize(True, False, [VECTOR_INDEX_NO_HNSW])
+
+
+def test_non_vector_index_may_not_smuggle_hnsw_params():
+    # The server rejects HNSW parameters on a non-vector index outright; the wire format
+    # gives them nowhere to go, so they are simply not sent.
+    index = dict(SORTED_INDEX, hnsw_m=64, hnsw_ef_construction=400)
+    assert serialize(True, True, [index]) == serialize(False, False, [SORTED_INDEX])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('indexes', [
+    [SORTED_INDEX, VECTOR_INDEX],
+    [VECTOR_INDEX, SORTED_INDEX],
+])
+async def test_async_path_matches_the_sync_path(indexes):
+    # parse_async / from_python_async / to_python_async are hand-duplicated from the sync
+    # versions and are what cache_get_configuration_async actually runs.
+    struct = query_entities_struct(True, True)
+
+    stream = AioBinaryStream(None)
+    await struct.from_python_async(stream, [entity(indexes)])
+    written = stream.getvalue()
+
+    assert written == serialize(True, True, indexes)
+
+    stream = AioBinaryStream(None, written)
+    c_type = await struct.parse_async(stream)
+    stream.seek(0)
+    parsed = (await struct.to_python_async(stream.read_ctype(c_type)))[0]['query_indexes']
+
+    assert parsed == round_trip(True, True, indexes)
 
 
 def test_prop_map_without_context_keeps_the_legacy_default():

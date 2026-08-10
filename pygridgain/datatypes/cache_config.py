@@ -14,13 +14,11 @@
 # limitations under the License.
 #
 import asyncio
-import ctypes
 from functools import lru_cache
-from io import SEEK_CUR
 
 import attr
 
-from pygridgain.constants import PROTOCOL_BYTE_ORDER
+from pygridgain.exceptions import NotSupportedByClusterError, ParseError
 from ..stream import READ_BACKWARD
 from . import ExpiryPolicy
 from .standard import String
@@ -37,14 +35,16 @@ __all__ = [
 
 
 #: Leaving an HNSW build parameter at this value lets the vector engine choose it. Mirrors
-#: ``QueryIndex.HNSW_ENGINE_DEFAULT`` on the server, and is what an index serialized before
-#: these parameters existed deserializes to — which is what makes zero mean "unset".
+#: ``QueryIndex.HNSW_ENGINE_DEFAULT`` on the server. Note that an index read back from a
+#: cluster that does not send these parameters has the keys *absent* from its dict rather
+#: than set to this value.
 HNSW_ENGINE_DEFAULT = 0
 
-#: Largest number of graph connections per node the vector engine accepts.
+#: Largest number of graph connections per node the vector engine accepts. Enforced by the
+#: server (QueryUtils.validateHnswParams); mirrored here so callers can validate up front.
 MAX_HNSW_M = 512
 
-#: Largest build-time beam width the vector engine accepts.
+#: Largest build-time beam width the vector engine accepts. Server-enforced, as above.
 MAX_HNSW_EF_CONSTRUCTION = 3200
 
 
@@ -133,47 +133,58 @@ class QueryIndexArray(StructArray):
     #: Names the server writes for VECTOR indexes only, in wire order.
     vector_only = attr.ib(type=tuple, default=())
 
+    #: ``(name, unset_value)`` pairs this negotiated layout cannot carry at all. Asking for
+    #: one of them is refused rather than dropped: silently building a graph the caller did
+    #: not ask for is worse than failing.
+    unsupported = attr.ib(type=tuple, default=())
+
     def _following_for(self, index_type) -> list:
         if index_type == IndexType.VECTOR:
             return self.following
         return [(name, el) for name, el in self.following if name not in self.vector_only]
 
-    def _apply_defaults(self, value) -> list:
+    def _reject_unsupported(self, value):
+        if value.get('index_type') != IndexType.VECTOR:
+            return
+        for name, unset in self.unsupported:
+            if value.get(name, unset) != unset:
+                raise NotSupportedByClusterError(
+                    f'The cluster does not support per-index HNSW build parameters '
+                    f'({name}={value[name]} on index {value.get("index_name")!r})'
+                )
+
+    def _prepare(self, value) -> list:
+        self._reject_unsupported(value)
         following = self._following_for(value.get('index_type'))
         for name, _ in following:
             if name in self.defaults:
                 value.setdefault(name, self.defaults[name])
         return following
 
-    def _write_length(self, stream, length):
-        stream.write(length.to_bytes(ctypes.sizeof(self.counter_type), byteorder=PROTOCOL_BYTE_ORDER))
-
-    def _read_length(self, stream):
-        counter_sz = ctypes.sizeof(self.counter_type)
-        length = int.from_bytes(stream.slice(offset=counter_sz), byteorder=PROTOCOL_BYTE_ORDER)
-        stream.seek(counter_sz, SEEK_CUR)
-        return [('length', self.counter_type)], length
-
     def _element_following(self, element) -> list:
-        present = {field[0] for field in element._fields_}
-        return [(name, el) for name, el in self.following if name in present]
+        known = {name for name, _ in self.following}
+        present = [field[0] for field in element._fields_]
+        unknown = [name for name in present if name not in known]
+        if unknown:
+            raise ParseError(f'Parsed query index carries unknown fields: {unknown}')
+        return [(name, el) for name, el in self.following if name in set(present)]
 
     def from_python(self, stream, value):
-        self._write_length(stream, len(value))
+        self._write_header(stream, len(value))
 
         for v in value:
-            for name, el_class in self._apply_defaults(v):
+            for name, el_class in self._prepare(v):
                 el_class.from_python(stream, v[name])
 
     async def from_python_async(self, stream, value):
-        self._write_length(stream, len(value))
+        self._write_header(stream, len(value))
 
         for v in value:
-            for name, el_class in self._apply_defaults(v):
+            for name, el_class in self._prepare(v):
                 await el_class.from_python_async(stream, v[name])
 
     def parse(self, stream):
-        fields, length = self._read_length(stream)
+        fields, length = self._parse_header(stream)
 
         for i in range(length):
             el_fields, index_type = [], None
@@ -189,7 +200,7 @@ class QueryIndexArray(StructArray):
         return self.build_c_type(fields)
 
     async def parse_async(self, stream):
-        fields, length = self._read_length(stream)
+        fields, length = self._parse_header(stream)
 
         for i in range(length):
             el_fields, index_type = [], None
@@ -235,6 +246,7 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArr
     ]
     defaults = {}
     vector_only = []
+    unsupported = ()
 
     if has_similarity:
         following.append(('similarity_function', Int))
@@ -247,8 +259,12 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArr
         defaults['hnsw_m'] = HNSW_ENGINE_DEFAULT
         defaults['hnsw_ef_construction'] = HNSW_ENGINE_DEFAULT
         vector_only.extend(('hnsw_m', 'hnsw_ef_construction'))
+    else:
+        unsupported = (('hnsw_m', HNSW_ENGINE_DEFAULT),
+                       ('hnsw_ef_construction', HNSW_ENGINE_DEFAULT))
 
-    return QueryIndexArray(following, defaults=defaults, vector_only=tuple(vector_only))
+    return QueryIndexArray(following, defaults=defaults,
+                           vector_only=tuple(vector_only), unsupported=unsupported)
 
 
 @lru_cache(maxsize=None)
@@ -276,15 +292,13 @@ def query_entities_for(protocol_context) -> StructArray:
     Pick the query entities layout matching what this connection negotiated.
     """
     return query_entities_struct(
-        bool(protocol_context and protocol_context.is_query_index_vector_similarity_supported()),
-        bool(protocol_context and protocol_context.is_query_index_vector_hnsw_params_supported()),
+        bool(protocol_context.is_query_index_vector_similarity_supported()),
+        bool(protocol_context.is_query_index_vector_hnsw_params_supported()),
     )
 
 
-# Named layouts for the combinations that predate the HNSW build parameters. Kept because
-# they are imported elsewhere in the package and read more clearly than a flag pair.
-QueryIndexes = _query_indexes(True, False)
-QueryIndexesNoSimilarity = _query_indexes(False, False)
+# The two layouts that predate the HNSW build parameters, named because cache_properties
+# binds them to its query entities properties.
 QueryEntities = query_entities_struct(True, False)
 QueryEntitiesNoSimilarity = query_entities_struct(False, False)
 
