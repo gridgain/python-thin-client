@@ -17,11 +17,14 @@ import ctypes
 import math
 from typing import Union
 
+from functools import lru_cache
+
 from . import ExpiryPolicy
 from .prop_codes import *
 from .cache_config import (
     CacheMode, CacheAtomicityMode, PartitionLossPolicy, RebalanceMode,
     WriteSynchronizationMode, QueryEntities, QueryEntitiesNoSimilarity, CacheKeyConfiguration,
+    query_entities_struct,
 )
 from .primitive import *
 from .standard import *
@@ -42,9 +45,12 @@ __all__ = [
 
 
 def prop_map(code: int, protocol_context=None):
-    if code == PROP_QUERY_ENTITIES and protocol_context and not protocol_context.is_query_index_vector_similarity_supported():
-        return PropQueryEntitiesNoSimilarity
-    
+    if code == PROP_QUERY_ENTITIES and protocol_context:
+        return _prop_query_entities(
+            bool(protocol_context.is_query_index_vector_similarity_supported()),
+            bool(protocol_context.is_query_index_vector_hnsw_params_supported()),
+        )
+
     return {
         PROP_NAME: PropName,
         PROP_CACHE_MODE: PropCacheMode,
@@ -205,9 +211,32 @@ class PropQueryEntities(PropBase):
     prop_code = PROP_QUERY_ENTITIES
     prop_data_class = QueryEntities
 
+
 class PropQueryEntitiesNoSimilarity(PropBase):
     prop_code = PROP_QUERY_ENTITIES
     prop_data_class = QueryEntitiesNoSimilarity
+
+
+@lru_cache(maxsize=None)
+def _prop_query_entities(has_similarity: bool, has_hnsw_params: bool):
+    """
+    The query entities property whose payload matches what the connection negotiated.
+
+    The two pre-HNSW combinations keep their named classes so that behaviour against an
+    older cluster stays byte-for-byte what it was; the rest are generated on demand.
+    """
+    if not has_hnsw_params:
+        return PropQueryEntities if has_similarity else PropQueryEntitiesNoSimilarity
+
+    return type(
+        'PropQueryEntitiesHnswParams' if has_similarity else 'PropQueryEntitiesHnswParamsNoSimilarity',
+        (PropBase,),
+        {
+            'prop_code': PROP_QUERY_ENTITIES,
+            'prop_data_class': query_entities_struct(has_similarity, has_hnsw_params),
+        },
+    )
+
 
 class PropQueryParallelism(PropBase):
     prop_code = PROP_QUERY_PARALLELISM

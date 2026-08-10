@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from functools import lru_cache
+
 from . import ExpiryPolicy
 from .standard import String
 from .internal import AnyDataObject, Struct, StructArray
@@ -22,8 +24,21 @@ from .primitive import *
 __all__ = [
     'get_cache_config_struct', 'CacheMode', 'PartitionLossPolicy',
     'RebalanceMode', 'WriteSynchronizationMode', 'IndexType',
-    'CacheAtomicityMode'
+    'CacheAtomicityMode', 'HNSW_ENGINE_DEFAULT', 'MAX_HNSW_M',
+    'MAX_HNSW_EF_CONSTRUCTION'
 ]
+
+
+#: Leaving an HNSW build parameter at this value lets the vector engine choose it. Mirrors
+#: ``QueryIndex.HNSW_ENGINE_DEFAULT`` on the server, and is what an index serialized before
+#: these parameters existed deserializes to — which is what makes zero mean "unset".
+HNSW_ENGINE_DEFAULT = 0
+
+#: Largest number of graph connections per node the vector engine accepts.
+MAX_HNSW_M = 512
+
+#: Largest build-time beam width the vector engine accepts.
+MAX_HNSW_EF_CONSTRUCTION = 3200
 
 
 class CacheMode(Int):
@@ -95,44 +110,71 @@ Fields = StructArray([
 })
 
 
-QueryIndexes = StructArray([
-    ('index_name', String),
-    ('index_type', IndexType),
-    ('inline_size', Int),
-    ('fields', Fields),
-    ('similarity_function', Int),
-], defaults={
-    'similarity_function': 0,
-})
+def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> StructArray:
+    """
+    Build the query index layout that the negotiated protocol actually puts on the wire.
 
-QueryIndexesNoSimilarity = StructArray([
-    ('index_name', String),
-    ('index_type', IndexType),
-    ('inline_size', Int),
-    ('fields', Fields),
-])
+    The server appends ``similarity_function`` and the two HNSW build parameters to a query
+    index only when the matching feature bit was negotiated, so this layout has to track the
+    negotiated set exactly: one field too many or too few desynchronises the whole stream.
+    """
+    following = [
+        ('index_name', String),
+        ('index_type', IndexType),
+        ('inline_size', Int),
+        ('fields', Fields),
+    ]
+    defaults = {}
 
-QueryEntities = StructArray([
-    ('key_type_name', String),
-    ('value_type_name', String),
-    ('table_name', String),
-    ('key_field_name', String),
-    ('value_field_name', String),
-    ('query_fields', QueryFields),
-    ('field_name_aliases', FieldNameAliases),
-    ('query_indexes', QueryIndexes),
-])
+    if has_similarity:
+        following.append(('similarity_function', Int))
+        defaults['similarity_function'] = 0
 
-QueryEntitiesNoSimilarity = StructArray([
-    ('key_type_name', String),
-    ('value_type_name', String),
-    ('table_name', String),
-    ('key_field_name', String),
-    ('value_field_name', String),
-    ('query_fields', QueryFields),
-    ('field_name_aliases', FieldNameAliases),
-    ('query_indexes', QueryIndexesNoSimilarity),
-])
+    if has_hnsw_params:
+        following.append(('hnsw_m', Int))
+        following.append(('hnsw_ef_construction', Int))
+        defaults['hnsw_m'] = HNSW_ENGINE_DEFAULT
+        defaults['hnsw_ef_construction'] = HNSW_ENGINE_DEFAULT
+
+    return StructArray(following, defaults=defaults)
+
+
+@lru_cache(maxsize=None)
+def query_entities_struct(has_similarity: bool, has_hnsw_params: bool) -> StructArray:
+    """
+    Query entities carrying the index layout for the given pair of negotiated features.
+
+    Memoised: the layout depends on nothing but the two flags, and both the cache config
+    struct and the query-entities cache property need the same instance.
+    """
+    return StructArray([
+        ('key_type_name', String),
+        ('value_type_name', String),
+        ('table_name', String),
+        ('key_field_name', String),
+        ('value_field_name', String),
+        ('query_fields', QueryFields),
+        ('field_name_aliases', FieldNameAliases),
+        ('query_indexes', _query_indexes(has_similarity, has_hnsw_params)),
+    ])
+
+
+def query_entities_for(protocol_context) -> StructArray:
+    """
+    Pick the query entities layout matching what this connection negotiated.
+    """
+    return query_entities_struct(
+        bool(protocol_context and protocol_context.is_query_index_vector_similarity_supported()),
+        bool(protocol_context and protocol_context.is_query_index_vector_hnsw_params_supported()),
+    )
+
+
+# Named layouts for the combinations that predate the HNSW build parameters. Kept because
+# they are imported elsewhere in the package and read more clearly than a flag pair.
+QueryIndexes = _query_indexes(True, False)
+QueryIndexesNoSimilarity = _query_indexes(False, False)
+QueryEntities = query_entities_struct(True, False)
+QueryEntitiesNoSimilarity = query_entities_struct(False, False)
 
 
 CacheKeyConfiguration = StructArray([
@@ -174,10 +216,7 @@ def get_cache_config_struct(protocol_context):
         ('write_synchronization_mode', WriteSynchronizationMode),
         ('cache_key_configuration', CacheKeyConfiguration),
     ]
-    if protocol_context.is_query_index_vector_similarity_supported():
-        fields.append(('query_entities', QueryEntities))
-    else:
-        fields.append(('query_entities', QueryEntitiesNoSimilarity))
+    fields.append(('query_entities', query_entities_for(protocol_context)))
     if protocol_context.is_expiry_policy_supported():
         fields.append(('expiry_policy', ExpiryPolicy))
     return Struct(fields=fields)
