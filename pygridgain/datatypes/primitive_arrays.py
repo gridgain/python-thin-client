@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import ctypes
+import struct
 import sys
 from io import SEEK_CUR
 
@@ -56,6 +57,40 @@ def _bulk_to_python(ctypes_object):
     return [ctypes_object.data[i] for i in range(ctypes_object.length)]
 
 
+def _bulk_from_python(cls, stream, value):
+    """
+    Encode a primitive array in one pass, or return False to use the element-wise path.
+
+    Encoding element by element costs one Python-level call per element. That is invisible for a
+    handful of values and dominant for a large one: a 1536-dimension embedding sent as a
+    vector-search clause spent ~1536 calls per query, which measured as the single largest component
+    of client-side CPU.
+
+    Both paths below are byte-for-byte identical to the element-wise one, on little- and big-endian
+    hosts alike: the ``struct`` formats are explicitly little-endian, matching
+    ``Primitive.from_python``, and the zero-copy path only triggers when the value's own dtype
+    already states little-endian.
+    """
+    # 1. zero copy — the buffer is already in wire layout (e.g. a numpy '<f4' array)
+    if cls._wire_dtype is not None:
+        dtype = getattr(value, 'dtype', None)
+        if dtype is not None and getattr(dtype, 'str', None) == cls._wire_dtype:
+            stream.write(value.tobytes())
+            return True
+
+    # 2. one pack call for the whole array
+    if cls._struct_format is not None:
+        try:
+            stream.write(struct.pack('<%d%s' % (len(value), cls._struct_format), *value))
+            return True
+        except (struct.error, TypeError, OverflowError):
+            # Not a plain sequence of in-range scalars. Fall back so the element-wise path raises
+            # the specific, familiar error rather than a bulk one.
+            pass
+
+    return False
+
+
 class PrimitiveArray(GridGainDataType):
     """
     Base class for array of primitives. Payload-only.
@@ -63,6 +98,13 @@ class PrimitiveArray(GridGainDataType):
     _type_name = None
     _type_id = None
     primitive_type = None
+
+    #: ``struct`` format character used to encode the whole array in one call. ``None`` keeps the
+    #: element-by-element path (types whose element encoding is not a plain little-endian scalar).
+    _struct_format = None
+
+    #: Buffer dtype string that already matches the wire layout exactly. ``None`` disables that path.
+    _wire_dtype = None
 
     @classmethod
     def build_c_type(cls, stream):
@@ -100,6 +142,10 @@ class PrimitiveArray(GridGainDataType):
     @classmethod
     def from_python(cls, stream, value, **kwargs):
         cls._write_header(stream, value)
+
+        if _bulk_from_python(cls, stream, value):
+            return
+
         for x in value:
             cls.primitive_type.from_python(stream, x)
 
@@ -125,6 +171,8 @@ class ShortArray(PrimitiveArray):
     _type_id = TYPE_SHORT_ARR
     primitive_type = Short
     type_code = TC_SHORT_ARRAY
+    _struct_format = 'h'
+    _wire_dtype = '<i2'
 
 
 class IntArray(PrimitiveArray):
@@ -132,6 +180,8 @@ class IntArray(PrimitiveArray):
     _type_id = TYPE_INT_ARR
     primitive_type = Int
     type_code = TC_INT_ARRAY
+    _struct_format = 'i'
+    _wire_dtype = '<i4'
 
 
 class LongArray(PrimitiveArray):
@@ -139,6 +189,8 @@ class LongArray(PrimitiveArray):
     _type_id = TYPE_LONG_ARR
     primitive_type = Long
     type_code = TC_LONG_ARRAY
+    _struct_format = 'q'
+    _wire_dtype = '<i8'
 
 
 class FloatArray(PrimitiveArray):
@@ -146,6 +198,8 @@ class FloatArray(PrimitiveArray):
     _type_id = TYPE_FLOAT_ARR
     primitive_type = Float
     type_code = TC_FLOAT_ARRAY
+    _struct_format = 'f'
+    _wire_dtype = '<f4'
 
 
 class DoubleArray(PrimitiveArray):
@@ -153,6 +207,8 @@ class DoubleArray(PrimitiveArray):
     _type_id = TYPE_DOUBLE_ARR
     primitive_type = Double
     type_code = TC_DOUBLE_ARRAY
+    _struct_format = 'd'
+    _wire_dtype = '<f8'
 
 
 class CharArray(PrimitiveArray):
@@ -179,6 +235,15 @@ class PrimitiveArrayObject(Nullable):
     type_code = None
     pythonic = list
     default = []
+
+    #: ``struct`` format character used to encode the whole array in one call. ``None`` keeps the
+    #: element-by-element path (types whose element encoding is not a plain little-endian scalar).
+    _struct_format = None
+
+    #: Buffer dtype string that already matches the wire layout exactly. When the value reports this
+    #: dtype, its bytes are written straight through with no per-element work at all. ``None``
+    #: disables that path.
+    _wire_dtype = None
 
     @classmethod
     def build_c_type(cls, stream):
@@ -213,6 +278,10 @@ class PrimitiveArrayObject(Nullable):
     @classmethod
     def from_python_not_null(cls, stream, value, **kwargs):
         cls._write_header(stream, value)
+
+        if _bulk_from_python(cls, stream, value):
+            return
+
         for x in value:
             cls.primitive_type.from_python(stream, x)
 
@@ -263,6 +332,8 @@ class ShortArrayObject(PrimitiveArrayObject):
     _type_id = TYPE_SHORT_ARR
     primitive_type = Short
     type_code = TC_SHORT_ARRAY
+    _struct_format = 'h'
+    _wire_dtype = '<i2'
 
 
 class IntArrayObject(PrimitiveArrayObject):
@@ -270,6 +341,8 @@ class IntArrayObject(PrimitiveArrayObject):
     _type_id = TYPE_INT_ARR
     primitive_type = Int
     type_code = TC_INT_ARRAY
+    _struct_format = 'i'
+    _wire_dtype = '<i4'
 
 
 class LongArrayObject(PrimitiveArrayObject):
@@ -277,6 +350,8 @@ class LongArrayObject(PrimitiveArrayObject):
     _type_id = TYPE_LONG_ARR
     primitive_type = Long
     type_code = TC_LONG_ARRAY
+    _struct_format = 'q'
+    _wire_dtype = '<i8'
 
 
 class FloatArrayObject(PrimitiveArrayObject):
@@ -284,6 +359,8 @@ class FloatArrayObject(PrimitiveArrayObject):
     _type_id = TYPE_FLOAT_ARR
     primitive_type = Float
     type_code = TC_FLOAT_ARRAY
+    _struct_format = 'f'
+    _wire_dtype = '<f4'
 
 
 class DoubleArrayObject(PrimitiveArrayObject):
@@ -291,6 +368,8 @@ class DoubleArrayObject(PrimitiveArrayObject):
     _type_id = TYPE_DOUBLE_ARR
     primitive_type = Double
     type_code = TC_DOUBLE_ARRAY
+    _struct_format = 'd'
+    _wire_dtype = '<f8'
 
 
 class CharArrayObject(PrimitiveArrayObject):

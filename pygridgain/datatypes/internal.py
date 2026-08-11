@@ -16,6 +16,7 @@
 import asyncio
 from collections import OrderedDict
 import ctypes
+import functools
 import decimal
 from datetime import date, datetime, timedelta
 from io import SEEK_CUR
@@ -233,6 +234,24 @@ class StructArray:
         )
 
 
+def _make_struct_c_type(fields):
+    return type(
+        'StructLE',
+        (ctypes.LittleEndianStructure,),
+        {
+            '_pack_': 1,
+            '_fields_': list(fields),
+        },
+    )
+
+
+@functools.lru_cache(maxsize=2048)
+def _cached_struct_c_type(fields):
+    """One ctypes Structure per distinct field shape. Bounded so an unusual workload cannot grow it
+    without limit; identical shapes recur constantly, so the hit rate is effectively 100%."""
+    return _make_struct_c_type(fields)
+
+
 @attr.s
 class Struct:
     """ Sequence of fields, including variable-sized and nested. """
@@ -274,14 +293,16 @@ class Struct:
 
     @staticmethod
     def build_c_type(fields):
-        return type(
-            'StructLE',
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': fields,
-            },
-        )
+        # Memoized: building a ctypes Structure calls type(), which allocates a class and computes a
+        # struct layout. A response with N rows built N of them, all identical — for a k-NN query
+        # returning 10 ids that was 10 class creations per query, and it was the top identifiable
+        # client frame after bulk encoding landed. The result is only ever read (sizeof,
+        # from_buffer_copy, read_ctype), never mutated, so one shared class per shape is safe.
+        try:
+            return _cached_struct_c_type(tuple(fields))
+        except TypeError:
+            # A field spec that is not hashable: build it directly rather than failing.
+            return _make_struct_c_type(tuple(fields))
 
     def to_python(self, ctypes_object, **kwargs) -> Union[dict, OrderedDict]:
         result = self.dict_type()

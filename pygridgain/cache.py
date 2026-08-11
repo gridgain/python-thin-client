@@ -667,7 +667,11 @@ class Cache(BaseCache):
 
         :param type_name: Name of the type.
         :param field: Name of the field.
-        :param clause_vector: Search vector.
+        :param clause_vector: Search vector. Any sequence of floats works; an array already in wire
+         layout (e.g. a numpy array of dtype ``'<f4'``) is written straight through without
+         per-element conversion and is by far the cheapest to send, which matters because embedding
+         dimensions are typically in the hundreds or thousands. Converting such an array to a Python
+         list before passing it costs more than the query itself.
         :param k: [K]NN, how many vectors to return.
         :param threshold: similarity threshold, non-positive values disable it.
         :param page_size: (optional) page size. Default size is 1 (slowest

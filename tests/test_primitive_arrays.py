@@ -118,3 +118,93 @@ def test_bulk_decode_matches_elementwise_and_big_endian_fallback(monkeypatch):
     monkeypatch.setattr(sys, 'byteorder', 'big')   # force the element-wise fallback branch
     fallback = _bulk_to_python(ctypes_object)
     assert fallback == reference == value
+
+
+# ---------------------------------------------------------------------------
+# Bulk SERIALIZATION fast path (_bulk_from_python) — the encode counterpart of
+# the decode coverage above. The element-wise path is the reference: every fast
+# path must be byte-for-byte identical to it, because these bytes go on the wire.
+# ---------------------------------------------------------------------------
+
+BULK_ENCODE_TYPES = [
+    ShortArrayObject, IntArrayObject, LongArrayObject, FloatArrayObject, DoubleArrayObject,
+    ShortArray, IntArray, LongArray, FloatArray, DoubleArray,
+]
+
+
+def _serialize_elementwise(datatype, value, monkeypatch):
+    """Serialize with both fast paths disabled, i.e. one call per element."""
+    monkeypatch.setattr(datatype, '_struct_format', None)
+    monkeypatch.setattr(datatype, '_wire_dtype', None)
+    try:
+        return _serialize(datatype, value)
+    finally:
+        monkeypatch.undo()
+
+
+# Deliberately includes the values most likely to expose an encoding difference:
+# type extremes, signed zero, subnormals, and the non-finite floats.
+EDGE_CASES = [
+    (ShortArrayObject, [0, 1, -1, 32767, -32768]),
+    (IntArrayObject, [0, 1, -1, 2 ** 31 - 1, -2 ** 31]),
+    (LongArrayObject, [0, 1, -1, 2 ** 63 - 1, -2 ** 63]),
+    (FloatArrayObject, [0.0, -0.0, 1.5, -1.5, 3.4e38, -3.4e38, 1e-45,
+                        float('inf'), float('-inf'), float('nan')]),
+    (DoubleArrayObject, [0.0, -0.0, 1.5, -1.5, 1.7e308, 5e-324,
+                         float('inf'), float('-inf'), float('nan')]),
+]
+
+
+@pytest.mark.parametrize('datatype,value', EDGE_CASES)
+def test_bulk_encode_is_byte_identical(datatype, value, monkeypatch):
+    assert _serialize(datatype, value) == _serialize_elementwise(datatype, value, monkeypatch)
+
+
+@pytest.mark.parametrize('datatype,value', EDGE_CASES)
+def test_bulk_encode_accepts_tuples(datatype, value, monkeypatch):
+    assert _serialize(datatype, tuple(value)) == _serialize_elementwise(datatype, value, monkeypatch)
+
+
+@pytest.mark.parametrize('datatype', BULK_ENCODE_TYPES)
+def test_bulk_encode_empty(datatype, monkeypatch):
+    assert _serialize(datatype, []) == _serialize_elementwise(datatype, [], monkeypatch)
+
+
+def test_bulk_encode_large_vector_is_byte_identical(monkeypatch):
+    """The motivating case: a 1536-d embedding sent as a vector-search clause."""
+    value = [i * 0.5 for i in range(1536)]
+    assert _serialize(FloatArrayObject, value) == _serialize_elementwise(FloatArrayObject, value, monkeypatch)
+
+
+def test_char_and_bool_keep_the_elementwise_path():
+    """Char encodes through a text codec and Bool has its own byte semantics."""
+    for datatype in (CharArrayObject, BoolArrayObject):
+        assert datatype._struct_format is None
+        assert datatype._wire_dtype is None
+
+
+def test_bad_element_still_raises():
+    """A non-numeric element must fail, not be silently coerced by the bulk path."""
+    with pytest.raises(Exception):
+        _serialize(IntArrayObject, [1, 'not a number', 3])
+
+
+def test_zero_copy_path_matches_and_only_takes_matching_dtype(monkeypatch):
+    """A buffer already in wire layout is written straight through; anything else is not."""
+    numpy = pytest.importorskip('numpy')
+    value = [0.0, 1.5, -2.25, 1024.0, float('nan')]
+
+    reference = _serialize_elementwise(FloatArrayObject, value, monkeypatch)
+
+    little = numpy.asarray(value, dtype='<f4')
+    assert little.dtype.str == FloatArrayObject._wire_dtype
+    assert _serialize(FloatArrayObject, little) == reference
+
+    # A byte-swapped buffer must NOT take the zero-copy path, or the wire bytes would be reversed.
+    big = numpy.asarray(value, dtype='>f4')
+    assert big.dtype.str != FloatArrayObject._wire_dtype
+    assert _serialize(FloatArrayObject, big) == reference
+
+    # float64 input to a float32 field must still narrow correctly rather than copy raw bytes.
+    wide = numpy.asarray(value, dtype='<f8')
+    assert _serialize(FloatArrayObject, wide) == reference
