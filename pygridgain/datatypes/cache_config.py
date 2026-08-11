@@ -133,28 +133,42 @@ class QueryIndexArray(StructArray):
     #: Names the server writes for VECTOR indexes only, in wire order.
     vector_only = attr.ib(type=tuple, default=())
 
-    #: ``(name, unset_value)`` pairs this negotiated layout cannot carry at all. Asking for
-    #: one of them is refused rather than dropped: silently building a graph the caller did
-    #: not ask for is worse than failing.
-    unsupported = attr.ib(type=tuple, default=())
+    #: ``(name, unset_value)`` pairs for the HNSW build parameters. Known whatever the
+    #: negotiated layout is, so that asking for one where it cannot apply is reported rather
+    #: than dropped: silently building a graph the caller did not ask for is worse than
+    #: failing, and a dropped parameter is invisible until someone measures recall.
+    hnsw_params = attr.ib(type=tuple, default=())
+
+    #: Whether the negotiated protocol can carry :attr:`hnsw_params` at all.
+    hnsw_supported = attr.ib(type=bool, default=False)
 
     def _following_for(self, index_type) -> list:
         if index_type == IndexType.VECTOR:
             return self.following
         return [(name, el) for name, el in self.following if name not in self.vector_only]
 
-    def _reject_unsupported(self, value):
-        if value.get('index_type') != IndexType.VECTOR:
+    def _validate(self, value):
+        configured = [(name, value[name]) for name, unset in self.hnsw_params
+                      if value.get(name, unset) != unset]
+
+        if not configured:
             return
-        for name, unset in self.unsupported:
-            if value.get(name, unset) != unset:
-                raise NotSupportedByClusterError(
-                    f'The cluster does not support per-index HNSW build parameters '
-                    f'({name}={value[name]} on index {value.get("index_name")!r})'
-                )
+
+        name, val = configured[0]
+        where = f'({name}={val} on index {value.get("index_name")!r})'
+
+        if value.get('index_type') != IndexType.VECTOR:
+            # The server refuses this outright (QueryUtils.validateHnswParams); the wire
+            # format gives it nowhere to go, so without this it would vanish silently.
+            raise ValueError(f'HNSW build parameters are supported by VECTOR indexes only {where}')
+
+        if not self.hnsw_supported:
+            raise NotSupportedByClusterError(
+                f'The cluster does not support per-index HNSW build parameters {where}'
+            )
 
     def _prepare(self, value) -> list:
-        self._reject_unsupported(value)
+        self._validate(value)
         following = self._following_for(value.get('index_type'))
         for name, _ in following:
             if name in self.defaults:
@@ -246,7 +260,6 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArr
     ]
     defaults = {}
     vector_only = []
-    unsupported = ()
 
     if has_similarity:
         following.append(('similarity_function', Int))
@@ -259,12 +272,15 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArr
         defaults['hnsw_m'] = HNSW_ENGINE_DEFAULT
         defaults['hnsw_ef_construction'] = HNSW_ENGINE_DEFAULT
         vector_only.extend(('hnsw_m', 'hnsw_ef_construction'))
-    else:
-        unsupported = (('hnsw_m', HNSW_ENGINE_DEFAULT),
-                       ('hnsw_ef_construction', HNSW_ENGINE_DEFAULT))
 
-    return QueryIndexArray(following, defaults=defaults,
-                           vector_only=tuple(vector_only), unsupported=unsupported)
+    return QueryIndexArray(
+        following,
+        defaults=defaults,
+        vector_only=tuple(vector_only),
+        hnsw_params=(('hnsw_m', HNSW_ENGINE_DEFAULT),
+                     ('hnsw_ef_construction', HNSW_ENGINE_DEFAULT)),
+        hnsw_supported=has_hnsw_params,
+    )
 
 
 @lru_cache(maxsize=None)

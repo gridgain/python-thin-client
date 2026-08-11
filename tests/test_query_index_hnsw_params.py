@@ -292,11 +292,24 @@ def test_engine_default_hnsw_params_are_accepted_without_the_feature():
     assert serialize(True, False, [index]) == serialize(True, False, [VECTOR_INDEX_NO_HNSW])
 
 
-def test_non_vector_index_may_not_smuggle_hnsw_params():
-    # The server rejects HNSW parameters on a non-vector index outright; the wire format
-    # gives them nowhere to go, so they are simply not sent.
-    index = dict(SORTED_INDEX, hnsw_m=64, hnsw_ef_construction=400)
-    assert serialize(True, True, [index]) == serialize(False, False, [SORTED_INDEX])
+@pytest.mark.parametrize('index_type', NON_VECTOR_TYPES)
+@pytest.mark.parametrize('has_hnsw_params', [True, False])
+def test_hnsw_params_on_a_non_vector_index_are_refused(index_type, has_hnsw_params):
+    # The server refuses this outright (QueryUtils.validateHnswParams). The wire format gives
+    # the values nowhere to go, so without an explicit refusal they vanish silently and the
+    # user only finds out by measuring recall. Caught against a live node, GG-49543.
+    index = dict(SORTED_INDEX, index_type=index_type, hnsw_m=64, hnsw_ef_construction=400)
+
+    with pytest.raises(ValueError, match='VECTOR indexes only'):
+        serialize(True, has_hnsw_params, [index])
+
+
+@pytest.mark.parametrize('index_type', NON_VECTOR_TYPES)
+def test_non_vector_index_without_hnsw_params_is_unaffected(index_type):
+    # The refusal must trigger on the values, not on the index type: an ordinary index that
+    # sets nothing still serialises exactly as before.
+    index = dict(SORTED_INDEX, index_type=index_type)
+    assert serialize(True, True, [index]) == serialize(False, False, [index])
 
 
 @pytest.mark.asyncio
