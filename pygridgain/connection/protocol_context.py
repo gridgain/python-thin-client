@@ -120,7 +120,7 @@ class ProtocolContext:
         Check whether cluster API supported by the current protocol.
         """
         return self.features and BitmaskFeature.CLUSTER_API in self.features
-    
+
     def is_query_index_vector_similarity_supported(self) -> bool:
         """
         Check whether query index vector similarity supported by the current protocol.
@@ -133,6 +133,13 @@ class ProtocolContext:
         by the cluster.
         """
         return self.features and BitmaskFeature.QUERY_VECTOR_EXTENDED in self.features
+
+    def is_query_index_vector_hnsw_params_supported(self) -> bool:
+        """
+        Check whether per-index HNSW build parameters (hnswM, hnswEfConstruction) are
+        supported by the current protocol.
+        """
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_HNSW_PARAMS in self.features
 
     def is_expiry_policy_supported(self) -> bool:
         return self.version >= (1, 6, 0)

@@ -146,6 +146,21 @@ Query index
 - `inline_size`: integer value,
 - `fields`: a list of 0 or more indexed fields (see `Fields`_).
 
+The remaining keys apply to vector indexes only (`index_type` = 3). They are sent only when
+the cluster supports them, and are ignored on any other index type:
+
+- `similarity_function`: (optional) vector similarity function as an integer value.
+  Defaults to 0. Requires a cluster supporting vector similarity functions,
+- `hnsw_m`: (optional) number of HNSW graph connections per node, 1 to 512. Defaults to 0,
+  which lets the vector engine choose. Changing it requires an index rebuild,
+- `hnsw_ef_construction`: (optional) HNSW build-time beam width, 1 to 3200. Defaults to 0,
+  which lets the vector engine choose. Changing it requires an index rebuild.
+
+Setting `hnsw_m` or `hnsw_ef_construction` against a cluster that does not support per-index
+HNSW build parameters raises `NotSupportedByClusterError` rather than silently building a
+graph with different parameters than requested. A cluster that does not send these values
+back omits the keys entirely from the index it returns.
+
 Fields
 ======
 

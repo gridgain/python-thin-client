@@ -24,6 +24,7 @@ class BitmaskFeature(IntFlag):
     CLUSTER_API = 1 << 2
     QUERY_INDEX_VECTOR_SIMILARITY = 1 << 33
     QUERY_VECTOR_EXTENDED = 1 << 35
+    QUERY_INDEX_VECTOR_HNSW_PARAMS = 1 << 38
 
     def __bytes__(self) -> bytes:
         """
