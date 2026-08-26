@@ -141,6 +141,46 @@ def test_int8_ordinal_matches_the_server_enum():
             VectorQuantization.BINARY, VectorQuantization.INT8) == (0, 1, 2, 3)
 
 
+# --- the client must know EVERY vector bit the server has ------------------------------
+
+#: Every vector-search feature bit the server declares, from ClientBitmaskFeature. Kept here as a
+#: literal on purpose: this client cannot read the server's enum, so the list is the contract, and
+#: a server that grows a seventh bit has to be reflected here deliberately rather than by accident.
+SERVER_VECTOR_BITS = {
+    33: 'QUERY_INDEX_VECTOR_SIMILARITY',
+    35: 'QUERY_VECTOR_EXTENDED',
+    38: 'QUERY_INDEX_VECTOR_HNSW_PARAMS',
+    39: 'QUERY_INDEX_VECTOR_QUANTIZATION',
+    40: 'QUERY_INDEX_VECTOR_SEGMENT_PARAMS',
+    41: 'QUERY_INDEX_VECTOR_INT8_STORAGE',
+}
+
+
+def _declared_vector_bits():
+    return {f.value.bit_length() - 1: f.name for f in BitmaskFeature if 'VECTOR' in f.name}
+
+
+def test_client_declares_every_vector_bit_the_server_has():
+    assert _declared_vector_bits() == SERVER_VECTOR_BITS
+
+
+@pytest.mark.parametrize('name', sorted(SERVER_VECTOR_BITS.values()))
+def test_every_vector_bit_has_a_protocol_context_accessor(name):
+    """
+    A declared bit is an advertised bit: all_supported() sends it, so the server may then send a
+    payload for it. Declaring one with no way to ask whether it was negotiated is a promise the
+    client cannot keep, and it fails on the wire rather than here.
+    """
+    assert hasattr(ProtocolContext, f'is_{name.lower()}_supported')
+
+
+def test_every_vector_bit_is_advertised():
+    supported = BitmaskFeature.all_supported()
+
+    for bit in SERVER_VECTOR_BITS:
+        assert BitmaskFeature(1 << bit) in supported
+
+
 # --- what reaches the wire -------------------------------------------------------------
 
 @pytest.mark.parametrize('flags,extra_bytes', [
