@@ -141,5 +141,29 @@ class ProtocolContext:
         """
         return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_HNSW_PARAMS in self.features
 
+    def is_query_index_vector_quantization_supported(self) -> bool:
+        """
+        Check whether per-index vector storage (quantization) is supported by the current
+        protocol.
+        """
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_QUANTIZATION in self.features
+
+    def is_query_index_vector_segment_params_supported(self) -> bool:
+        """
+        Check whether the per-index segment target and query-thread count are supported by the
+        current protocol.
+        """
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_SEGMENT_PARAMS in self.features
+
+    def is_query_index_vector_int8_storage_supported(self) -> bool:
+        """
+        Check whether INT8 vector storage is supported by the current protocol.
+
+        Distinct from :meth:`is_query_index_vector_quantization_supported` on purpose. INT8 is a
+        value on a field that shipped earlier, so a peer can read the quantization field and
+        still not know this value; the server gave it a bit of its own for exactly that reason.
+        """
+        return self.features and BitmaskFeature.QUERY_INDEX_VECTOR_INT8_STORAGE in self.features
+
     def is_expiry_policy_supported(self) -> bool:
         return self.version >= (1, 6, 0)

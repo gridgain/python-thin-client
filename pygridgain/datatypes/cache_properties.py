@@ -49,6 +49,9 @@ def prop_map(code: int, protocol_context=None):
         return _prop_query_entities(
             bool(protocol_context.is_query_index_vector_similarity_supported()),
             bool(protocol_context.is_query_index_vector_hnsw_params_supported()),
+            bool(protocol_context.is_query_index_vector_quantization_supported()),
+            bool(protocol_context.is_query_index_vector_segment_params_supported()),
+            bool(protocol_context.is_query_index_vector_int8_storage_supported()),
         )
 
     return {
@@ -217,8 +220,20 @@ class PropQueryEntitiesNoSimilarity(PropBase):
     prop_data_class = QueryEntitiesNoSimilarity
 
 
+def _prop_query_entities(has_similarity: bool, has_hnsw_params: bool, has_quantization: bool = False,
+                         has_segment_params: bool = False, has_int8: bool = False):
+    """
+    See :func:`_prop_query_entities_cached`. Normalises first so that callers passing different
+    numbers of arguments for the same feature set share one memoised class, as the layout they
+    carry must be the same object.
+    """
+    return _prop_query_entities_cached(bool(has_similarity), bool(has_hnsw_params), bool(has_quantization),
+                                       bool(has_segment_params), bool(has_int8))
+
+
 @lru_cache(maxsize=None)
-def _prop_query_entities(has_similarity: bool, has_hnsw_params: bool):
+def _prop_query_entities_cached(has_similarity: bool, has_hnsw_params: bool, has_quantization: bool,
+                                has_segment_params: bool, has_int8: bool):
     """
     The query entities property whose payload matches what the connection negotiated.
 
@@ -227,15 +242,16 @@ def _prop_query_entities(has_similarity: bool, has_hnsw_params: bool):
     they carry now gate the trailing fields on the index being a VECTOR index, which is what
     the server has always required.
     """
-    if not has_hnsw_params:
+    if not (has_hnsw_params or has_quantization or has_segment_params):
         return PropQueryEntities if has_similarity else PropQueryEntitiesNoSimilarity
 
     return type(
-        'PropQueryEntitiesHnswParams' if has_similarity else 'PropQueryEntitiesHnswParamsNoSimilarity',
+        'PropQueryEntitiesVectorParams' if has_similarity else 'PropQueryEntitiesVectorParamsNoSimilarity',
         (PropBase,),
         {
             'prop_code': PROP_QUERY_ENTITIES,
-            'prop_data_class': query_entities_struct(has_similarity, has_hnsw_params),
+            'prop_data_class': query_entities_struct(
+                has_similarity, has_hnsw_params, has_quantization, has_segment_params, has_int8),
         },
     )
 

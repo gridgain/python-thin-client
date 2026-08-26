@@ -30,7 +30,8 @@ __all__ = [
     'get_cache_config_struct', 'CacheMode', 'PartitionLossPolicy',
     'RebalanceMode', 'WriteSynchronizationMode', 'IndexType',
     'CacheAtomicityMode', 'HNSW_ENGINE_DEFAULT', 'MAX_HNSW_M',
-    'MAX_HNSW_EF_CONSTRUCTION'
+    'MAX_HNSW_EF_CONSTRUCTION', 'VectorQuantization', 'VECTOR_SEGMENTS_ENGINE_DEFAULT',
+    'MAX_VECTOR_INDEX_SEGMENTS', 'MAX_VECTOR_QUERY_THREADS'
 ]
 
 
@@ -46,6 +47,34 @@ MAX_HNSW_M = 512
 
 #: Largest build-time beam width the vector engine accepts. Server-enforced, as above.
 MAX_HNSW_EF_CONSTRUCTION = 3200
+
+#: Leaving the segment target or the query-thread count at this value lets the engine choose.
+#: Mirrors ``QueryIndex.HNSW_ENGINE_DEFAULT``, which the server reuses for both.
+VECTOR_SEGMENTS_ENGINE_DEFAULT = 0
+
+#: Largest segment target the engine accepts (``QueryIndex.MAX_VECTOR_INDEX_SEGMENTS``). The
+#: server refuses a value outside 1..this rather than narrowing it.
+MAX_VECTOR_INDEX_SEGMENTS = 1024
+
+#: Largest per-query thread count the engine accepts (``QueryIndex.MAX_VECTOR_QUERY_THREADS``).
+#: A thread count is a resource commitment taken on every query, so it is refused, not clamped.
+MAX_VECTOR_QUERY_THREADS = 64
+
+
+class VectorQuantization(Int):
+    """
+    How a VECTOR index stores its vectors. Ordinals mirror ``org.apache.ignite.cache
+    .VectorQuantization`` on the server, and the wire carries the ordinal.
+
+    ``INT8`` was added after the quantization field itself shipped, so it needs its own feature
+    bit: a peer that reads the field but does not know this value resolves it to
+    ``ENGINE_DEFAULT`` and builds a full-precision index without reporting anything.
+    """
+
+    ENGINE_DEFAULT = 0
+    NONE = 1
+    BINARY = 2
+    INT8 = 3
 
 
 class CacheMode(Int):
@@ -142,13 +171,40 @@ class QueryIndexArray(StructArray):
     #: Whether the negotiated protocol can carry :attr:`hnsw_params` at all.
     hnsw_supported = attr.ib(type=bool, default=False)
 
+    #: ``(name, unset_value)`` pairs for the per-index segment parameters, known whatever the
+    #: negotiated layout is, for the same reason as :attr:`hnsw_params`.
+    segment_params = attr.ib(type=tuple, default=())
+
+    #: Whether the negotiated protocol can carry :attr:`segment_params` at all.
+    segment_supported = attr.ib(type=bool, default=False)
+
+    #: Whether the negotiated protocol can carry the vector storage mode at all.
+    quantization_supported = attr.ib(type=bool, default=False)
+
+    #: Whether the negotiated protocol knows the ``INT8`` storage mode specifically.
+    int8_supported = attr.ib(type=bool, default=False)
+
     def _following_for(self, index_type) -> list:
         if index_type == IndexType.VECTOR:
             return self.following
         return [(name, el) for name, el in self.following if name not in self.vector_only]
 
     def _validate(self, value):
-        configured = [(name, value[name]) for name, unset in self.hnsw_params
+        self._validate_group(value, self.hnsw_params, self.hnsw_supported,
+                             'per-index HNSW build parameters')
+        self._validate_group(value, self.segment_params, self.segment_supported,
+                             'per-index vector segment parameters')
+        self._validate_quantization(value)
+
+    def _validate_group(self, value, params, supported, what):
+        """
+        Refuse a group of VECTOR-only parameters the wire cannot carry, rather than dropping it.
+
+        The wire format gives a parameter on a non-VECTOR index nowhere to go, and a parameter the
+        cluster never negotiated nowhere to go either. Dropping either is invisible until somebody
+        measures recall or latency, so both are errors.
+        """
+        configured = [(name, value[name]) for name, unset in params
                       if value.get(name, unset) != unset]
 
         if not configured:
@@ -158,13 +214,39 @@ class QueryIndexArray(StructArray):
         where = f'({name}={val} on index {value.get("index_name")!r})'
 
         if value.get('index_type') != IndexType.VECTOR:
-            # The server refuses this outright (QueryUtils.validateHnswParams); the wire
-            # format gives it nowhere to go, so without this it would vanish silently.
-            raise ValueError(f'HNSW build parameters are supported by VECTOR indexes only {where}')
+            raise ValueError(f'{what.capitalize()} are supported by VECTOR indexes only {where}')
 
-        if not self.hnsw_supported:
+        if not supported:
+            raise NotSupportedByClusterError(f'The cluster does not support {what} {where}')
+
+    def _validate_quantization(self, value):
+        """
+        Refuse a storage mode the peer cannot honour.
+
+        Two separate refusals, because there are two ways to lose the request. A cluster with no
+        quantization bit at all cannot carry the field. A cluster that has the field but not the
+        INT8 bit reads the ordinal and resolves the value it does not know to the engine default,
+        so the caller asks for byte codes and silently gets a full-precision index.
+        """
+        mode = value.get('quantization', VectorQuantization.ENGINE_DEFAULT)
+
+        if mode == VectorQuantization.ENGINE_DEFAULT:
+            return
+
+        where = f'(quantization={mode} on index {value.get("index_name")!r})'
+
+        if value.get('index_type') != IndexType.VECTOR:
+            raise ValueError(f'Vector storage is supported by VECTOR indexes only {where}')
+
+        if not self.quantization_supported:
+            raise NotSupportedByClusterError(f'The cluster does not support per-index vector storage {where}')
+
+        if mode == VectorQuantization.INT8 and not self.int8_supported:
             raise NotSupportedByClusterError(
-                f'The cluster does not support per-index HNSW build parameters {where}'
+                f'The cluster supports vector storage but not the INT8 mode {where}. INT8 is a value on a '
+                f'field that shipped before it, so a peer can read the field and still not know the value: '
+                f'sent anyway it resolves to the engine default and builds a full-precision index without '
+                f'reporting anything.'
             )
 
     def _prepare(self, value) -> list:
@@ -245,7 +327,8 @@ class QueryIndexArray(StructArray):
         return await asyncio.gather(*result_coro)
 
 
-def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArray:
+def _query_indexes(has_similarity: bool, has_hnsw_params: bool, has_quantization: bool = False,
+                   has_segment_params: bool = False, has_int8: bool = False) -> QueryIndexArray:
     """
     Build the query index layout that the negotiated protocol actually puts on the wire.
 
@@ -273,6 +356,21 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArr
         defaults['hnsw_ef_construction'] = HNSW_ENGINE_DEFAULT
         vector_only.extend(('hnsw_m', 'hnsw_ef_construction'))
 
+    # Wire order follows the server's writer (ClientUtils.cacheConfiguration): quantization after
+    # the graph parameters, then the segment pair. INT8 adds no field of its own -- it is a value
+    # on this one -- so its bit gates the value rather than the layout.
+    if has_quantization:
+        following.append(('quantization', Int))
+        defaults['quantization'] = VectorQuantization.ENGINE_DEFAULT
+        vector_only.append('quantization')
+
+    if has_segment_params:
+        following.append(('max_segments', Int))
+        following.append(('query_threads', Int))
+        defaults['max_segments'] = VECTOR_SEGMENTS_ENGINE_DEFAULT
+        defaults['query_threads'] = VECTOR_SEGMENTS_ENGINE_DEFAULT
+        vector_only.extend(('max_segments', 'query_threads'))
+
     return QueryIndexArray(
         following,
         defaults=defaults,
@@ -280,17 +378,33 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool) -> QueryIndexArr
         hnsw_params=(('hnsw_m', HNSW_ENGINE_DEFAULT),
                      ('hnsw_ef_construction', HNSW_ENGINE_DEFAULT)),
         hnsw_supported=has_hnsw_params,
+        segment_params=(('max_segments', VECTOR_SEGMENTS_ENGINE_DEFAULT),
+                        ('query_threads', VECTOR_SEGMENTS_ENGINE_DEFAULT)),
+        segment_supported=has_segment_params,
+        quantization_supported=has_quantization,
+        int8_supported=has_int8,
     )
 
 
-@lru_cache(maxsize=None)
-def query_entities_struct(has_similarity: bool, has_hnsw_params: bool) -> StructArray:
+def query_entities_struct(has_similarity: bool, has_hnsw_params: bool, has_quantization: bool = False,
+                          has_segment_params: bool = False, has_int8: bool = False) -> StructArray:
     """
-    Query entities carrying the index layout for the given pair of negotiated features.
+    Query entities carrying the index layout for the given set of negotiated features.
 
-    Memoised: the layout depends on nothing but the two flags, and both the cache config
-    struct and the query-entities cache property need the same instance.
+    Memoised, and normalised before memoising. The cache config struct and the query-entities
+    cache property must resolve to the SAME instance, and an ``lru_cache`` keyed on the argument
+    tuple does not give that once parameters have defaults: ``(True, True)`` and
+    ``(True, True, False, False, False)`` mean the same thing and would be two cache entries, so
+    two layouts. Every caller therefore lands on one five-argument key.
     """
+    return _query_entities_struct(bool(has_similarity), bool(has_hnsw_params), bool(has_quantization),
+                                  bool(has_segment_params), bool(has_int8))
+
+
+@lru_cache(maxsize=None)
+def _query_entities_struct(has_similarity: bool, has_hnsw_params: bool, has_quantization: bool,
+                           has_segment_params: bool, has_int8: bool) -> StructArray:
+    """The memoised body of :func:`query_entities_struct`; arguments are already normalised."""
     return StructArray([
         ('key_type_name', String),
         ('value_type_name', String),
@@ -299,7 +413,8 @@ def query_entities_struct(has_similarity: bool, has_hnsw_params: bool) -> Struct
         ('value_field_name', String),
         ('query_fields', QueryFields),
         ('field_name_aliases', FieldNameAliases),
-        ('query_indexes', _query_indexes(has_similarity, has_hnsw_params)),
+        ('query_indexes', _query_indexes(has_similarity, has_hnsw_params, has_quantization,
+                                         has_segment_params, has_int8)),
     ])
 
 
@@ -310,6 +425,9 @@ def query_entities_for(protocol_context) -> StructArray:
     return query_entities_struct(
         bool(protocol_context.is_query_index_vector_similarity_supported()),
         bool(protocol_context.is_query_index_vector_hnsw_params_supported()),
+        bool(protocol_context.is_query_index_vector_quantization_supported()),
+        bool(protocol_context.is_query_index_vector_segment_params_supported()),
+        bool(protocol_context.is_query_index_vector_int8_storage_supported()),
     )
 
 
