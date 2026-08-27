@@ -19,10 +19,13 @@ Wire layout of the vector storage and segment parameters (GG-50943).
 Three feature bits, and they are not interchangeable:
 
     39  QUERY_INDEX_VECTOR_QUANTIZATION    adds one int, the storage ordinal
-    40  QUERY_INDEX_VECTOR_SEGMENT_PARAMS  adds two ints, the segment target and thread count
-    41  QUERY_INDEX_VECTOR_INT8_STORAGE    adds NO field: it gates a VALUE on the field bit 39 added
+    41  QUERY_INDEX_VECTOR_SEGMENT_PARAMS  adds two ints, the segment target and thread count
+    42  QUERY_INDEX_VECTOR_INT8_STORAGE    adds NO field: it gates a VALUE on the field bit 39 added
 
-Bit 41 exists because INT8 was added to an enum that had already shipped behind bit 39. A peer
+Bit 40 is not a vector bit. The server gave it to CONTINUOUS_QUERY_COMPACT_VALUE, so the two
+newest vector bits are 41 and 42. Do not close the gap.
+
+Bit 42 exists because INT8 was added to an enum that had already shipped behind bit 39. A peer
 with bit 39 reads the ordinal and resolves the value it does not know to the engine default, so
 an INT8 request against such a peer silently produces a full-precision index. The server refuses
 that; so does this client.
@@ -106,8 +109,8 @@ def vector_index(**overrides):
 
 def test_feature_bits_match_the_server():
     assert QUANTIZATION == 1 << 39
-    assert SEGMENTS == 1 << 40
-    assert INT8 == 1 << 41
+    assert SEGMENTS == 1 << 41
+    assert INT8 == 1 << 42
 
 
 def test_features_are_advertised_as_supported():
@@ -125,7 +128,7 @@ def test_features_are_advertised_as_supported():
 def test_protocol_context_reports_each_feature_independently(feature, method):
     assert getattr(context(feature), method)()
     # and reports nothing when a DIFFERENT vector feature was negotiated: the three are not
-    # interchangeable, and treating one as implying another is the bug bit 41 exists to prevent
+    # interchangeable, and treating one as implying another is the bug bit 42 exists to prevent
     others = {QUANTIZATION, SEGMENTS, INT8} - {feature}
     assert not getattr(context(*others), method)()
 
@@ -151,8 +154,8 @@ SERVER_VECTOR_BITS = {
     35: 'QUERY_VECTOR_EXTENDED',
     38: 'QUERY_INDEX_VECTOR_HNSW_PARAMS',
     39: 'QUERY_INDEX_VECTOR_QUANTIZATION',
-    40: 'QUERY_INDEX_VECTOR_SEGMENT_PARAMS',
-    41: 'QUERY_INDEX_VECTOR_INT8_STORAGE',
+    41: 'QUERY_INDEX_VECTOR_SEGMENT_PARAMS',
+    42: 'QUERY_INDEX_VECTOR_INT8_STORAGE',
 }
 
 
@@ -196,7 +199,7 @@ def test_vector_index_gains_exactly_the_negotiated_fields(flags, extra_bytes):
 
 
 def test_int8_bit_adds_no_bytes():
-    # Bit 41 gates a value, not a field. If it ever changes the layout, this fails loudly.
+    # Bit 42 gates a value, not a field. If it ever changes the layout, this fails loudly.
     without = serialize([vector_index()], quantization=True)
     with_int8 = serialize([vector_index()], quantization=True, int8=True)
     assert without == with_int8
@@ -236,7 +239,7 @@ def test_quantization_refused_when_the_cluster_lacks_the_field():
 
 
 def test_int8_refused_when_the_cluster_has_the_field_but_not_the_value():
-    # The whole reason bit 41 exists. Sent anyway, the peer resolves ordinal 3 to the engine
+    # The whole reason bit 42 exists. Sent anyway, the peer resolves ordinal 3 to the engine
     # default and builds a full-precision index without reporting anything.
     with pytest.raises(NotSupportedByClusterError, match='not the INT8 mode'):
         serialize([vector_index(quantization=VectorQuantization.INT8)], quantization=True)
@@ -244,7 +247,7 @@ def test_int8_refused_when_the_cluster_has_the_field_but_not_the_value():
 
 def test_binary_still_reaches_a_cluster_without_the_int8_bit():
     # The negative control for the test above. BINARY shipped before INT8 existed, so gating it
-    # on bit 41 would break every existing caller while passing the refusal test.
+    # on bit 42 would break every existing caller while passing the refusal test.
     got = round_trip([vector_index(quantization=VectorQuantization.BINARY)], quantization=True)[0]
     assert got['quantization'] == VectorQuantization.BINARY
 
