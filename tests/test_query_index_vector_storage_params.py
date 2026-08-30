@@ -43,7 +43,7 @@ from pygridgain.datatypes.cache_config import (
     IndexType, VectorQuantization, query_entities_struct,
 )
 from pygridgain.exceptions import NotSupportedByClusterError
-from pygridgain.stream.binary_stream import BinaryStream
+from pygridgain.stream.binary_stream import AioBinaryStream, BinaryStream
 
 # Feature flags only exist from 1.7.0; ProtocolContext drops them below that.
 VERSION = (1, 7, 1)
@@ -95,6 +95,33 @@ def round_trip(indexes, **flags):
     c_type = struct.parse(stream)
     stream.seek(0)
     return struct.to_python(stream.read_ctype(c_type))[0]['query_indexes']
+
+
+@pytest.mark.asyncio
+async def test_async_path_matches_the_sync_path():
+    """
+    parse_async / from_python_async / to_python_async are hand-duplicated from the sync versions and
+    are what cache_get_configuration_async runs. The new fields are written by the same _prepare and
+    following, so this is parity cover rather than a second implementation test -- but the previous
+    per-index ticket set the precedent, and a drift here would otherwise reach users unseen.
+    """
+    indexes = [vector_index(quantization=VectorQuantization.INT8, max_segments=4, query_threads=2)]
+    flags = dict(quantization=True, segments=True, int8=True)
+
+    struct = struct_for(**flags)
+
+    stream = AioBinaryStream(None)
+    await struct.from_python_async(stream, [entity(indexes)])
+    written = stream.getvalue()
+
+    assert written == serialize(indexes, **flags)
+
+    stream = AioBinaryStream(None, written)
+    c_type = await struct.parse_async(stream)
+    stream.seek(0)
+    parsed = (await struct.to_python_async(stream.read_ctype(c_type)))[0]['query_indexes']
+
+    assert parsed == round_trip(indexes, **flags)
 
 
 def vector_index(**overrides):

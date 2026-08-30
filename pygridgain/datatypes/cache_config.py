@@ -77,6 +77,17 @@ class VectorQuantization(Int):
     INT8 = 3
 
 
+#: Ordinals :class:`VectorQuantization` defines. It is an ``Int`` subclass rather than an ``Enum``,
+#: so it cannot be iterated; keeping the set here is what lets the client refuse an ordinal the
+#: server would reject with a less specific error.
+VECTOR_QUANTIZATIONS = frozenset({
+    VectorQuantization.ENGINE_DEFAULT,
+    VectorQuantization.NONE,
+    VectorQuantization.BINARY,
+    VectorQuantization.INT8,
+})
+
+
 class CacheMode(Int):
     LOCAL = 0
     REPLICATED = 1
@@ -191,9 +202,9 @@ class QueryIndexArray(StructArray):
 
     def _validate(self, value):
         self._validate_group(value, self.hnsw_params, self.hnsw_supported,
-                             'per-index HNSW build parameters')
+                             'Per-index HNSW build parameters')
         self._validate_group(value, self.segment_params, self.segment_supported,
-                             'per-index vector segment parameters')
+                             'Per-index vector segment parameters')
         self._validate_quantization(value)
 
     def _validate_group(self, value, params, supported, what):
@@ -214,10 +225,11 @@ class QueryIndexArray(StructArray):
         where = f'({name}={val} on index {value.get("index_name")!r})'
 
         if value.get('index_type') != IndexType.VECTOR:
-            raise ValueError(f'{what.capitalize()} are supported by VECTOR indexes only {where}')
+            raise ValueError(f'{what} are supported by VECTOR indexes only {where}')
 
         if not supported:
-            raise NotSupportedByClusterError(f'The cluster does not support {what} {where}')
+            raise NotSupportedByClusterError(
+                f'The cluster does not support {what[0].lower() + what[1:]} {where}')
 
     def _validate_quantization(self, value):
         """
@@ -229,6 +241,11 @@ class QueryIndexArray(StructArray):
         so the caller asks for byte codes and silently gets a full-precision index.
         """
         mode = value.get('quantization', VectorQuantization.ENGINE_DEFAULT)
+
+        if mode not in VECTOR_QUANTIZATIONS:
+            raise ValueError(
+                f'Unknown vector storage mode {mode!r}. Use a VectorQuantization value; the server '
+                f'refuses an ordinal outside the enum with a less specific error.')
 
         if mode == VectorQuantization.ENGINE_DEFAULT:
             return
@@ -356,9 +373,10 @@ def _query_indexes(has_similarity: bool, has_hnsw_params: bool, has_quantization
         defaults['hnsw_ef_construction'] = HNSW_ENGINE_DEFAULT
         vector_only.extend(('hnsw_m', 'hnsw_ef_construction'))
 
-    # Wire order follows the server's writer (ClientUtils.cacheConfiguration): quantization after
-    # the graph parameters, then the segment pair. INT8 adds no field of its own -- it is a value
-    # on this one -- so its bit gates the value rather than the layout.
+    # Wire order follows the server's writer (PlatformConfigurationUtils.writeQueryIndex, called from
+    # ClientCacheConfigurationSerializer): quantization after the graph parameters, then the segment
+    # pair. INT8 adds no field of its own -- it is a value on this one -- so its bit gates the value
+    # rather than the layout.
     if has_quantization:
         following.append(('quantization', Int))
         defaults['quantization'] = VectorQuantization.ENGINE_DEFAULT
