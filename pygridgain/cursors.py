@@ -25,7 +25,7 @@ from pygridgain.api import (
     sql_cursor_get_page, sql_fields, sql_fields_cursor_get_page, sql_fields_cursor_get_page_async, sql_fields_async
 )
 from pygridgain.api.sql import (
-    VECTOR_FLAG_NOCONTENT, VECTOR_FLAG_WITH_SCORES, vector, vector_cursor_get_page, vector_async,
+    vector, vector_cursor_get_page, vector_async,
     vector_cursor_get_page_async
 )
 from pygridgain.exceptions import CacheError, SQLError
@@ -417,8 +417,8 @@ class AbstractVectorCursor:
         self.data, self.more = self._rows_iter(result.value['data']), result.value['more']
 
     def _rows_iter(self, data):
-        # Legacy responses are key-value maps; flagged responses are lists of per-row dicts.
-        return iter(data if self._query_flags else data.items())
+        # Rows arrive from VectorResponse as final Python values, already shaped by the flags.
+        return iter(data)
 
 
 class VectorCursor(AbstractVectorCursor, CursorMixin):
@@ -452,30 +452,14 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
             raise StopIteration
 
         try:
-            row = next(self.data)
+            return next(self.data)
         except StopIteration:
             if self.more:
                 self._process_page_response(
                     vector_cursor_get_page(self.connection, self.cursor_id, self._query_flags))
-                row = next(self.data)
-            else:
-                raise StopIteration
+                return next(self.data)
 
-        if not self._query_flags:
-            k, v = row
-            return self.client.unwrap_binary(k), self.client.unwrap_binary(v)
-
-        key = self.client.unwrap_binary(row['key'])
-
-        if self._query_flags & VECTOR_FLAG_NOCONTENT:
-            if self._query_flags & VECTOR_FLAG_WITH_SCORES:
-                return key, row['score']
-
-            return key
-
-        value = self.client.unwrap_binary(row['value'])
-
-        return key, value, row['score']
+            raise StopIteration
 
 
 class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
@@ -515,32 +499,14 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
             raise StopAsyncIteration
 
         try:
-            row = next(self.data)
+            return next(self.data)
         except StopIteration:
             if self.more:
                 self._process_page_response(
                     await vector_cursor_get_page_async(self.connection, self.cursor_id, self._query_flags))
                 try:
-                    row = next(self.data)
+                    return next(self.data)
                 except StopIteration:
                     raise StopAsyncIteration
-            else:
-                raise StopAsyncIteration
 
-        if not self._query_flags:
-            k, v = row
-            return await asyncio.gather(
-                *[self.client.unwrap_binary(k), self.client.unwrap_binary(v)]
-            )
-
-        key = await self.client.unwrap_binary(row['key'])
-
-        if self._query_flags & VECTOR_FLAG_NOCONTENT:
-            if self._query_flags & VECTOR_FLAG_WITH_SCORES:
-                return key, row['score']
-
-            return key
-
-        value = await self.client.unwrap_binary(row['value'])
-
-        return key, value, row['score']
+            raise StopAsyncIteration
