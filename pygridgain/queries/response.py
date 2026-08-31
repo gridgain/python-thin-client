@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 import asyncio
+import struct
+import sys
 from io import SEEK_CUR
 
 import attr
@@ -22,7 +24,9 @@ import ctypes
 
 from pygridgain.connection.protocol_context import ProtocolContext
 from pygridgain.constants import RHF_TOPOLOGY_CHANGED, RHF_ERROR
-from pygridgain.datatypes import AnyDataObject, Bool, Int, Long, String, StringArray, Struct
+from pygridgain.datatypes import (
+    AnyDataObject, Bool, DoubleObject, FloatArrayObject, Int, IntObject, Long, LongObject, String, StringArray, Struct
+)
 from pygridgain.datatypes.binary import body_struct, enum_struct, schema_struct
 from pygridgain.datatypes.internal import cached_c_type
 from pygridgain.queries.op_codes import OP_SUCCESS
@@ -281,6 +285,290 @@ class SQLResponse(Response):
         if hasattr(ctypes_object, 'cursor'):
             result['cursor'] = Long.to_python(ctypes_object.cursor, *args, **kwargs)
         return result
+
+
+#: Sentinel: the direct reader cannot decode this element, use the generic machinery.
+_FALLBACK = object()
+
+# Wire type codes the direct readers understand, as integers (buf[i] indexing yields ints).
+_TC_INT = 0x03
+_TC_LONG = 0x04
+_TC_DOUBLE = 0x06
+_TC_STRING = 0x09
+_TC_FLOAT_ARRAY = 0x10
+_TC_WRAPPED = 0x1b
+_TC_NULL = 0x65
+_TC_COMPLEX = 0x67
+
+
+@attr.s
+class VectorResponse(Response):
+    """
+    Vector query response with the rows decoded in one pass, straight off the response buffer.
+
+    The generic path pays for a vector row three times: the page parse builds one ctypes
+    structure per element and copies every wrapped binary value out as an opaque blob, and the
+    cursor then re-parses each blob (``unwrap_binary``) to build the Python object. Response
+    deserialization measured as the bulk of pygridgain's vector-query cost, so this class
+    replaces it for the row section: keys, values and scores leave ``parse`` as final Python
+    values, already shaped the way the cursor yields them, and ``to_python`` just hands them
+    over.
+
+    Only the shapes a vector row actually carries get direct readers: long/int/double/string
+    keys, binary objects with primitive or float-array fields, raw float scores. Any element
+    outside them falls back to the generic machinery at the same stream position, one element
+    at a time, so an unusual payload costs the old price instead of failing. The ctypes layout
+    the parent contract requires stays byte-exact: the row section is described as one opaque
+    byte blob.
+    """
+    with_scores = attr.ib(type=bool, default=False)
+    no_content = attr.ib(type=bool, default=False)
+    #: Legacy (flags == 0) responses carry a key-value map; flagged ones a row struct.
+    legacy = attr.ib(type=bool, default=False)
+    has_cursor = attr.ib(type=bool, default=False)
+    _response_class_name = 'VectorResponse'
+    _rows = None
+
+    def _parse_success(self, stream, fields: list):
+        if self.has_cursor:
+            fields.append(('cursor', ctypes.c_longlong))
+            stream.seek(ctypes.sizeof(ctypes.c_longlong), SEEK_CUR)
+
+        data_pos = stream.tell()
+        buf = stream.getbuffer()
+        self._rows = self._decode_rows(stream, buf)
+
+        fields.append(('data', ctypes.c_byte * (stream.tell() - data_pos)))
+        fields.append(('more', ctypes.c_byte))
+        stream.seek(1, SEEK_CUR)
+
+    async def _parse_success_async(self, stream, fields: list):
+        if self.has_cursor:
+            fields.append(('cursor', ctypes.c_longlong))
+            stream.seek(ctypes.sizeof(ctypes.c_longlong), SEEK_CUR)
+
+        data_pos = stream.tell()
+        buf = stream.getbuffer()
+        self._rows = await self._decode_rows_async(stream, buf)
+
+        fields.append(('data', ctypes.c_byte * (stream.tell() - data_pos)))
+        fields.append(('more', ctypes.c_byte))
+        stream.seek(1, SEEK_CUR)
+
+    def to_python(self, ctypes_object, **kwargs):
+        result = {'data': self._rows, 'more': Bool.to_python(ctypes_object.more)}
+        if self.has_cursor:
+            result['cursor'] = ctypes_object.cursor
+        return result
+
+    async def to_python_async(self, ctypes_object, **kwargs):
+        return self.to_python(ctypes_object, **kwargs)
+
+    def _decode_rows(self, stream, buf):
+        count = struct.unpack_from('<i', buf, stream.tell())[0]
+        stream.seek(4, SEEK_CUR)
+
+        rows = []
+        # The rows of one page share the value type, so the registry is asked once per shape.
+        data_classes = {}
+
+        if self.legacy:
+            for _ in range(count):
+                key = self._decode_any(stream, buf, data_classes)
+                value = self._decode_any(stream, buf, data_classes)
+                rows.append((key, value))
+            return rows
+
+        for _ in range(count):
+            key = self._decode_any(stream, buf, data_classes)
+            value = None if self.no_content else self._decode_any(stream, buf, data_classes)
+            if self.with_scores:
+                score = struct.unpack_from('<f', buf, stream.tell())[0]
+                stream.seek(4, SEEK_CUR)
+                rows.append((key, score) if self.no_content else (key, value, score))
+            else:
+                rows.append(key if self.no_content else (key, value))
+        return rows
+
+    async def _decode_rows_async(self, stream, buf):
+        # The readers are pure CPU; only the registry lookup and the generic fallback need
+        # awaiting on the asyncio client, and _decode_any raises _NeedsAsync for those.
+        count = struct.unpack_from('<i', buf, stream.tell())[0]
+        stream.seek(4, SEEK_CUR)
+
+        rows = []
+        data_classes = {}
+
+        async def one():
+            pos = stream.tell()
+            try:
+                return self._decode_any(stream, buf, data_classes)
+            except _NeedsAsync as need:
+                stream.seek(pos)
+                return await self._decode_any_async(stream, buf, data_classes, need)
+
+        if self.legacy:
+            for _ in range(count):
+                key = await one()
+                value = await one()
+                rows.append((key, value))
+            return rows
+
+        for _ in range(count):
+            key = await one()
+            value = None if self.no_content else await one()
+            if self.with_scores:
+                score = struct.unpack_from('<f', buf, stream.tell())[0]
+                stream.seek(4, SEEK_CUR)
+                rows.append((key, score) if self.no_content else (key, value, score))
+            else:
+                rows.append(key if self.no_content else (key, value))
+        return rows
+
+    def _decode_any(self, stream, buf, data_classes):
+        """Decode one element to its final Python value; the stream ends up past it."""
+        pos = stream.tell()
+        type_code = buf[pos]
+
+        if type_code == _TC_LONG:
+            stream.seek(9, SEEK_CUR)
+            return struct.unpack_from('<q', buf, pos + 1)[0]
+        if type_code == _TC_INT:
+            stream.seek(5, SEEK_CUR)
+            return struct.unpack_from('<i', buf, pos + 1)[0]
+        if type_code == _TC_DOUBLE:
+            stream.seek(9, SEEK_CUR)
+            return struct.unpack_from('<d', buf, pos + 1)[0]
+        if type_code == _TC_STRING:
+            length = struct.unpack_from('<i', buf, pos + 1)[0]
+            stream.seek(5 + length, SEEK_CUR)
+            return bytes(buf[pos + 5:pos + 5 + length]).decode('utf-8')
+        if type_code == _TC_NULL:
+            stream.seek(1, SEEK_CUR)
+            return None
+        if type_code == _TC_WRAPPED and sys.byteorder == 'little':
+            payload_len = struct.unpack_from('<i', buf, pos + 1)[0]
+            value, _ = self._decode_binary_object(stream, buf, pos + 5, data_classes)
+            if value is not _FALLBACK:
+                # type code + length + payload + trailing root offset
+                stream.seek(pos + 5 + payload_len + 4)
+                return value
+        elif type_code == _TC_COMPLEX and sys.byteorder == 'little':
+            value, end = self._decode_binary_object(stream, buf, pos, data_classes)
+            if value is not _FALLBACK:
+                stream.seek(end)
+                return value
+
+        return self._decode_element_generic(stream, pos)
+
+    def _decode_binary_object(self, stream, buf, start, data_classes):
+        """
+        Decode one binary object laid out at ``start``, or return ``_FALLBACK`` untouched.
+
+        Follows the same contract as the generic ``BinaryObject`` path: field types and order
+        come from the complex types registry for (type_id, schema_id), the footer is skipped.
+        """
+        version, flags, type_id, _, length, schema_id, _ = struct.unpack_from('<bhiiiii', buf, start + 1)
+
+        # USER_TYPE off or raw data present: shapes the registry walk cannot place - old path.
+        if not (flags & 0x0001) or (flags & 0x0004):
+            return _FALLBACK, start
+
+        data_class = data_classes.get((type_id, schema_id))
+        if data_class is None:
+            data_class = self._query_binary_type_sync(stream, type_id, schema_id)
+            if data_class is None:
+                return _FALLBACK, start
+            data_classes[(type_id, schema_id)] = data_class
+
+        # The side effect the generic parse has: remember how this peer encodes schema footers.
+        stream.compact_footer = bool(flags & 0x0020)
+
+        result = data_class()
+        result.version = version
+
+        pos = start + 24
+        for field_name, field_type in data_class.schema.items():
+            value, pos = self._decode_field(stream, buf, pos, field_type)
+            setattr(result, field_name, value)
+
+        return result, start + length
+
+    @staticmethod
+    def _query_binary_type_sync(stream, type_id, schema_id):
+        client = stream.client
+        query = getattr(client, 'query_binary_type', None)
+        if query is None:
+            return None
+        if asyncio.iscoroutinefunction(query):
+            raise _NeedsAsync(type_id, schema_id)
+        return query(type_id, schema_id)
+
+    def _decode_field(self, stream, buf, pos, field_type):
+        """Decode one object field to (value, next position), preferring the direct readers."""
+        type_code = buf[pos]
+
+        if type_code == _TC_NULL:
+            return None, pos + 1
+        if field_type is FloatArrayObject and type_code == _TC_FLOAT_ARRAY:
+            length = struct.unpack_from('<i', buf, pos + 1)[0]
+            end = pos + 5 + length * 4
+            view = buf[pos + 5:end]
+            try:
+                return view.cast('f').tolist(), end
+            finally:
+                view.release()
+        if field_type is LongObject and type_code == _TC_LONG:
+            return struct.unpack_from('<q', buf, pos + 1)[0], pos + 9
+        if field_type is IntObject and type_code == _TC_INT:
+            return struct.unpack_from('<i', buf, pos + 1)[0], pos + 5
+        if field_type is DoubleObject and type_code == _TC_DOUBLE:
+            return struct.unpack_from('<d', buf, pos + 1)[0], pos + 9
+        if field_type is String and type_code == _TC_STRING:
+            length = struct.unpack_from('<i', buf, pos + 1)[0]
+            return bytes(buf[pos + 5:pos + 5 + length]).decode('utf-8'), pos + 5 + length
+
+        stream.seek(pos)
+        c_type = field_type.parse(stream)
+        value = field_type.to_python(
+            stream.read_ctype(c_type, direction=READ_BACKWARD), client=stream.client)
+        return value, stream.tell()
+
+    @staticmethod
+    def _decode_element_generic(stream, pos):
+        """The old price for one element: generic parse, then the unwrap the cursor used to do."""
+        stream.seek(pos)
+        c_type = AnyDataObject.parse(stream)
+        value = AnyDataObject.to_python(
+            stream.read_ctype(c_type, direction=READ_BACKWARD), client=stream.client)
+        unwrap = stream.client.unwrap_binary
+        if asyncio.iscoroutinefunction(unwrap):
+            raise _NeedsAsync(None, None)
+        return unwrap(value)
+
+    async def _decode_any_async(self, stream, buf, data_classes, need):
+        """Asyncio twin of one element decode, entered only when the sync path raised."""
+        pos = stream.tell()
+        if need.type_id is not None:
+            data_class = await stream.client.query_binary_type(need.type_id, need.schema_id)
+            if data_class is not None:
+                data_classes[(need.type_id, need.schema_id)] = data_class
+                return self._decode_any(stream, buf, data_classes)
+
+        stream.seek(pos)
+        c_type = await AnyDataObject.parse_async(stream)
+        value = await AnyDataObject.to_python_async(
+            stream.read_ctype(c_type, direction=READ_BACKWARD), client=stream.client)
+        return await stream.client.unwrap_binary(value)
+
+
+class _NeedsAsync(Exception):
+    """The sync decode hit a point that must await on the asyncio client."""
+
+    def __init__(self, type_id, schema_id):
+        super().__init__()
+        self.type_id = type_id
+        self.schema_id = schema_id
 
 
 class BinaryTypeResponse(Response):
