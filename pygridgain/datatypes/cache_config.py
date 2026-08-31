@@ -77,10 +77,11 @@ class VectorQuantization(Int):
     INT8 = 3
 
 
-#: Ordinals :class:`VectorQuantization` defines. It is an ``Int`` subclass rather than an ``Enum``,
-#: so it cannot be iterated; keeping the set here is what lets the client refuse an ordinal the
-#: server would reject with a less specific error.
-VECTOR_QUANTIZATIONS = frozenset({
+# Ordinals VectorQuantization defines. It is an Int subclass rather than an Enum, so it cannot be
+# iterated; this set is what lets the client refuse an ordinal the server would reject with a less
+# specific error. Internal on purpose: it exists only because the type is not iterable, and a public
+# name would outlive that workaround.
+_VECTOR_QUANTIZATIONS = frozenset({
     VectorQuantization.ENGINE_DEFAULT,
     VectorQuantization.NONE,
     VectorQuantization.BINARY,
@@ -242,18 +243,22 @@ class QueryIndexArray(StructArray):
         """
         mode = value.get('quantization', VectorQuantization.ENGINE_DEFAULT)
 
-        if mode not in VECTOR_QUANTIZATIONS:
-            raise ValueError(
-                f'Unknown vector storage mode {mode!r}. Use a VectorQuantization value; the server '
-                f'refuses an ordinal outside the enum with a less specific error.')
-
         if mode == VectorQuantization.ENGINE_DEFAULT:
             return
 
         where = f'(quantization={mode} on index {value.get("index_name")!r})'
 
+        # The index-type refusal comes first: on a non-VECTOR index the value is irrelevant, so
+        # "VECTOR indexes only" is the useful message whether the ordinal is known or not.
         if value.get('index_type') != IndexType.VECTOR:
             raise ValueError(f'Vector storage is supported by VECTOR indexes only {where}')
+
+        # And the unknown-ordinal refusal comes before the feature bits: garbage input must not be
+        # reported as a cluster capability gap.
+        if mode not in _VECTOR_QUANTIZATIONS:
+            raise ValueError(
+                f'Unknown vector storage mode {mode!r}. Use a VectorQuantization value; the server '
+                f'refuses an ordinal outside the enum with a less specific error.')
 
         if not self.quantization_supported:
             raise NotSupportedByClusterError(f'The cluster does not support per-index vector storage {where}')
