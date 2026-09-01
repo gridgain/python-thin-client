@@ -257,8 +257,8 @@ class QueryIndexArray(StructArray):
         # reported as a cluster capability gap.
         if mode not in _VECTOR_QUANTIZATIONS:
             raise ValueError(
-                f'Unknown vector storage mode {mode!r}. Use a VectorQuantization value; the server '
-                f'refuses an ordinal outside the enum with a less specific error.')
+                f'Unknown vector storage mode {mode!r} {where}. Use a VectorQuantization value; the '
+                f'server refuses an ordinal outside the enum with a less specific error.')
 
         if not self.quantization_supported:
             raise NotSupportedByClusterError(f'The cluster does not support per-index vector storage {where}')
