@@ -22,7 +22,7 @@ from typing import Optional
 from pygridgain.constants import *
 from pygridgain.exceptions import ParseError
 from .base import GridGainDataType
-from .internal import AnyDataObject, Struct, infer_from_python, infer_from_python_async
+from .internal import AnyDataObject, Struct, cached_c_type, infer_from_python, infer_from_python_async
 from .type_codes import *
 from .type_ids import *
 from .type_names import *
@@ -157,19 +157,14 @@ class WrappedDataObject(Nullable):
             byteorder=PROTOCOL_BYTE_ORDER
         )
 
-        final_class = type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': [
-                    ('type_code', ctypes.c_byte),
-                    ('length', ctypes.c_int),
-                    ('payload', ctypes.c_byte * length),
-                    ('offset', ctypes.c_int),
-                ],
-            }
-        )
+        # One shared class per payload length: the rows of one result set carry same-shaped
+        # objects, so the length recurs and a fresh class per row is pure overhead.
+        final_class = cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), (
+            ('type_code', ctypes.c_byte),
+            ('length', ctypes.c_int),
+            ('payload', ctypes.c_byte * length),
+            ('offset', ctypes.c_int),
+        ))
 
         stream.seek(ctypes.sizeof(final_class), SEEK_CUR)
         return final_class
@@ -257,14 +252,7 @@ class CollectionObject(Nullable):
 
     @classmethod
     def __build_final_class(cls, fields):
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': fields,
-            }
-        )
+        return cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), fields)
 
     @classmethod
     def to_python_not_null(cls, ctypes_object, *args, **kwargs):
@@ -349,14 +337,7 @@ class _MapBase:
 
     @classmethod
     def __build_final_class(cls, fields):
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': fields,
-            }
-        )
+        return cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), fields)
 
     @classmethod
     def _to_python(cls, ctypes_object, **kwargs):
@@ -597,17 +578,10 @@ class BinaryObject(Nullable):
     def schema_type(cls, flags: int):
         if flags & cls.COMPACT_FOOTER:
             return cls.offset_c_type(flags)
-        return type(
-            'SchemaElement',
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': [
-                    ('field_id', ctypes.c_int),
-                    ('offset', cls.offset_c_type(flags)),
-                ],
-            },
-        )
+        return cached_c_type('SchemaElement', (ctypes.LittleEndianStructure,), (
+            ('field_id', ctypes.c_int),
+            ('offset', cls.offset_c_type(flags)),
+        ))
 
     @classmethod
     def parse_not_null(cls, stream):
@@ -655,14 +629,9 @@ class BinaryObject(Nullable):
             stream.seek(ctypes.sizeof(schema), SEEK_CUR)
             final_class_fields.append(('schema', schema))
 
-        final_class = type(
-            cls.__name__,
-            (header_class,),
-            {
-                '_pack_': 1,
-                '_fields_': final_class_fields,
-            }
-        )
+        # Rows of one result set share the object shape, so this class recurs: object_fields comes
+        # from a shared-per-shape cache and ctypes caches array types, which makes the key stable.
+        final_class = cached_c_type(cls.__name__, (header_class,), final_class_fields)
         # register schema encoding approach
         stream.compact_footer = bool(header.flags & cls.COMPACT_FOOTER)
         return final_class

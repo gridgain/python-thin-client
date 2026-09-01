@@ -185,26 +185,21 @@ class StructArray:
 
     @staticmethod
     def build_c_type(fields):
-        return type(
-            'StructArray',
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': fields,
-            },
-        )
+        return cached_c_type('StructArray', (ctypes.LittleEndianStructure,), fields)
 
     def to_python(self, ctypes_object, **kwargs):
         length = getattr(ctypes_object, 'length', 0)
+        element_struct = Struct(self.following, dict_type=dict)
         return [
-            Struct(self.following, dict_type=dict).to_python(getattr(ctypes_object, f'element_{i}'), **kwargs)
+            element_struct.to_python(getattr(ctypes_object, f'element_{i}'), **kwargs)
             for i in range(length)
         ]
 
     async def to_python_async(self, ctypes_object, **kwargs):
         length = getattr(ctypes_object, 'length', 0)
+        element_struct = Struct(self.following, dict_type=dict)
         result_coro = [
-            Struct(self.following, dict_type=dict).to_python_async(getattr(ctypes_object, f'element_{i}'), **kwargs)
+            element_struct.to_python_async(getattr(ctypes_object, f'element_{i}'), **kwargs)
             for i in range(length)
         ]
         return await asyncio.gather(*result_coro)
@@ -250,6 +245,30 @@ def _cached_struct_c_type(fields):
     """One ctypes Structure per distinct field shape. Bounded so an unusual workload cannot grow it
     without limit; identical shapes recur constantly, so the hit rate is effectively 100%."""
     return _make_struct_c_type(fields)
+
+
+@functools.lru_cache(maxsize=2048)
+def _cached_c_type(name, bases, fields):
+    return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
+
+
+def cached_c_type(name, bases, fields):
+    """
+    One ctypes Structure per distinct (name, bases, field shape) - the general form of
+    :func:`_cached_struct_c_type`, for the parse sites that pick the class name or base at run time.
+
+    Building a ctypes Structure calls ``type()``, which allocates a class and computes a struct
+    layout. Response parsing built one per message, per binary object and per wrapped payload -
+    for a k-NN query returning ``(key, value)`` rows that was several class creations per row.
+    The classes are only ever read (``sizeof``, ``from_buffer_copy``, ``read_ctype``), never
+    mutated, so one shared class per shape is safe. Field shapes recur because the leaf classes
+    themselves are shared: ctypes caches array types, and the struct shapes come from the caches
+    above. A field spec that is not hashable falls back to a direct build.
+    """
+    try:
+        return _cached_c_type(name, bases, tuple(fields))
+    except TypeError:
+        return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
 
 
 @attr.s

@@ -660,7 +660,7 @@ class Cache(BaseCache):
                          distributed_joins, replicated_only, local, timeout)
 
     def vector(self, type_name: str, field: str, clause_vector: List[float],
-               k: int, threshold: float, page_size: int = 1, ef_search: int = 0,
+               k: int, threshold: float, page_size: int = None, ef_search: int = 0,
                with_scores: bool = False, no_content: bool = False) -> VectorCursor:
         """
         Ignite supports vector queries based on Apache Lucene engine.
@@ -672,10 +672,12 @@ class Cache(BaseCache):
          per-element conversion and is by far the cheapest to send, which matters because embedding
          dimensions are typically in the hundreds or thousands. Converting such an array to a Python
          list before passing it costs more than the query itself.
-        :param k: [K]NN, how many vectors to return.
+        :param k: [K]NN, how many vectors to return. Must be positive; the server also bounds it
+         (GRIDGAIN_VECTOR_MAX_K, 10000 by default) and rejects a query above that bound.
         :param threshold: similarity threshold, non-positive values disable it.
-        :param page_size: (optional) page size. Default size is 1 (slowest
-         and safest),
+        :param page_size: (optional) page size. Defaults to k: a vector query returns at most k
+         rows, so the whole result arrives in one page. Set it lower only to cap the size of a
+         single response,
         :param ef_search: (optional) search beam width: how many candidate vectors the engine
          keeps while traversing the index graph. The engine returns the k best of those
          candidates, so k controls the result size while the beam controls the search quality:
@@ -691,6 +693,12 @@ class Cache(BaseCache):
          `(key, value, score)` with `with_scores`, bare `key` with `no_content`, and
          `(key, score)` with both.
         """
+        if k < 1:
+            raise ValueError(f'k must be positive, got {k}')
+
+        if page_size is None:
+            page_size = k
+
         query_flags = ((VECTOR_FLAG_WITH_SCORES if with_scores else 0)
                        | (VECTOR_FLAG_NOCONTENT if no_content else 0))
 
