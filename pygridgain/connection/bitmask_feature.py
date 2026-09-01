@@ -25,6 +25,9 @@ class BitmaskFeature(IntFlag):
     QUERY_INDEX_VECTOR_SIMILARITY = 1 << 33
     QUERY_VECTOR_EXTENDED = 1 << 35
     QUERY_INDEX_VECTOR_HNSW_PARAMS = 1 << 38
+    QUERY_INDEX_VECTOR_QUANTIZATION = 1 << 39
+    QUERY_INDEX_VECTOR_SEGMENT_PARAMS = 1 << 41
+    QUERY_INDEX_VECTOR_INT8_STORAGE = 1 << 42
 
     def __bytes__(self) -> bytes:
         """
