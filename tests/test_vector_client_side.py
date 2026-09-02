@@ -87,3 +87,51 @@ def test_aio_vector_page_size_defaults_to_k():
             cache.vector('T', 'vec', [0.0], k=5, threshold=0.0)
         assert cursor.call_args.args[2] == 5
     asyncio.new_event_loop().run_until_complete(run())
+
+
+# ---- the cache must HIT at the real parse sites, not only in isolation ----------------------------
+
+def _parse_twice(datatype, payload):
+    from pygridgain.stream import BinaryStream
+    classes = []
+    for _ in range(2):
+        with BinaryStream(None, bytearray(payload)) as stream:
+            classes.append(datatype.parse(stream))
+    return classes
+
+
+def test_wrapped_payload_class_is_shared_across_parses():
+    from pygridgain.datatypes import WrappedDataObject
+    import struct
+    payload = b'\x1b' + struct.pack('<i', 24) + bytes(24) + struct.pack('<i', 0)
+    first, second = _parse_twice(WrappedDataObject, payload)
+    assert first is second
+    assert ctypes.sizeof(first) == len(payload)
+
+
+def test_float_array_class_is_shared_across_parses():
+    from pygridgain.datatypes import FloatArrayObject
+    import struct
+    payload = b'\x10' + struct.pack('<i', 4) + struct.pack('<4f', 1.0, 2.0, 3.0, 4.0)
+    first, second = _parse_twice(FloatArrayObject, payload)
+    assert first is second
+    assert ctypes.sizeof(first) == len(payload)
+
+
+def test_map_class_is_shared_across_parses():
+    """The container key holds the element classes, so it repeats only if the leaves do."""
+    from pygridgain.datatypes import Map
+    import struct
+    entry = b'\x04' + struct.pack('<q', 7) + b'\x09' + struct.pack('<i', 2) + b'hi'
+    payload = struct.pack('<i', 2) + entry + entry
+    first, second = _parse_twice(Map, payload)
+    assert first is second
+    assert ctypes.sizeof(first) == len(payload)
+
+
+def test_different_payload_lengths_do_not_share():
+    from pygridgain.datatypes import WrappedDataObject
+    import struct
+    short = b'\x1b' + struct.pack('<i', 8) + bytes(8) + struct.pack('<i', 0)
+    longer = b'\x1b' + struct.pack('<i', 16) + bytes(16) + struct.pack('<i', 0)
+    assert _parse_twice(WrappedDataObject, short)[0] is not _parse_twice(WrappedDataObject, longer)[0]
