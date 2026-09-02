@@ -24,6 +24,7 @@ value is written by the client's own object writer, decoded once by ``VectorResp
 by the generic path the cursor used before (page parse, then ``unwrap_binary``), and both
 results must equal each other and the object that was written.
 """
+import asyncio
 import ctypes
 import struct
 from collections import OrderedDict
@@ -32,13 +33,14 @@ from datetime import datetime
 import pytest
 
 from pygridgain import GenericObjectMeta
+from pygridgain.aio_client import AioClient
 from pygridgain.client import Client
 from pygridgain.datatypes import (
     AnyDataObject, BinaryObject, Bool, BoolObject, DoubleObject, Float, FloatArrayObject, IntObject, Long,
     LongObject, Map, String, StringArrayObject, StructArray, TimestampObject
 )
 from pygridgain.queries.response import Response, VectorResponse
-from pygridgain.stream import BinaryStream, READ_BACKWARD
+from pygridgain.stream import AioBinaryStream, BinaryStream, READ_BACKWARD
 
 
 class _Ctx:
@@ -190,3 +192,64 @@ def test_two_value_types_resolve_their_own_classes():
     fast = decode_fast(registry, frame(payload), legacy=True)
     assert [type(row[1]).__name__ for row in fast] == ['Article', 'Rich', 'Article']
     assert fast == [(i, obj) for i, obj in enumerate(objects)]
+
+
+class _AioRegistry(_Registry):
+    """The asyncio client's face of the registry: coroutine lookups, the real async unwrap."""
+
+    async def query_binary_type(self, type_id, schema=None):
+        return self._classes.get((type_id, schema))
+
+    def register_binary_type(self, data_class, affinity_key_field=None):
+        self._classes[(data_class.type_id, data_class.schema_id)] = data_class
+
+    async def unwrap_binary(self, value):
+        return await AioClient.unwrap_binary(self, value)
+
+
+def _run(coro):
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
+@pytest.mark.parametrize('compact_footer', [False, True])
+def test_rich_objects_on_the_asyncio_stream_match_the_generic_async_path(compact_footer):
+    """Nested objects and other fallback fields must not run a sync parse on an async stream."""
+    sync_registry = _Registry(compact_footer)          # objects are written with the sync writer
+    objects = [rich(6), Article(vec=[2.0]), rich(7)]
+    payload = b''.join((
+        struct.pack('<q', 14), struct.pack('<i', len(objects)),
+        *(key(sync_registry, i) + wrapped(sync_registry, obj) + struct.pack('<f', 0.25 * i)
+          for i, obj in enumerate(objects)),
+        b'\x00'))
+    buf = frame(payload)
+    registry = _AioRegistry(compact_footer)
+    registry._classes = dict(sync_registry._classes)
+
+    async def fast():
+        response = VectorResponse(protocol_context=_Ctx(), following=None, has_cursor=True, with_scores=True)
+        with AioBinaryStream(registry, buf) as stream:
+            response_class = await response.parse_async(stream)
+            assert ctypes.sizeof(response_class) == len(buf)
+            parsed = stream.read_ctype(response_class, direction=READ_BACKWARD)
+        return (await response.to_python_async(parsed))['data']
+
+    async def generic():
+        rows_type = StructArray([('key', AnyDataObject), ('value', AnyDataObject), ('score', Float)])
+        response = Response(protocol_context=_Ctx(),
+                            following=[('cursor', Long), ('data', rows_type), ('more', Bool)])
+        with AioBinaryStream(registry, buf) as stream:
+            response_class = await response.parse_async(stream)
+            parsed = stream.read_ctype(response_class, direction=READ_BACKWARD)
+        data = (await response.to_python_async(parsed))['data']
+        return [(await registry.unwrap_binary(r['key']), await registry.unwrap_binary(r['value']), r['score'])
+                for r in data]
+
+    fast_rows = _run(fast())
+    generic_rows = _run(generic())
+    assert fast_rows == generic_rows
+    assert [row[1] for row in fast_rows] == objects
+    assert fast_rows[0][1].inner == Inner(label='inner 6', n=60)

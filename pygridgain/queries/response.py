@@ -290,6 +290,12 @@ class SQLResponse(Response):
 #: Sentinel: the direct reader cannot decode this element, use the generic machinery.
 _FALLBACK = object()
 
+
+def _is_async_stream(stream):
+    """True for AioBinaryStream: its registry lookup is a coroutine, so no sync parse may run on it."""
+    return asyncio.iscoroutinefunction(getattr(stream, 'get_dataclass', None))
+
+
 # Wire type codes the direct readers understand, as integers (buf[i] indexing yields ints).
 _TC_INT = 0x03
 _TC_LONG = 0x04
@@ -528,6 +534,10 @@ class VectorResponse(Response):
             length = struct.unpack_from('<i', buf, pos + 1)[0]
             return bytes(buf[pos + 5:pos + 5 + length]).decode('utf-8'), pos + 5 + length
 
+        # A field with no direct reader takes the generic parser. On the asyncio client that
+        # parser awaits the registry, so the whole element is redone on the async path instead.
+        if _is_async_stream(stream):
+            raise _NeedsAsync(None, None)
         stream.seek(pos)
         c_type = field_type.parse(stream)
         value = field_type.to_python(
@@ -537,6 +547,8 @@ class VectorResponse(Response):
     @staticmethod
     def _decode_element_generic(stream, pos):
         """The old price for one element: generic parse, then the unwrap the cursor used to do."""
+        if _is_async_stream(stream):
+            raise _NeedsAsync(None, None)
         stream.seek(pos)
         c_type = AnyDataObject.parse(stream)
         value = AnyDataObject.to_python(
@@ -553,7 +565,10 @@ class VectorResponse(Response):
             data_class = await stream.client.query_binary_type(need.type_id, need.schema_id)
             if data_class is not None:
                 data_classes[(need.type_id, need.schema_id)] = data_class
-                return self._decode_any(stream, buf, data_classes)
+                try:
+                    return self._decode_any(stream, buf, data_classes)
+                except _NeedsAsync:
+                    pass  # a field inside still needs the async path: decode the whole element there
 
         stream.seek(pos)
         c_type = await AnyDataObject.parse_async(stream)
