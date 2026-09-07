@@ -285,6 +285,30 @@ def test_int8_accepted_once_the_bit_is_negotiated():
     assert got['quantization'] == VectorQuantization.INT8
 
 
+def test_unknown_storage_mode_is_refused():
+    # Refused here rather than sent, because the server rejects an ordinal outside the enum with
+    # a less specific error.
+    with pytest.raises(ValueError, match='Unknown vector storage mode 7'):
+        serialize([vector_index(quantization=7)], quantization=True, segments=True, int8=True)
+
+
+@pytest.mark.parametrize('mode', [VectorQuantization.ENGINE_DEFAULT, VectorQuantization.NONE,
+                                  VectorQuantization.BINARY, VectorQuantization.INT8])
+def test_every_known_storage_mode_still_serializes(mode):
+    # The negative control for the refusal above. A membership check is easy to write so it
+    # rejects something valid, and without this loop nothing here would notice.
+    serialize([vector_index(quantization=mode)], quantization=True, segments=True, int8=True)
+
+
+def test_unknown_storage_mode_on_a_non_vector_index_reports_the_index_type():
+    # Precedence is load-bearing: on a non-VECTOR index the value is irrelevant, so the useful
+    # message names the index type, not the unknown ordinal.
+    idx = {'index_name': 'i', 'index_type': IndexType.SORTED, 'inline_size': -1,
+           'fields': [{'name': 'f'}], 'quantization': 7}
+    with pytest.raises(ValueError, match='VECTOR indexes only'):
+        serialize([idx], quantization=True, segments=True, int8=True)
+
+
 @pytest.mark.parametrize('field,value', [('max_segments', 4), ('query_threads', 2)])
 def test_segment_params_refused_when_the_cluster_lacks_them(field, value):
     with pytest.raises(NotSupportedByClusterError, match='per-index vector segment parameters'):
