@@ -253,3 +253,38 @@ def test_rich_objects_on_the_asyncio_stream_match_the_generic_async_path(compact
     assert fast_rows == generic_rows
     assert [row[1] for row in fast_rows] == objects
     assert fast_rows[0][1].inner == Inner(label='inner 6', n=60)
+
+
+def test_embedded_nul_strings_round_trip_and_agree_on_both_paths():
+    """A Java string may contain U+0000. The shared String codec used a c_char array, which stops at
+    the first NUL on read and write; the direct reader is byte-exact. Both paths must now agree and
+    must return the whole string, as a key and as an object field, sync and asyncio."""
+    registry = _Registry(False)
+    nul = 'a\x00b'
+    objects = [Rich(title=nul, vec=[1.0], count=1, weight=1.0, big=1, flag=True, tags=[nul, 'x'],
+                    when=(datetime(2026, 9, 7, 0, 0, 0), 0), note=nul, inner=Inner(label=nul, n=1))]
+    with BinaryStream(registry) as stream:
+        String.from_python(stream, nul)
+        key_bytes = stream.getvalue()
+    payload = b''.join((
+        struct.pack('<q', 15), struct.pack('<i', 1), key_bytes, wrapped(registry, objects[0]), b'\x00'))
+    buf = frame(payload)
+    fast = decode_fast(registry, buf, legacy=True)
+    generic = decode_generic(registry, buf, legacy=True)
+    assert fast == generic == [(nul, objects[0])]
+    assert fast[0][1].title == nul and fast[0][1].note == nul and fast[0][1].inner.label == nul
+
+    # the writer must carry the NUL too: the declared length is 3 and the payload is a \x00 b
+    assert key_bytes == b'\x09' + struct.pack('<i', 3) + b'a\x00b'
+
+    aio = _AioRegistry(False)
+    aio._classes = dict(registry._classes)
+
+    async def fast_async():
+        response = VectorResponse(protocol_context=_Ctx(), following=None, has_cursor=True, legacy=True)
+        with AioBinaryStream(aio, buf) as stream:
+            response_class = await response.parse_async(stream)
+            parsed = stream.read_ctype(response_class, direction=READ_BACKWARD)
+        return (await response.to_python_async(parsed))['data']
+
+    assert _run(fast_async()) == [(nul, objects[0])]
