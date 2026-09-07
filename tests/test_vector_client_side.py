@@ -135,3 +135,68 @@ def test_different_payload_lengths_do_not_share():
     short = b'\x1b' + struct.pack('<i', 8) + bytes(8) + struct.pack('<i', 0)
     longer = b'\x1b' + struct.pack('<i', 16) + bytes(16) + struct.pack('<i', 0)
     assert _parse_twice(WrappedDataObject, short)[0] is not _parse_twice(WrappedDataObject, longer)[0]
+
+
+# ---- review findings (af Round 1): one-shot iterables, the admission bound, remaining leaf classes ----
+
+def test_one_shot_iterable_builds_the_full_class():
+    """tuple(fields) must run once: a generator must not be exhausted before the fallback build."""
+    fields = iter((('a', ctypes.c_int), ('b', ctypes.c_byte)))
+    c = cached_c_type('OneShot', (ctypes.LittleEndianStructure,), fields)
+    assert [n for n, _ in c._fields_] == ['a', 'b']
+    assert ctypes.sizeof(c) == 5
+
+
+def test_one_shot_iterable_with_a_bad_spec_still_raises():
+    """An exhausted iterator must never turn an invalid spec into a silent zero-field class."""
+    fields = iter((('ok', ctypes.c_int), ('bad', [1, 2, 3])))
+    with pytest.raises(TypeError):
+        cached_c_type('OneShotBad', (ctypes.LittleEndianStructure,), fields)
+
+
+def test_shapes_above_the_field_budget_are_not_cached():
+    from pygridgain.datatypes.internal import CACHED_C_TYPE_MAX_FIELDS, _cached_c_type
+    wide = tuple((f'f{i}', ctypes.c_byte) for i in range(CACHED_C_TYPE_MAX_FIELDS + 1))
+    before = _cached_c_type.cache_info()
+    a = cached_c_type('Wide', (ctypes.LittleEndianStructure,), wide)
+    b = cached_c_type('Wide', (ctypes.LittleEndianStructure,), wide)
+    after = _cached_c_type.cache_info()
+    assert a is not b                      # built per call, like before the cache existed
+    assert ctypes.sizeof(a) == CACHED_C_TYPE_MAX_FIELDS + 1
+    assert after.currsize == before.currsize and after.misses == before.misses
+
+
+def test_decimal_leaf_class_is_shared_across_parses():
+    """A parent that holds a Decimal can only hit the cache if the Decimal leaf itself is shared."""
+    from pygridgain.datatypes import DecimalObject
+    import struct
+    payload = b'\x1e' + struct.pack('<i', 2) + struct.pack('<i', 3) + b'\x01\x02\x03'
+    first, second = _parse_twice(DecimalObject, payload)
+    assert first is second
+
+
+def test_object_array_class_is_shared_across_parses():
+    from pygridgain.datatypes import ObjectArrayObject
+    import struct
+    # type code, type id, length, then two Long elements
+    element = b'\x04' + struct.pack('<q', 5)
+    payload = b'\x17' + struct.pack('<i', -1) + struct.pack('<i', 2) + element + element
+    first, second = _parse_twice(ObjectArrayObject, payload)
+    assert first is second
+
+
+def test_parsing_identical_frames_creates_no_new_classes():
+    """The demand behind the cache: after warm-up, parsing the same shape creates zero classes."""
+    import gc
+    import struct
+    from pygridgain.datatypes import Map
+    entry = b'\x04' + struct.pack('<q', 7) + b'\x1b' + struct.pack('<i', 32) + bytes(32) + struct.pack('<i', 0)
+    payload = struct.pack('<i', 3) + entry * 3
+    _parse_twice(Map, payload)                      # warm-up
+    gc.collect()
+    classes_before = sum(1 for o in gc.get_objects() if isinstance(o, type))
+    for _ in range(50):
+        _parse_twice(Map, payload)
+    gc.collect()
+    classes_after = sum(1 for o in gc.get_objects() if isinstance(o, type))
+    assert classes_after == classes_before

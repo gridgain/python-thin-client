@@ -81,14 +81,7 @@ class ObjectArrayObject(Nullable):
 
     @classmethod
     def __build_final_class(cls, fields):
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': cls._fields + fields,
-            }
-        )
+        return cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), cls._fields + fields)
 
     @classmethod
     def to_python_not_null(cls, ctypes_object, **kwargs):

@@ -252,6 +252,12 @@ def _cached_c_type(name, bases, fields):
     return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
 
 
+#: Largest field count the shared-class cache admits. A container class carries one field per element,
+#: so a 10,000-row page or a 10,000-element collection would be a multi-megabyte class; the cache is
+#: bounded by entry count, so such shapes are built per parse instead (the pre-existing behaviour).
+CACHED_C_TYPE_MAX_FIELDS = 256
+
+
 def cached_c_type(name, bases, fields):
     """
     One ctypes Structure per distinct (name, bases, field shape) - the general form of
@@ -263,10 +269,17 @@ def cached_c_type(name, bases, fields):
     The classes are only ever read (``sizeof``, ``from_buffer_copy``, ``read_ctype``), never
     mutated, so one shared class per shape is safe. Field shapes recur because the leaf classes
     themselves are shared: ctypes caches array types, and the struct shapes come from the caches
-    above. A field spec that is not hashable falls back to a direct build.
+    above.
+
+    ``fields`` is materialized exactly once, so a one-shot iterable is safe on every path. A shape
+    wider than :data:`CACHED_C_TYPE_MAX_FIELDS`, or one whose spec is not hashable, is built
+    directly and not cached.
     """
+    fields = tuple(fields)
+    if len(fields) > CACHED_C_TYPE_MAX_FIELDS:
+        return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
     try:
-        return _cached_c_type(name, bases, tuple(fields))
+        return _cached_c_type(name, bases, fields)
     except TypeError:
         return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
 
@@ -609,14 +622,7 @@ class AnyDataArray(AnyDataObject):
         return [('length', self.counter_type)], length
 
     def build_c_type(self, fields):
-        return type(
-            self.__class__.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': fields,
-            }
-        )
+        return cached_c_type(self.__class__.__name__, (ctypes.LittleEndianStructure,), fields)
 
     @classmethod
     def to_python(cls, ctypes_object, **kwargs):

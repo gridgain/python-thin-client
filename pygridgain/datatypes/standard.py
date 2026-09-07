@@ -25,6 +25,7 @@ import uuid
 from pygridgain.constants import *
 from pygridgain.utils import datetime_hashcode, decimal_hashcode, hashcode
 from .base import GridGainDataType
+from .internal import cached_c_type
 from .type_codes import *
 from .type_ids import *
 from .type_names import *
@@ -148,19 +149,14 @@ class DecimalObject(Nullable):
 
     @classmethod
     def build_c_type(cls, length):
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': [
-                    ('type_code', ctypes.c_byte),
-                    ('scale', ctypes.c_int),
-                    ('length', ctypes.c_int),
-                    ('data', ctypes.c_ubyte * length)
-                ]
-            }
-        )
+        # Shared per length, like String: a parent class that holds a Decimal field can only be
+        # shared if this leaf is.
+        return cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), (
+            ('type_code', ctypes.c_byte),
+            ('scale', ctypes.c_int),
+            ('length', ctypes.c_int),
+            ('data', ctypes.c_ubyte * length),
+        ))
 
     @classmethod
     def parse_not_null(cls, stream):
