@@ -20,6 +20,7 @@ from io import SEEK_CUR
 
 from pygridgain.constants import *
 from .base import GridGainDataType
+from .internal import cached_c_type
 from .null_object import Nullable
 from .primitive import *
 from .type_codes import *
@@ -113,17 +114,12 @@ class PrimitiveArray(GridGainDataType):
             byteorder=PROTOCOL_BYTE_ORDER
         )
 
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure, ),
-            {
-                '_pack_': 1,
-                '_fields_': [
-                    ('length', ctypes.c_int),
-                    ('data', cls.primitive_type.c_type * length),
-                ],
-            }
-        )
+        # One shared class per (array type, length): result rows carry same-length arrays,
+        # so the shape recurs and a fresh class per row is pure overhead.
+        return cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), (
+            ('length', ctypes.c_int),
+            ('data', cls.primitive_type.c_type * length),
+        ))
 
     @classmethod
     def parse(cls, stream):
@@ -252,18 +248,11 @@ class PrimitiveArrayObject(Nullable):
             byteorder=PROTOCOL_BYTE_ORDER
         )
 
-        return type(
-            cls.__name__,
-            (ctypes.LittleEndianStructure,),
-            {
-                '_pack_': 1,
-                '_fields_': [
-                    ('type_code', ctypes.c_byte),
-                    ('length', ctypes.c_int),
-                    ('data', cls.primitive_type.c_type * length),
-                ],
-            }
-        )
+        return cached_c_type(cls.__name__, (ctypes.LittleEndianStructure,), (
+            ('type_code', ctypes.c_byte),
+            ('length', ctypes.c_int),
+            ('data', cls.primitive_type.c_type * length),
+        ))
 
     @classmethod
     def parse_not_null(cls, stream):

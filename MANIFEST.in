@@ -9,5 +9,6 @@ global-exclude *.py[cod]
 global-exclude *__pycache__*
 include tox.ini
 include README.md
+include CHANGELOG.md
 include LICENSE
 include NOTICE

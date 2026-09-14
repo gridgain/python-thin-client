@@ -24,6 +24,7 @@ from pygridgain.connection.protocol_context import ProtocolContext
 from pygridgain.constants import RHF_TOPOLOGY_CHANGED, RHF_ERROR
 from pygridgain.datatypes import AnyDataObject, Bool, Int, Long, String, StringArray, Struct
 from pygridgain.datatypes.binary import body_struct, enum_struct, schema_struct
+from pygridgain.datatypes.internal import cached_c_type
 from pygridgain.queries.op_codes import OP_SUCCESS
 from pygridgain.stream import READ_BACKWARD
 
@@ -93,14 +94,9 @@ class Response:
         return not has_error, init_pos, header_class, fields
 
     def __build_response_class(self, stream, init_pos, header_class, fields):
-        response_class = type(
-            self._response_class_name,
-            (header_class,),
-            {
-                '_pack_': 1,
-                '_fields_': fields,
-            }
-        )
+        # One shared class per response shape: the hot responses (cache ops, query pages) repeat
+        # a handful of shapes, and their field classes come from shared-per-shape caches.
+        response_class = cached_c_type(self._response_class_name, (header_class,), fields)
 
         stream.seek(init_pos + ctypes.sizeof(response_class))
         return response_class
