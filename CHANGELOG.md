@@ -24,3 +24,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   building a new class for every element of every row. Vector queries that carry values are
   20% to 28% faster, and the client keeps no dead classes. There is no API change.
   ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
+- Vector query responses decode in one pass, directly from the response buffer. The vector
+  cursors no longer unwrap each value a second time. Queries that carry values are a further
+  18% faster at `k=100`; rows are unchanged. Two response shapes change at the edges:
+  - An asyncio legacy `(key, value)` row is now a `tuple`. Before, it was a `list`. The
+    synchronous client always returned a `tuple`, so the two clients now agree.
+  - `pygridgain.api.sql.vector()` returns legacy rows as a list of `(key, value)` tuples.
+    Before, it returned a dictionary. The wire order stays the same, and the cursor gives
+    the same rows as before. This function is low-level; `Cache.vector()` is unchanged.
+
+  ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
+
+### Fixed
+
+- **A string that contains a NUL character (U+0000) is no longer truncated.** The string
+  codec used a ctypes `c_char` array, which stops at the first NUL. The client cut such a
+  string on read and on write, so `'a\x00b'` went to the server as `'a'` and came back as
+  `'a'`. This applies to every string the client sends or receives, not only to vector
+  queries. ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
