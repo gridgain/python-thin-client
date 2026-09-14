@@ -74,7 +74,7 @@ def _cached_string_c_type(cls, length: int):
             '_fields_': [
                 ('type_code', ctypes.c_byte),
                 ('length', ctypes.c_int),
-                ('data', ctypes.c_char * length),
+                ('data', ctypes.c_ubyte * length),  # not c_char: a c_char array stops at the first NUL,
             ],
         },
     )
@@ -115,7 +115,9 @@ class String(Nullable):
     @classmethod
     def to_python_not_null(cls, ctypes_object, **kwargs):
         if ctypes_object.length > 0:
-            return ctypes_object.data.decode(PROTOCOL_STRING_ENCODING)
+            # bytes() of the whole array: exactly the declared length. Reading a c_char array
+            # instead would stop at the first NUL and silently truncate a valid string.
+            return bytes(ctypes_object.data).decode(PROTOCOL_STRING_ENCODING)
 
         return ''
 
@@ -131,7 +133,8 @@ class String(Nullable):
             byteorder=PROTOCOL_BYTE_ORDER
         )
         data_object.length = length
-        data_object.data = value
+        if length:
+            ctypes.memmove(data_object.data, value, length)   # every byte, NULs included
 
         stream.write(data_object)
 

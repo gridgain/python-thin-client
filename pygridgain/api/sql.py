@@ -22,6 +22,7 @@ from pygridgain.datatypes import Float as PyFloat
 from pygridgain.datatypes.sql import StatementType
 from pygridgain.exceptions import NotSupportedByClusterError
 from pygridgain.queries import Query, query_perform
+from pygridgain.queries.response import VectorResponse
 from pygridgain.queries.op_codes import (
     OP_QUERY_SCAN, OP_QUERY_SCAN_CURSOR_GET_PAGE, OP_QUERY_SQL, OP_QUERY_SQL_CURSOR_GET_PAGE, OP_QUERY_SQL_FIELDS,
     OP_QUERY_SQL_FIELDS_CURSOR_GET_PAGE, OP_RESOURCE_CLOSE, OP_QUERY_VECTOR, OP_QUERY_VECTOR_CURSOR_GET_PAGE
@@ -480,9 +481,9 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
      Value dict is of following format:
 
      * `cursor`: int, cursor ID,
-     * `data`: result rows - a dict of key-value pairs when `query_flags` is 0, otherwise
-       a list of per-row dicts with `key`, optionally `value` (no VECTOR_FLAG_NOCONTENT) and
-       optionally `score` (VECTOR_FLAG_WITH_SCORES) entries,
+     * `data`: result rows as final Python values, shaped by the flags: `(key, value)` tuples
+       when `query_flags` is 0, otherwise `key`, `(key, score)`, `(key, value)` or
+       `(key, value, score)` per VECTOR_FLAG_NOCONTENT / VECTOR_FLAG_WITH_SCORES,
      * `more`: bool, True if more data is available for subsequent
        ‘vector_cursor_get_page’ calls.
     """
@@ -498,25 +499,6 @@ async def vector_async(conn: 'AioConnection', cache_info: CacheInfo, page_size: 
     """
     return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold,
                           ef_search, query_flags)
-
-
-def __vector_rows_type(query_flags):
-    """
-    Response rows encoding: a plain key-value sequence for legacy queries, a row struct shaped
-    by the flags otherwise.
-    """
-    if not query_flags:
-        return Map
-
-    row = [('key', AnyDataObject)]
-
-    if not query_flags & VECTOR_FLAG_NOCONTENT:
-        row.append(('value', AnyDataObject))
-
-    if query_flags & VECTOR_FLAG_WITH_SCORES:
-        row.append(('score', PyFloat))
-
-    return StructArray(row)
 
 
 def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold, ef_search, query_flags):
@@ -553,16 +535,17 @@ def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, th
         raise NotSupportedByClusterError('The cluster does not support extended vector queries '
                                          '(efSearch, scores, NOCONTENT) - QUERY_VECTOR_EXTENDED feature is absent.')
 
-    query_struct = Query(OP_QUERY_VECTOR, fields)
+    query_struct = Query(OP_QUERY_VECTOR, fields, response_type=VectorResponse)
 
+    # The response decodes in one pass (VectorResponse): rows leave it as final Python values,
+    # already shaped the way the cursor yields them.
     return query_perform(
         query_struct, conn,
         query_params=query_params,
-        response_config=[
-            ('cursor', Long),
-            ('data', __vector_rows_type(query_flags)),
-            ('more', Bool),
-        ],
+        with_scores=bool(query_flags & VECTOR_FLAG_WITH_SCORES),
+        no_content=bool(query_flags & VECTOR_FLAG_NOCONTENT),
+        legacy=not query_flags,
+        has_cursor=True,
         post_process_fun=__query_result_post_process
     )
 
@@ -597,17 +580,18 @@ def __vector_cursor_get_page(conn, cursor, query_flags):
         OP_QUERY_VECTOR_CURSOR_GET_PAGE,
         [
             ('cursor', Long),
-        ]
+        ],
+        response_type=VectorResponse,
     )
     return query_perform(
         query_struct, conn,
         query_params={
             'cursor': cursor,
         },
-        response_config=[
-            ('data', __vector_rows_type(query_flags)),
-            ('more', Bool),
-        ],
+        with_scores=bool(query_flags & VECTOR_FLAG_WITH_SCORES),
+        no_content=bool(query_flags & VECTOR_FLAG_NOCONTENT),
+        legacy=not query_flags,
+        has_cursor=False,
         post_process_fun=__query_result_post_process
     )
 
