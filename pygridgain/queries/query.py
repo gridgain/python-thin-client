@@ -65,7 +65,6 @@ _OP_CODES = {code: name for name, code in inspect.getmembers(op_codes) if name.s
 
 
 def _get_op_code_name(code):
-    global _OP_CODES
     return _OP_CODES.get(code)
 
 
@@ -122,7 +121,6 @@ class Query:
         self.__write_header(stream, header, init_pos)
 
     def _build_header(self, stream):
-        global _QUERY_COUNTER
         header_class = self.build_c_type()
         header_len = ctypes.sizeof(header_class)
         stream.seek(header_len, SEEK_CUR)
