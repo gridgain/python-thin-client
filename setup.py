@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import re
+# The package metadata lives in pyproject.toml. What is left here is the C
+# extension, which has to be attempted and then given up on when the platform
+# cannot compile it, so that the client still installs as pure Python.
+#
 from distutils.command.build_ext import build_ext
 from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
 
@@ -55,33 +58,6 @@ class ve_build_ext(build_ext):
             raise BuildFailed()
 
 
-def is_a_requirement(line):
-    return not any([
-        line.startswith('#'),
-        line.startswith('-r'),
-        len(line) == 0,
-    ])
-
-
-install_requirements = []
-with open('requirements/install.txt', 'r', encoding='utf-8') as requirements_file:
-    for line in requirements_file.readlines():
-        line = line.strip('\n')
-        if is_a_requirement(line):
-            install_requirements.append(line)
-
-with open('README.md', 'r', encoding='utf-8') as readme_file:
-    long_description = readme_file.read()
-
-version = ''
-with open('pygridgain/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
-
-if not version:
-    raise RuntimeError('Cannot find version information')
-
-
 def run_setup(with_binary=True):
     if with_binary:
         kw = dict(
@@ -91,37 +67,7 @@ def run_setup(with_binary=True):
     else:
         kw = dict()
 
-    setuptools.setup(
-        name='pygridgain',
-        version=version,
-        python_requires='>=3.7',
-        author='GridGain Systems',
-        author_email='info@gridgain.com',
-        description='GridGain binary client Python API',
-        long_description=long_description,
-        long_description_content_type='text/markdown',
-        url='https://github.com/gridgain/python-thin-client',
-        packages=setuptools.find_packages(),
-        install_requires=install_requirements,
-        license='GridGain Community Edition License',
-        license_files=('LICENSE', 'NOTICE'),
-        classifiers=[
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.9',
-            'Programming Language :: Python :: 3.10',
-            'Programming Language :: Python :: 3.11',
-            'Programming Language :: Python :: 3.12',
-            'Programming Language :: Python :: 3.13',
-            'Programming Language :: Python :: 3 :: Only',
-            'Intended Audience :: Developers',
-            'Topic :: Database :: Front-Ends',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            'License :: Free for non-commercial use',
-            'Operating System :: OS Independent',
-        ],
-        **kw
-    )
+    setuptools.setup(**kw)
 
 
 try:

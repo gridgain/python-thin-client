@@ -1,0 +1,65 @@
+#
+# Copyright 2019 GridGain Systems, Inc. and Contributors.
+#
+# Licensed under the GridGain Community Edition License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.gridgain.com/products/software/community-edition/gridgain-community-edition-license
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# setuptools 77 is the first release that understands the license fields below,
+# which PEP 639 defines and which replace the deprecated license classifier.
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# The C extension is what keeps setup.py around: it is built if a compiler is
+# available and skipped if not, which is a decision no static field can carry.
+# Everything else about the package is declared here.
+[project]
+name = 'pygridgain'
+description = 'GridGain binary client Python API'
+readme = 'README.md'
+requires-python = '>=3.9'
+# The GridGain Community Edition License is not an SPDX-registered license, so
+# it is named as a reference rather than an identifier.
+license = 'LicenseRef-GridGain-Community-Edition'
+license-files = ['LICENSE', 'NOTICE']
+authors = [{ name = 'GridGain Systems', email = 'info@gridgain.com' }]
+classifiers = [
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3 :: Only',
+    'Intended Audience :: Developers',
+    'Topic :: Database :: Front-Ends',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Operating System :: OS Independent',
+]
+# The version stays in the package, and the dependencies in the requirements
+# file, so that both have a single place to be read from.
+dynamic = ['version', 'dependencies']
+
+[project.urls]
+Homepage = 'https://github.com/gridgain/python-thin-client'
+
+[tool.setuptools.dynamic]
+version = { attr = 'pygridgain.__version__' }
+dependencies = { file = ['requirements/install.txt'] }
+
+# Only the client itself is installed. A bare find() also picks up the
+# top-level 'tests' package, which then lands in site-packages and collides
+# with any other project that ships one.
+[tool.setuptools.packages.find]
+include = ['pygridgain*']
