@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the client's own test suite into `site-packages/tests`, where it shadowed, and was
   shadowed by, any other project that ships one. Only `pygridgain` is installed now. The
   source distribution still carries the tests.
+- **The client no longer requires exact versions of its dependencies, and no longer
+  depends on `contextvars`.** `attrs` and `tzlocal` were pinned with `==`, which made the
+  client impossible to install next to any application that needed a different version of
+  either; they are now floors (`attrs>=23.2.0`, `tzlocal>=4.3.1`). The `contextvars`
+  requirement was a backport of a module that has been in the standard library since
+  Python 3.7, so it only pulled in `immutables`, a C extension, for nothing.
 - The package metadata moved from `setup.py` to `pyproject.toml`, and the license is
   declared the way PEP 639 defines instead of through the deprecated license classifier.
   `setup.py` remains, and still builds the C extension and falls back to a pure Python

@@ -1,5 +1,7 @@
 # these pip packages are necessary for the pygridgain to run
 
-attrs==23.2.0
-contextvars==2.4
-tzlocal==4.3.1
+# Ranges, not exact versions: an exact pin in a library's own requirements makes
+# the client uninstallable next to any application that needs a different
+# version of the same package. The floors are what the client is tested with.
+attrs>=23.2.0
+tzlocal>=4.3.1
