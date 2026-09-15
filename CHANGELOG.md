@@ -10,25 +10,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **The client now requires Python 3.9 or above.** The published metadata said 3.7, while
-  the wheels, the tested versions and the documented requirement have all been 3.9 and
-  above for several releases. `pip` now reports that mismatch instead of installing a
-  client that was never built for the interpreter.
+- **The client now needs Python 3.9 or newer.** The metadata said 3.7, but the wheels, the
+  tested versions and the documentation have all said 3.9 for several releases. `pip` now
+  reports this instead of installing a client that was not built for the interpreter.
 - **The installed package no longer contains a top-level `tests` package.** The wheel put
-  the client's own test suite into `site-packages/tests`, where it shadowed, and was
-  shadowed by, any other project that ships one. Only `pygridgain` is installed now. The
-  source distribution still carries the tests.
-- **The client no longer requires exact versions of its dependencies, and no longer
-  depends on `contextvars`.** `attrs` and `tzlocal` were pinned with `==`, which made the
-  client impossible to install next to any application that needed a different version of
-  either; they are now floors (`attrs>=23.2.0`, `tzlocal>=4.3.1`). The `contextvars`
-  requirement was a backport of a module that has been in the standard library since
-  Python 3.7, so it only pulled in `immutables`, a C extension, for nothing.
-- The package metadata moved from `setup.py` to `pyproject.toml`, and the license is
-  declared the way PEP 639 defines instead of through the deprecated license classifier.
-  `setup.py` remains, and still builds the C extension and falls back to a pure Python
-  install where it cannot be compiled. Building from a source distribution now needs
-  setuptools 77 or newer, which `pip` installs on its own.
+  the client's tests into `site-packages/tests`, where they clashed with any other project
+  that ships a `tests` package. Only `pygridgain` is installed now. The source
+  distribution still contains the tests.
+- **The client no longer pins exact versions of its dependencies, and no longer needs
+  `contextvars`.** `attrs` and `tzlocal` were pinned with `==`, so the client could not be
+  installed together with an application that needed another version. They are now
+  minimum versions (`attrs>=23.2.0`, `tzlocal>=4.3.1`). `contextvars` has been in the
+  standard library since Python 3.7, so the backport only added `immutables` for nothing.
+- The package metadata moved from `setup.py` to `pyproject.toml`, and the license now uses
+  the PEP 639 fields instead of the deprecated license classifier. `setup.py` still builds
+  the C extension. Building from a source distribution now needs setuptools 77 or newer,
+  which `pip` installs on its own.
 - **`Cache.vector()` and `AioCache.vector()` now use `k` as the default `page_size`**
   (before: `1`). A vector query returns at most `k` rows, so the whole result now arrives in
   one page. The old default made one server round trip for every result row: a `k=10` query

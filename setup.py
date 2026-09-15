@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# The package metadata lives in pyproject.toml. What is left here is the C
-# extension, which has to be attempted and then given up on when the platform
-# cannot compile it, so that the client still installs as pure Python.
+# The package metadata is in pyproject.toml. This file only builds the C
+# extension. If it cannot be compiled, the build falls back to pure Python.
 #
 from setuptools.command.build_ext import build_ext
 from setuptools.errors import CCompilerError, ExecError, PlatformError

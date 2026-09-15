@@ -23,9 +23,8 @@ PACKAGE_NAME=pygridgain
 for PYBIN in /opt/python/*/bin; do
     if [[ $PYBIN =~ ^(.*)cp39(.*)$ ]] || [[ $PYBIN =~ ^(.*)cp31[0123](.*)$ ]]; then
         cd $PACKAGE_NAME
-        # setup.py runs against the interpreter's own setuptools rather than an
-        # isolated build environment, and the license fields in pyproject.toml
-        # need 77 or newer.
+        # setup.py uses the interpreter's own setuptools, and the license
+        # fields in pyproject.toml need version 77 or newer.
         "${PYBIN}/pip" install --upgrade "setuptools>=77"
         "${PYBIN}/python" setup.py sdist --formats=gztar,zip --dist-dir /dist
         break;

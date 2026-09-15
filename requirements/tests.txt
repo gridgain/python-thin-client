@@ -1,23 +1,9 @@
 # these packages are used for testing
 
-# The newest releases that still cover every Python this client supports:
-# pytest 9 dropped 3.9, and pytest-cov 7.1.0 is the latest there is. Going
-# older is not an option either, as flake8 before 5 fails on 3.12 and later.
 pytest==8.4.2
 pytest-cov==7.1.0
 flake8==7.3.0
-
-# Held back on purpose. Later releases removed the `event_loop` fixture that
-# tests/conftest.py overrides and that many tests take as an argument, so
-# moving this pin is a change to the tests rather than to a version number.
 pytest-asyncio==0.14.0
-
-# 7.1.2 is the first release with wheels for 3.13; 5.8.0 had none past 3.9, so
-# every test environment had to compile it.
 psutil==7.1.2
-
-# 1.28 registers a flake8 plugin that flake8 7 refuses to load, and this
-# file is installed into the codestyle environment as well.
 teamcity-messages==1.33
-
 jinja2==3.0.3

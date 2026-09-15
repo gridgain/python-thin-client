@@ -14,22 +14,18 @@
 # limitations under the License.
 #
 
-# setuptools 77 is the first release that understands the license fields below,
-# which PEP 639 defines and which replace the deprecated license classifier.
+# setuptools 77 is the first version that reads the license fields below.
 [build-system]
 requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
-# The C extension is what keeps setup.py around: it is built if a compiler is
-# available and skipped if not, which is a decision no static field can carry.
-# Everything else about the package is declared here.
 [project]
 name = 'pygridgain'
 description = 'GridGain binary client Python API'
 readme = 'README.md'
 requires-python = '>=3.9'
-# The GridGain Community Edition License is not an SPDX-registered license, so
-# it is named as a reference rather than an identifier.
+# The GridGain Community Edition License is not in the SPDX list, so it is
+# named as a reference.
 license = 'LicenseRef-GridGain-Community-Edition'
 license-files = ['LICENSE', 'NOTICE']
 authors = [{ name = 'GridGain Systems', email = 'info@gridgain.com' }]
@@ -49,8 +45,6 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Operating System :: OS Independent',
 ]
-# The version stays in the package, and the dependencies in the requirements
-# file, so that both have a single place to be read from.
 dynamic = ['version', 'dependencies']
 
 [project.urls]
@@ -63,8 +57,6 @@ Changelog = 'https://github.com/gridgain/python-thin-client/blob/master/CHANGELO
 version = { attr = 'pygridgain.__version__' }
 dependencies = { file = ['requirements/install.txt'] }
 
-# Only the client itself is installed. A bare find() also picks up the
-# top-level 'tests' package, which then lands in site-packages and collides
-# with any other project that ships one.
+# A bare find() would also install the top-level 'tests' package.
 [tool.setuptools.packages.find]
 include = ['pygridgain*']
