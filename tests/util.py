@@ -117,15 +117,6 @@ def get_ignite_runner():
                     "a valid Ignite instance")
 
 
-def get_ignite_config_path(use_ssl=False):
-    if use_ssl:
-        file_name = "ignite-config-ssl.xml"
-    else:
-        file_name = "ignite-default.xml.jinja2"
-
-    return os.path.join(get_test_dir(), "config", file_name)
-
-
 def check_server_started(idx=1):
     pattern = re.compile('^Topology snapshot.*')
 
