@@ -22,11 +22,12 @@ PACKAGE_NAME=pygridgain
 # Create source dist.
 for PYBIN in /opt/python/*/bin; do
     if [[ $PYBIN =~ ^(.*)cp39(.*)$ ]] || [[ $PYBIN =~ ^(.*)cp31[0123](.*)$ ]]; then
-        cd $PACKAGE_NAME
-        # setup.py uses the interpreter's own setuptools, and the license
-        # fields in pyproject.toml need version 77 or newer.
-        "${PYBIN}/pip" install --upgrade "setuptools>=77"
-        "${PYBIN}/python" setup.py sdist --formats=gztar,zip --dist-dir /dist
+        # build reads [build-system] from pyproject.toml and provisions
+        # setuptools itself, so the interpreter's own copy does not matter.
+        "${PYBIN}/pip" install --upgrade build
+        "${PYBIN}/python" -m build --sdist --outdir /dist /$PACKAGE_NAME
+        # build only makes a tarball. The release also ships a zip of it.
+        "${PYBIN}/python" /$PACKAGE_NAME/scripts/sdist_to_zip.py /dist
         break;
     fi
 done
