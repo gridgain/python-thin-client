@@ -38,7 +38,9 @@ the additional requirements into your working Python environment using
 $ pip install -r requirements/<your task>.txt
 ```
 
-You may also want to consult the `setuptools` manual about using `setup.py`.
+The package metadata lives in `pyproject.toml`; `setup.py` only builds the optional
+C extension. You may also want to consult the
+[Python packaging guide](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/).
 
 ### *optional C extension*
 There is an optional C extension to speedup some computational intensive tasks. If it's compilation fails
@@ -56,6 +58,9 @@ There is an optional C extension to speedup some computational intensive tasks. 
   
   Ready wheels for `x86` and `x86-64` for different python versions (3.9, 3.10, 3.11, 3.12 and 3.13) will be
   located in `distr` directory.
+
+- `./scripts/create_distr.sh` also builds the source distribution, as a `.tar.gz` and a `.zip`,
+  into the same `distr` directory.
 
 ### Updating from older version
 

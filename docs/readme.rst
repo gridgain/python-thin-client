@@ -87,7 +87,8 @@ For checking codestyle run:
 
 $ flake8
 
-You may also want to consult the `setuptools`_ manual about using `setup.py`.
+The package metadata lives in `pyproject.toml`; `setup.py` only builds the optional
+C extension. You may also want to consult the `Python packaging guide`_.
 
 Examples
 --------
@@ -188,6 +189,6 @@ This is a free software, brought to you on terms of the
 .. _GridGain Community Edition License: https://www.gridgain.com/products/software/community-edition/gridgain-community-edition-license
 .. _virtualenv: https://virtualenv.pypa.io/
 .. _tox: https://tox.readthedocs.io/en/latest/
-.. _setuptools: https://setuptools.readthedocs.io/
+.. _Python packaging guide: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 .. _docs/generated/html/index.html: .
 .. _editable installs: https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs
