@@ -138,7 +138,8 @@ class AioConnection(BaseConnection):
         super().__init__(client, host, port, username, password, **ssl_params)
         self._pending_reqs = {}
         self._transport = None
-        self._loop = asyncio.get_event_loop()
+        # Connections are only created from AioClient._connect(), so a loop is running.
+        self._loop = asyncio.get_running_loop()
         self._closed = False
         self._transport_closed_fut = None
 
