@@ -60,3 +60,7 @@ dependencies = { file = ['requirements/install.txt'] }
 # A bare find() would also install the top-level 'tests' package.
 [tool.setuptools.packages.find]
 include = ['pygridgain*']
+
+# PEP 561: without this marker type checkers ignore the annotations.
+[tool.setuptools.package-data]
+pygridgain = ['py.typed']
