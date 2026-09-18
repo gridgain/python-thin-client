@@ -10,7 +10,7 @@ distr
 docs/generated
 tests/config/*.xml
 junit*.xml
-pygridgain.egg-info
+*.egg-info
 ignite-log-*
 __pycache__
 venv

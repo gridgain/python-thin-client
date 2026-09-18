@@ -400,10 +400,8 @@ def __cache_get_and_replace(connection, cache_info, key, key_hint, value, value_
     )
 
 
-def cache_get_and_remove(
-        connection: 'Connection', cache_info: CacheInfo, key: Any,
-                         key_hint: 'GridGainDataType' = None
-) -> 'APIResult':
+def cache_get_and_remove(connection: 'Connection', cache_info: CacheInfo, key: Any,
+                         key_hint: 'GridGainDataType' = None) -> 'APIResult':
     """
     Removes the cache entry with specified key, returning the value.
 
@@ -498,7 +496,8 @@ def __cache_put_if_absent(connection, cache_info, key, value, key_hint, value_hi
 
 
 def cache_get_and_put_if_absent(connection: 'Connection', cache_info: CacheInfo, key: Any, value: Any,
-                                key_hint: 'GridGainDataType' = None, value_hint: 'GridGainDataType' = None) -> 'APIResult':
+                                key_hint: 'GridGainDataType' = None,
+                                value_hint: 'GridGainDataType' = None) -> 'APIResult':
     """
     Puts a value with a given key to cache only if the key does not
     already exist.

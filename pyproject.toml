@@ -1,0 +1,66 @@
+#
+# Copyright 2019 GridGain Systems, Inc. and Contributors.
+#
+# Licensed under the GridGain Community Edition License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.gridgain.com/products/software/community-edition/gridgain-community-edition-license
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# setuptools 77 is the first version that reads the license fields below.
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = 'pygridgain'
+description = 'GridGain binary client Python API'
+readme = 'README.md'
+requires-python = '>=3.9'
+# The GridGain Community Edition License is not an SPDX license, so it uses
+# the LicenseRef- form.
+license = 'LicenseRef-GridGain-Community-Edition'
+license-files = ['LICENSE', 'NOTICE']
+authors = [{ name = 'GridGain Systems', email = 'info@gridgain.com' }]
+keywords = ['gridgain', 'ignite', 'thin client', 'binary protocol', 'cache', 'database']
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3 :: Only',
+    'Intended Audience :: Developers',
+    'Topic :: Database :: Front-Ends',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Operating System :: OS Independent',
+]
+dynamic = ['version', 'dependencies']
+
+[project.urls]
+Homepage = 'https://github.com/gridgain/python-thin-client'
+Documentation = 'https://pygridgain.readthedocs.io'
+Source = 'https://github.com/gridgain/python-thin-client'
+Changelog = 'https://github.com/gridgain/python-thin-client/blob/master/CHANGELOG.md'
+
+[tool.setuptools.dynamic]
+version = { attr = 'pygridgain.__version__' }
+dependencies = { file = ['requirements/install.txt'] }
+
+# A bare find() would also install the top-level 'tests' package.
+[tool.setuptools.packages.find]
+include = ['pygridgain*']
+
+# PEP 561: without this marker type checkers ignore the annotations.
+[tool.setuptools.package-data]
+pygridgain = ['py.typed']
