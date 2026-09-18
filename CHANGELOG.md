@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Added
+
+- **The client ships a PEP 561 `py.typed` marker.** The client is annotated throughout, but
+  without the marker `mypy` and `pyright` treated every import from `pygridgain` as untyped
+  and silently ignored the annotations. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+
 ### Changed
 
 - **The client now needs Python 3.9 or newer.** The metadata said 3.7, but the wheels, the
@@ -51,6 +57,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
   ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
 
+### Removed
+
+- The empty `pygridgain.stream.aio_cluster` module. It was an accidental second copy of
+  `pygridgain.aio_cluster`, emptied rather than deleted, and it has shipped as a 0-byte
+  module in every wheel since. Nothing imported it, and `pygridgain.aio_cluster` itself is
+  unaffected. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+
 ### Fixed
 
 - **A string that contains a NUL character (U+0000) is no longer truncated.** The string
@@ -58,3 +71,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   string on read and on write, so `'a\x00b'` went to the server as `'a'` and came back as
   `'a'`. This applies to every string the client sends or receives, not only to vector
   queries. ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
+- **The installation instructions no longer send users to the GridGain 9 client.** The
+  `pygridgain` name on PyPI also carries the GridGain 9 client, which is versioned from 9.0
+  upwards, so a plain `pip install pygridgain` resolves to that instead of to this client.
+  The README and the documentation now use `pip install "pygridgain<9"`. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
