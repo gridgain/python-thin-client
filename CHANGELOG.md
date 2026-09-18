@@ -11,14 +11,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **The client ships a PEP 561 `py.typed` marker.** The client is annotated throughout, but
-  without the marker `mypy` and `pyright` treated every import from `pygridgain` as untyped
-  and silently ignored the annotations. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+  without the marker `mypy` and `pyright` treated every import from `pygridgain` as
+  untyped. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
 
 ### Changed
 
 - **The client now needs Python 3.9 or newer.** The metadata said 3.7, but the wheels, the
   tested versions and the documentation have all said 3.9 for several releases. `pip` now
-  reports this instead of installing a client that was not built for the interpreter.
+  refuses to install the client on an older interpreter.
 - **The installed package no longer contains a top-level `tests` package.** The wheel put
   the client's tests into `site-packages/tests`, where they clashed with any other project
   that ships a `tests` package. Only `pygridgain` is installed now. The source
@@ -59,10 +59,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
-- The empty `pygridgain.stream.aio_cluster` module. It was an accidental second copy of
-  `pygridgain.aio_cluster`, emptied rather than deleted, and it has shipped as a 0-byte
-  module in every wheel since. Nothing imported it, and `pygridgain.aio_cluster` itself is
-  unaffected. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+- The empty `pygridgain.stream.aio_cluster` module. It was an accidental copy of
+  `pygridgain.aio_cluster`, left empty instead of deleted. Nothing imported it, and
+  `pygridgain.aio_cluster` itself is not affected.
+  ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
 
 ### Fixed
 
@@ -74,4 +74,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The installation instructions no longer send users to the GridGain 9 client.** The
   `pygridgain` name on PyPI also carries the GridGain 9 client, which is versioned from 9.0
   upwards, so a plain `pip install pygridgain` resolves to that instead of to this client.
-  The README and the documentation now use `pip install "pygridgain<9"`. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+  The README and the documentation now use `pip install "pygridgain<9"`.
+  ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))

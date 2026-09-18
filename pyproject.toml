@@ -24,8 +24,8 @@ name = 'pygridgain'
 description = 'GridGain binary client Python API'
 readme = 'README.md'
 requires-python = '>=3.9'
-# The GridGain Community Edition License is not in the SPDX list, so it is
-# named as a reference.
+# The GridGain Community Edition License is not an SPDX license, so it uses
+# the LicenseRef- form.
 license = 'LicenseRef-GridGain-Community-Edition'
 license-files = ['LICENSE', 'NOTICE']
 authors = [{ name = 'GridGain Systems', email = 'info@gridgain.com' }]

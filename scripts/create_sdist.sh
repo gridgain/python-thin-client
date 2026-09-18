@@ -22,11 +22,8 @@ PACKAGE_NAME=pygridgain
 # Create source dist.
 for PYBIN in /opt/python/*/bin; do
     if [[ $PYBIN =~ ^(.*)cp39(.*)$ ]] || [[ $PYBIN =~ ^(.*)cp31[0123](.*)$ ]]; then
-        # build reads [build-system] from pyproject.toml and provisions
-        # setuptools itself, so the interpreter's own copy does not matter.
         "${PYBIN}/pip" install --upgrade build
         "${PYBIN}/python" -m build --sdist --outdir /dist /$PACKAGE_NAME
-        # build only makes a tarball. The release also ships a zip of it.
         "${PYBIN}/python" /$PACKAGE_NAME/scripts/sdist_to_zip.py /dist
         break;
     fi

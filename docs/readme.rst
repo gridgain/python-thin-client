@@ -51,10 +51,9 @@ If you want to use *pygridgain* in your project, you may install it from PyPI:
 
 $ pip install "pygridgain<9"
 
-The version bound matters: the ``pygridgain`` name on PyPI also carries the
-GridGain 9 client, which is versioned from 9.0 upwards. Everything below 9 is
-this client. A plain ``pip install pygridgain`` installs the GridGain 9 client
-instead.
+The ``pygridgain`` name on PyPI also carries the GridGain 9 client, which is
+versioned from 9.0 upwards. Without the ``<9`` bound, ``pip`` installs that
+client instead of this one.
 
 for developer
 """""""""""""
