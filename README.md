@@ -13,8 +13,13 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 This is a recommended way for users. If you only want to use the `pygridgain`
 module in your project, do:
 ```
-$ pip install pygridgain
+$ pip install "pygridgain<9"
 ```
+
+The version bound matters: the `pygridgain` name on PyPI also carries the
+GridGain 9 client, which is versioned from 9.0 upwards. Everything below 9 is
+this client. A plain `pip install pygridgain` installs the GridGain 9 client
+instead.
 
 ### From sources
 This way is more suitable for developers or if you install client from zip archive.
@@ -66,19 +71,19 @@ There is an optional C extension to speedup some computational intensive tasks. 
 
 To upgrade an existing package, use the following command:
 ```
-pip install --upgrade pygridgain
+pip install --upgrade "pygridgain<9"
 ```
 
 To install the latest version of a package:
 
 ```
-pip install pygridgain
+pip install "pygridgain<9"
 ```
 
 To install a specific version:
 
 ```
-pip install pygridgain==1.5.0
+pip install pygridgain==1.7.0
 ```
 
 ## Documentation
