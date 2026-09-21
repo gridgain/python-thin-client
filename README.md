@@ -1,6 +1,15 @@
 # pygridgain
 GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
+[GridGain](https://docs.gridgain.com/docs) is a memory-centric distributed database,
+caching, and processing platform for transactional, analytical, and streaming
+workloads delivering in-memory speeds at petabyte scale.
+
+The GridGain [binary client protocol](https://ignite.apache.org/docs/latest/binary-client-protocol/binary-client-protocol)
+provides user applications the ability to communicate with an existing GridGain
+cluster without starting a full-fledged GridGain node. An application can connect
+to the cluster through a raw TCP socket.
+
 ## Prerequisites
 
 - Python 3.9 or above (3.9, 3.10, 3.11, 3.12 and 3.13 are tested),
@@ -9,7 +18,7 @@ GridGain Community Edition thin (binary protocol) client, written in Python 3.
 
 ## Installation
 
-### From repository
+### From PyPI
 This is a recommended way for users. If you only want to use the `pygridgain`
 module in your project, do:
 ```
@@ -40,6 +49,16 @@ Then run through the contents of `requirements` folder to install
 the additional requirements into your working Python environment using
 ```
 $ pip install -r requirements/<your task>.txt
+```
+
+For development, it is recommended to install `tests` requirements
+```
+$ pip install -r requirements/tests.txt
+```
+
+For checking codestyle run:
+```
+$ flake8
 ```
 
 The package metadata lives in `pyproject.toml`; `setup.py` only builds the optional
@@ -90,15 +109,24 @@ pip install pygridgain==1.7.0
 at *RTD* for your convenience.
 
 If you want to build the documentation from source, do the developer
-installation as described above, then run the following commands:
+installation as described above, then run the following commands from your
+virtualenv environment:
 ```
 $ pip install -r requirements/docs.txt
 $ cd docs
 $ make html
 ```
 
-Then open `<client_root_directory>/docs/generated/html/index.html`
-in your browser.
+Then open `docs/generated/html/index.html` in your browser.
+
+If you feel that old version is stuck, do
+```
+$ make clean
+$ sphinx-apidoc -feM -o source/ ../ ../setup.py
+$ make html
+```
+
+And that should be it.
 
 ## Examples
 Some examples of using pygridgain are provided in
@@ -107,7 +135,10 @@ Some examples of using pygridgain are provided in
 section of the documentation.
 
 This code implies that it is run in the environment with `pygridgain` package
-installed, and GridGain node is running on localhost:10800.
+installed, and GridGain node is running on localhost:10800, unless otherwise noted.
+
+There is also a possibility to run examples alone with tests. For the explanation
+of testing, look up the [Testing](#testing) section.
 
 ## Testing
 *NB!* It is recommended installing `pygridgain` in development mode.
@@ -118,7 +149,7 @@ Do not forget to install test requirements:
 $ pip install -r requirements/install.txt -r requirements/tests.txt
 ```
 
-Also, you'll need to have a binary release of Ignite with `log4j2` enabled and to set
+Also, you'll need to have a binary release of GridGain with `log4j2` enabled and to set
 `IGNITE_HOME` environment variable: 
 ```bash
 $ cd <gridgain_binary_release>
@@ -134,5 +165,29 @@ $ pytest
 $ pytest --examples 
 ```
 
-If you need to change the connection parameters, see the documentation on
-[testing](https://pygridgain.readthedocs.io/en/latest/readme.html#testing).
+The `--examples` option runs the examples as one test. In this test assertion fails
+if any of the examples' processes ends with non-zero exit code. If you wish to run
+*only* the examples, supply also the name of the test function to the `pytest`
+launcher:
+```bash
+$ pytest --examples tests/test_examples.py::test_examples
+```
+
+Examples are not parameterized for the sake of simplicity. They always run
+with default parameters (host and port) regardless of any other `pytest` option.
+
+Since failover, SSL and authentication examples are meant to be controlled
+by user or depend on special configuration of the GridGain cluster, they
+can not be automated.
+
+### Using tox
+For automate running tests against different python version, it is recommended
+to use [tox](https://tox.readthedocs.io/en/latest/)
+```bash
+$ pip install tox
+$ tox
+```
+
+## Licensing
+This is a free software, brought to you on terms of the
+[GridGain Community Edition License](https://www.gridgain.com/products/software/community-edition/gridgain-community-edition-license).
