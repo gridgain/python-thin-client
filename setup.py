@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import re
-from distutils.command.build_ext import build_ext
-from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
+# The package metadata is in pyproject.toml. This file only builds the C extension.
+#
+from setuptools.command.build_ext import build_ext
+from setuptools.errors import CCompilerError, ExecError, PlatformError
 
 import setuptools
 import sys
@@ -30,9 +31,9 @@ cext = setuptools.Extension(
 )
 
 if sys.platform == 'win32':
-    ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError, IOError, ValueError)
+    ext_errors = (CCompilerError, ExecError, PlatformError, IOError, ValueError)
 else:
-    ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError)
+    ext_errors = (CCompilerError, ExecError, PlatformError)
 
 
 class BuildFailed(Exception):
@@ -45,7 +46,7 @@ class ve_build_ext(build_ext):
     def run(self):
         try:
             build_ext.run(self)
-        except DistutilsPlatformError:
+        except PlatformError:
             raise BuildFailed()
 
     def build_extension(self, ext):
@@ -53,33 +54,6 @@ class ve_build_ext(build_ext):
             build_ext.build_extension(self, ext)
         except ext_errors:
             raise BuildFailed()
-
-
-def is_a_requirement(line):
-    return not any([
-        line.startswith('#'),
-        line.startswith('-r'),
-        len(line) == 0,
-    ])
-
-
-install_requirements = []
-with open('requirements/install.txt', 'r', encoding='utf-8') as requirements_file:
-    for line in requirements_file.readlines():
-        line = line.strip('\n')
-        if is_a_requirement(line):
-            install_requirements.append(line)
-
-with open('README.md', 'r', encoding='utf-8') as readme_file:
-    long_description = readme_file.read()
-
-version = ''
-with open('pygridgain/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
-
-if not version:
-    raise RuntimeError('Cannot find version information')
 
 
 def run_setup(with_binary=True):
@@ -91,37 +65,7 @@ def run_setup(with_binary=True):
     else:
         kw = dict()
 
-    setuptools.setup(
-        name='pygridgain',
-        version=version,
-        python_requires='>=3.7',
-        author='GridGain Systems',
-        author_email='info@gridgain.com',
-        description='GridGain binary client Python API',
-        long_description=long_description,
-        long_description_content_type='text/markdown',
-        url='https://github.com/gridgain/python-thin-client',
-        packages=setuptools.find_packages(),
-        install_requires=install_requirements,
-        license='GridGain Community Edition License',
-        license_files=('LICENSE', 'NOTICE'),
-        classifiers=[
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.9',
-            'Programming Language :: Python :: 3.10',
-            'Programming Language :: Python :: 3.11',
-            'Programming Language :: Python :: 3.12',
-            'Programming Language :: Python :: 3.13',
-            'Programming Language :: Python :: 3 :: Only',
-            'Intended Audience :: Developers',
-            'Topic :: Database :: Front-Ends',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            'License :: Free for non-commercial use',
-            'Operating System :: OS Independent',
-        ],
-        **kw
-    )
+    setuptools.setup(**kw)
 
 
 try:

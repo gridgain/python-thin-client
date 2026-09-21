@@ -112,7 +112,7 @@ async def test_events_async(request, server2):
 def __assert_events(nodes, protocol_context):
     assert len([e for e in events if isinstance(e, ConnectionLostEvent)]) == 1
     # ConnectionLostEvent is a subclass of ConnectionClosedEvent
-    assert 1 <= len([e for e in events if type(e) == ConnectionClosedEvent and e.node_uuid]) <= 2
+    assert 1 <= len([e for e in events if type(e) is ConnectionClosedEvent and e.node_uuid]) <= 2
     assert len([e for e in events if isinstance(e, HandshakeSuccessEvent)]) == 2
 
     for ev in events:

@@ -8,8 +8,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Added
+
+- **The client ships a PEP 561 `py.typed` marker.**
+
 ### Changed
 
+- **The client now needs Python 3.9 or newer.** The metadata said 3.7, but the wheels, the
+  tested versions and the documentation have all said 3.9 for several releases. `pip` now
+  refuses to install the client on an older interpreter.
+- **The installed package no longer contains a top-level `tests` package.** The wheel put
+  the client's tests into `site-packages/tests`, where they clashed with any other project
+  that ships a `tests` package. Only `pygridgain` is installed now. The source
+  distribution still contains the tests.
+- **The client no longer pins exact versions of its dependencies, and no longer needs
+  `contextvars`.** `attrs` and `tzlocal` were pinned with `==`, so the client could not be
+  installed together with an application that needed another version. They are now
+  minimum versions (`attrs>=23.2.0`, `tzlocal>=4.3.1`). `contextvars` has been in the
+  standard library since Python 3.7, so the backport only added `immutables` for nothing.
+- The package metadata moved from `setup.py` to `pyproject.toml`, and the license now uses
+  the PEP 639 fields instead of the deprecated license classifier. `setup.py` still builds
+  the C extension. Building from a source distribution now needs setuptools 77 or newer,
+  which `pip` installs on its own.
 - **`Cache.vector()` and `AioCache.vector()` now use `k` as the default `page_size`**
   (before: `1`). A vector query returns at most `k` rows, so the whole result now arrives in
   one page. The old default made one server round trip for every result row: a `k=10` query
@@ -35,6 +55,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
   ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
 
+### Removed
+
+- The empty `pygridgain.stream.aio_cluster` module. It was an accidental copy of
+  `pygridgain.aio_cluster`, left empty instead of deleted. Nothing imported it, and
+  `pygridgain.aio_cluster` itself is not affected.
+  ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+
 ### Fixed
 
 - **A string that contains a NUL character (U+0000) is no longer truncated.** The string
@@ -42,3 +69,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   string on read and on write, so `'a\x00b'` went to the server as `'a'` and came back as
   `'a'`. This applies to every string the client sends or receives, not only to vector
   queries. ([GG-49932](https://ggsystems.atlassian.net/browse/GG-49932))
+- **The installation instructions no longer send users to the GridGain 9 client.** The
+  `pygridgain` name on PyPI also carries the GridGain 9 client, which is versioned from 9.0
+  upwards, so a plain `pip install pygridgain` resolves to that instead of to this client.
+  The README and the documentation now use `pip install "pygridgain<9"`.
+  ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))

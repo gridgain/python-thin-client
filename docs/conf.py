@@ -55,7 +55,13 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinxcontrib.fulltoc',
+    # Parses the repository README, which `readme.rst` includes.
+    'myst_parser',
 ]
+
+# Generates anchors for the README headings, so that the in-page links of the
+# README resolve here as well as on GitHub.
+myst_heading_anchors = 3
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
