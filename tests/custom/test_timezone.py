@@ -13,11 +13,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import contextlib
+import os
+import time
 from datetime import datetime
 
 import pytest
+from tzlocal import reload_localzone
 
 from tests.util import kill_process_tree
+
+# Zones observing DST, so that the zone ID and any abbreviation of it differ
+# between the two moments below.
+CLIENT_TIMEZONES = ['Europe/Berlin', 'America/New_York', 'Australia/Sydney']
+
+# A moment outside and a moment inside the northern DST period.
+TIMESTAMPS = [datetime(2020, 2, 12, 12, 32, 55), datetime(2020, 7, 12, 12, 32, 55)]
+
+requires_tzset = pytest.mark.skipif(not hasattr(time, 'tzset'),
+                                    reason='TZ is only honoured on POSIX platforms')
+
+
+@contextlib.contextmanager
+def client_in_timezone(timezone):
+    """
+    Run the enclosed block as if the client process was started with
+    `TZ=<timezone>`: both the local time of the process and the zone the client
+    reports to the server change.
+    """
+    old_tz = os.environ.get('TZ')
+    try:
+        os.environ['TZ'] = timezone
+        time.tzset()
+        reload_localzone()
+        yield
+    finally:
+        if old_tz is None:
+            del os.environ['TZ']
+        else:
+            os.environ['TZ'] = old_tz
+        time.tzset()
+        reload_localzone()
 
 
 @pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])
@@ -67,5 +103,60 @@ async def test_server_in_different_timezone_async(start_ignite_server, start_asy
         assert current_time == received
 
         await client.close()
+    finally:
+        kill_process_tree(server.pid)
+
+
+@requires_tzset
+@pytest.mark.parametrize('timezone', CLIENT_TIMEZONES)
+def test_client_in_timezone_with_dst(start_ignite_server, start_client, timezone):
+    server_id = 10
+    server = start_ignite_server(idx=server_id, jvm_opts='-Duser.timezone=UTC')
+    try:
+        with client_in_timezone(timezone):
+            client = start_client()
+            client.connect('127.0.0.1', 10800 + server_id)
+
+            client.get_or_create_cache('PUBLIC')
+            client.sql('create table test(key int primary key, time datetime)')
+
+            for key, current_time in enumerate(TIMESTAMPS):
+                client.sql(f"insert into test (key, time) VALUES ({key}, '{current_time}')")
+
+            with client.sql('SELECT time FROM test ORDER BY key') as cursor:
+                received = [row[0][0] for row in cursor]
+
+            assert received == TIMESTAMPS
+
+            client.close()
+    finally:
+        kill_process_tree(server.pid)
+
+
+@requires_tzset
+@pytest.mark.asyncio
+@pytest.mark.parametrize('timezone', CLIENT_TIMEZONES)
+async def test_client_in_timezone_with_dst_async(start_ignite_server, start_async_client, timezone):
+    server_id = 10
+    server = start_ignite_server(idx=server_id, jvm_opts='-Duser.timezone=UTC')
+    try:
+        with client_in_timezone(timezone):
+            client = start_async_client()
+            await client.connect('127.0.0.1', 10800 + server_id)
+
+            await client.get_or_create_cache('PUBLIC')
+            await client.sql('create table test(key int primary key, time datetime)')
+
+            for key, current_time in enumerate(TIMESTAMPS):
+                await client.sql(f"insert into test (key, time) VALUES ({key}, '{current_time}')")
+
+            received = []
+            async with client.sql('SELECT time FROM test ORDER BY key') as cursor:
+                async for row in cursor:
+                    received.append(row[0][0])
+
+            assert received == TIMESTAMPS
+
+            await client.close()
     finally:
         kill_process_tree(server.pid)
