@@ -20,15 +20,15 @@ import pytest
 
 from tests.util import client_in_timezone, kill_process_tree
 
-# Zones observing DST, so that the zone ID and any abbreviation of it differ
-# between the two moments below.
+# Zones with DST: their abbreviation differs between the two moments below,
+# the zone ID does not.
 CLIENT_TIMEZONES = ['Europe/Berlin', 'America/New_York', 'Australia/Sydney']
 
-# A moment outside and a moment inside the northern DST period.
+# One moment outside and one inside the northern DST period.
 TIMESTAMPS = [datetime(2020, 2, 12, 12, 32, 55), datetime(2020, 7, 12, 12, 32, 55)]
 
 requires_tzset = pytest.mark.skipif(not hasattr(time, 'tzset'),
-                                    reason='TZ is only honoured on POSIX platforms')
+                                    reason='TZ only works on POSIX platforms')
 
 
 @pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])

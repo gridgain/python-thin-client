@@ -75,11 +75,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   The README and the documentation now use `pip install "pygridgain<9"`.
   ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
 - **The client now reports its own time zone to the server.** The `client.timezone`
-  handshake attribute carried `tzname(None)`, which is `None` for every zone that observes
-  DST, so the server kept its own default zone and shifted the timestamps of the whole
-  connection by the difference between the two. The client now sends the IANA zone ID
-  (`Europe/Berlin`), the same as the other thin clients, and sends nothing when the machine
-  names no zone. This is a regression in 1.5.0, where `tzlocal` was bumped from 2.1 to
-  4.3.1: `tzname(None)` on the `pytz` zone that 2.1 returned gave the zone ID, and on the
-  `zoneinfo` zone that 4.x returns it gives `None`. 1.5.0 and 1.6.0 are affected.
+  handshake attribute was `None` for every zone that uses DST, so the server kept its own
+  default zone and shifted every timestamp of the connection by the difference between the
+  two. The client now sends the IANA zone ID (`Europe/Berlin`), like the other thin
+  clients, and sends nothing when the machine names no zone. Versions 1.5.0 and 1.6.0 are
+  affected: the `tzlocal` update in 1.5.0 changed what `tzname(None)` returns.
   ([GG-51543](https://ggsystems.atlassian.net/browse/GG-51543))

@@ -45,9 +45,8 @@ class BaseConnection:
         self.password = password
         self.uuid = None
 
-        # The server resolves the value with TimeZone.getTimeZone(), which falls back to
-        # GMT for anything it does not recognise, so send an IANA zone ID or nothing at
-        # all. get_localzone_name() gives None when the machine names no zone.
+        # The server reads this with TimeZone.getTimeZone(), which uses GMT for any name
+        # it does not know, so send an IANA zone ID or nothing.
         self.timezone = get_localzone_name()
 
         if handshake_timeout <= 0.0:

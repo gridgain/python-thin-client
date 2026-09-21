@@ -13,13 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-Tests for the `client.timezone` attribute the client sends in the handshake.
-
-The server resolves the value with `TimeZone.getTimeZone()`, so it has to be an
-IANA zone ID. An abbreviation is not one, and it falls back to GMT for anything
-it does not recognise, silently shifting every timestamp of the connection.
-"""
+""" Tests for the `client.timezone` attribute the client sends in the handshake. """
 import struct
 import time
 from datetime import datetime
@@ -35,15 +29,13 @@ from pygridgain.connection.protocol_context import ProtocolContext
 from pygridgain.stream import BinaryStream
 from tests.util import client_in_timezone
 
-# Zones observing DST in either hemisphere, a zone with a non-integer offset,
-# and a couple of fixed-offset ones.
 ZONE_IDS = ['Europe/Berlin', 'America/New_York', 'Australia/Sydney', 'Asia/Kolkata', 'Etc/GMT+5', 'UTC']
 
-# A moment outside and a moment inside the northern DST period.
+# One moment outside and one inside the northern DST period.
 MOMENTS = [datetime(2020, 2, 12, 12, 32, 55), datetime(2020, 7, 12, 12, 32, 55)]
 
 requires_tzset = pytest.mark.skipif(not hasattr(time, 'tzset'),
-                                    reason='TZ is only honoured on POSIX platforms')
+                                    reason='TZ only works on POSIX platforms')
 
 
 @requires_tzset
@@ -63,12 +55,11 @@ def test_handshake_carries_zone_id(zone_id):
         handshake = stream.getvalue()
 
     assert zone_id.encode() in handshake
-    # The length is computed by hand in HandshakeRequest, so check it holds.
+    # HandshakeRequest counts the length by hand, so check that it matches.
     assert struct.unpack('<i', handshake[:4])[0] == len(handshake) - 4
 
 
 def test_reported_zone_matches_machine_zone():
-    """ Whatever the machine is set to, the zone sent has to mean the same as the local one. """
     zone_id = Connection(Client(), '127.0.0.1', 10800).timezone
 
     assert zone_id is not None, 'nothing is sent, so the server keeps its own default zone'

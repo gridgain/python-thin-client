@@ -40,9 +40,8 @@ except ImportError:
 @contextlib.contextmanager
 def client_in_timezone(timezone):
     """
-    Run the enclosed block as if the client process was started with
-    `TZ=<timezone>`: both the local time of the process and the zone the client
-    reports to the server change. Needs `time.tzset()`, so POSIX only.
+    Run the block as if the process was started with `TZ=<timezone>`: both the local
+    time and the zone the client reports to the server change. POSIX only.
     """
     old_tz = os.environ.get('TZ')
     try:
