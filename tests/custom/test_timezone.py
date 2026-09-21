@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import contextlib
-import os
 import time
 from datetime import datetime
 
 import pytest
-from tzlocal import reload_localzone
 
-from tests.util import kill_process_tree
+from tests.util import client_in_timezone, kill_process_tree
 
 # Zones observing DST, so that the zone ID and any abbreviation of it differ
 # between the two moments below.
@@ -32,28 +29,6 @@ TIMESTAMPS = [datetime(2020, 2, 12, 12, 32, 55), datetime(2020, 7, 12, 12, 32, 5
 
 requires_tzset = pytest.mark.skipif(not hasattr(time, 'tzset'),
                                     reason='TZ is only honoured on POSIX platforms')
-
-
-@contextlib.contextmanager
-def client_in_timezone(timezone):
-    """
-    Run the enclosed block as if the client process was started with
-    `TZ=<timezone>`: both the local time of the process and the zone the client
-    reports to the server change.
-    """
-    old_tz = os.environ.get('TZ')
-    try:
-        os.environ['TZ'] = timezone
-        time.tzset()
-        reload_localzone()
-        yield
-    finally:
-        if old_tz is None:
-            del os.environ['TZ']
-        else:
-            os.environ['TZ'] = old_tz
-        time.tzset()
-        reload_localzone()
 
 
 @pytest.mark.parametrize('timezone', ['UTC', 'GMT+5', 'GMT-3'])

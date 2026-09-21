@@ -28,11 +28,35 @@ import signal
 import subprocess
 import time
 
+from tzlocal import reload_localzone
+
 
 try:
     from contextlib import asynccontextmanager
 except ImportError:
     from async_generator import asynccontextmanager
+
+
+@contextlib.contextmanager
+def client_in_timezone(timezone):
+    """
+    Run the enclosed block as if the client process was started with
+    `TZ=<timezone>`: both the local time of the process and the zone the client
+    reports to the server change. Needs `time.tzset()`, so POSIX only.
+    """
+    old_tz = os.environ.get('TZ')
+    try:
+        os.environ['TZ'] = timezone
+        time.tzset()
+        reload_localzone()
+        yield
+    finally:
+        if old_tz is None:
+            del os.environ['TZ']
+        else:
+            os.environ['TZ'] = old_tz
+        time.tzset()
+        reload_localzone()
 
 
 @contextlib.contextmanager
