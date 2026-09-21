@@ -10,9 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **The client ships a PEP 561 `py.typed` marker.** The client is annotated throughout, but
-  without the marker `mypy` and `pyright` treated every import from `pygridgain` as
-  untyped. ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+- **The client ships a PEP 561 `py.typed` marker.**
 
 ### Changed
 
