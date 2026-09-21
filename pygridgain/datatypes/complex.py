@@ -682,14 +682,16 @@ class BinaryObject(Nullable):
 
     @classmethod
     def from_python_not_null(cls, stream, value, **kwargs):
+        # Register before the fast path, not inside it: a buffer left by a hashcode pass holds
+        # a type ID that the cluster cannot resolve until the type is registered.
+        stream.register_binary_type(value.__class__)
         if cls.__write_fast_path(stream, value):
-            stream.register_binary_type(value.__class__)
             value._from_python(stream)
 
     @classmethod
     async def from_python_not_null_async(cls, stream, value, **kwargs):
+        await stream.register_binary_type(value.__class__)
         if cls.__write_fast_path(stream, value):
-            await stream.register_binary_type(value.__class__)
             await value._from_python_async(stream)
 
     @classmethod
