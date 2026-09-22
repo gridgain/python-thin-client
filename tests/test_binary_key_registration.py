@@ -29,67 +29,41 @@ import pytest
 from pygridgain import GenericObjectMeta
 from pygridgain.datatypes import BinaryObject, IntObject, String
 from pygridgain.stream import AioBinaryStream, BinaryStream
+from tests.client_stubs import AioBinaryRegistryStub, BinaryRegistryStub
 
 
-class StudentKey(metaclass=GenericObjectMeta, type_name='test.model.StudentKey', schema=OrderedDict([
+# Type names of this file's own, so that nothing here shares a type ID with another test module.
+class FlatKey(metaclass=GenericObjectMeta, type_name='test.model.BufferedFlatKey', schema=OrderedDict([
     ('ID', IntObject),
     ('DEPT', String),
 ])):
     pass
 
 
-class Inner(metaclass=GenericObjectMeta, type_name='test.model.Inner', schema=OrderedDict([
+class InnerValue(metaclass=GenericObjectMeta, type_name='test.model.BufferedInner', schema=OrderedDict([
     ('label', String),
 ])):
     pass
 
 
-class NestedKey(metaclass=GenericObjectMeta, type_name='test.model.NestedKey', schema=OrderedDict([
+class NestedKey(metaclass=GenericObjectMeta, type_name='test.model.BufferedNestedKey', schema=OrderedDict([
     ('ID', IntObject),
     ('inner', BinaryObject),
 ])):
     pass
 
 
-class _Registry:
-    """A client stand-in: the complex-types registry, the footer flag, and a log of registrations."""
-
-    def __init__(self, compact_footer=True):
-        self.compact_footer = compact_footer
-        self.registered = []
-        self._classes = {}
-
-    def register_binary_type(self, data_class, affinity_key_field=None):
-        self.registered.append(data_class)
-        self._classes[(data_class.type_id, data_class.schema_id)] = data_class
-
-    def query_binary_type(self, type_id, schema=None):
-        return self._classes.get((type_id, schema))
-
-    @property
-    def registered_names(self):
-        return [c.type_name for c in self.registered]
-
-
-class _AioRegistry(_Registry):
-    async def register_binary_type(self, data_class, affinity_key_field=None):
-        super().register_binary_type(data_class)
-
-    async def query_binary_type(self, type_id, schema=None):
-        return self._classes.get((type_id, schema))
-
-
 # Factories, not instances: a written object caches its hashcode and its bytes, so every case
 # needs objects of its own.
 KEYS = [
-    pytest.param(lambda: StudentKey(2, 'Business'), id='flat'),
-    pytest.param(lambda: NestedKey(3, Inner('lorem')), id='nested'),
+    pytest.param(lambda: FlatKey(2, 'Business'), id='flat'),
+    pytest.param(lambda: NestedKey(3, InnerValue('lorem')), id='nested'),
 ]
 
 
 @pytest.mark.parametrize('make_key', KEYS)
 def test_type_registered_when_written_from_buffer(make_key):
-    key, registry = make_key(), _Registry()
+    key, registry = make_key(), BinaryRegistryStub()
 
     # Partition-aware routing does this before the key reaches the request stream.
     BinaryObject.hashcode(key, client=registry)
@@ -104,7 +78,7 @@ def test_type_registered_when_written_from_buffer(make_key):
 @pytest.mark.parametrize('make_key', KEYS)
 @pytest.mark.asyncio
 async def test_type_registered_when_written_from_buffer_async(make_key):
-    key, registry = make_key(), _AioRegistry()
+    key, registry = make_key(), AioBinaryRegistryStub()
 
     await BinaryObject.hashcode_async(key, client=registry)
     assert key._buffer, 'precondition: hashcode must arm the buffer fast path'
@@ -118,7 +92,7 @@ async def test_type_registered_when_written_from_buffer_async(make_key):
 @pytest.mark.parametrize('make_key', KEYS)
 def test_buffer_fast_path_writes_same_bytes(make_key):
     """The buffer is an optimization only: it must not change what goes on the wire."""
-    registry = _Registry()
+    registry = BinaryRegistryStub()
 
     with BinaryStream(registry) as stream:
         BinaryObject.from_python(stream, make_key())
@@ -133,4 +107,3 @@ def test_buffer_fast_path_writes_same_bytes(make_key):
         fast_path = stream.getvalue()
 
     assert fast_path == slow_path
-

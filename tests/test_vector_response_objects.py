@@ -33,38 +33,19 @@ from datetime import datetime
 import pytest
 
 from pygridgain import GenericObjectMeta
-from pygridgain.aio_client import AioClient
-from pygridgain.client import Client
 from pygridgain.datatypes import (
     AnyDataObject, BinaryObject, Bool, BoolObject, DoubleObject, Float, FloatArrayObject, IntObject, Long,
     LongObject, Map, String, StringArrayObject, StructArray, TimestampObject
 )
 from pygridgain.queries.response import Response, VectorResponse
 from pygridgain.stream import AioBinaryStream, BinaryStream, READ_BACKWARD
+from tests.client_stubs import AioBinaryRegistryStub, BinaryRegistryStub
 
 
 class _Ctx:
     @staticmethod
     def is_status_flags_supported():
         return True
-
-
-class _Registry:
-    """A client stand-in: the complex-types registry, the footer flag, and the real unwrap."""
-
-    def __init__(self, compact_footer):
-        self.compact_footer = compact_footer
-        self._classes = {}
-
-    def register_binary_type(self, data_class, affinity_key_field=None):
-        self._classes[(data_class.type_id, data_class.schema_id)] = data_class
-
-    def query_binary_type(self, type_id, schema=None):
-        return self._classes.get((type_id, schema))
-
-    def unwrap_binary(self, value):
-        # The real Client.unwrap_binary, bound to this registry: this is the reference path.
-        return Client.unwrap_binary(self, value)
 
 
 class Inner(metaclass=GenericObjectMeta, type_name='Inner',
@@ -144,7 +125,7 @@ def decode_generic(registry, buf, legacy):
 
 @pytest.mark.parametrize('compact_footer', [False, True])
 def test_rich_objects_legacy_rows_match_the_generic_path(compact_footer):
-    registry = _Registry(compact_footer)
+    registry = BinaryRegistryStub(compact_footer)
     objects = [rich(1), Article(vec=[1.0, 2.0, 3.0, 4.0]), rich(2)]
     payload = b''.join((
         struct.pack('<q', 11), struct.pack('<i', len(objects)),
@@ -166,7 +147,7 @@ def test_rich_objects_legacy_rows_match_the_generic_path(compact_footer):
 
 @pytest.mark.parametrize('compact_footer', [False, True])
 def test_rich_objects_flagged_rows_with_scores_match_the_generic_path(compact_footer):
-    registry = _Registry(compact_footer)
+    registry = BinaryRegistryStub(compact_footer)
     objects = [rich(3), rich(4)]
     payload = b''.join((
         struct.pack('<q', 12), struct.pack('<i', len(objects)),
@@ -183,7 +164,7 @@ def test_rich_objects_flagged_rows_with_scores_match_the_generic_path(compact_fo
 
 
 def test_two_value_types_resolve_their_own_classes():
-    registry = _Registry(False)
+    registry = BinaryRegistryStub(False)
     objects = [Article(vec=[9.0]), rich(5), Article(vec=[8.0, 7.0])]
     payload = b''.join((
         struct.pack('<q', 13), struct.pack('<i', len(objects)),
@@ -192,19 +173,6 @@ def test_two_value_types_resolve_their_own_classes():
     fast = decode_fast(registry, frame(payload), legacy=True)
     assert [type(row[1]).__name__ for row in fast] == ['Article', 'Rich', 'Article']
     assert fast == [(i, obj) for i, obj in enumerate(objects)]
-
-
-class _AioRegistry(_Registry):
-    """The asyncio client's face of the registry: coroutine lookups, the real async unwrap."""
-
-    async def query_binary_type(self, type_id, schema=None):
-        return self._classes.get((type_id, schema))
-
-    def register_binary_type(self, data_class, affinity_key_field=None):
-        self._classes[(data_class.type_id, data_class.schema_id)] = data_class
-
-    async def unwrap_binary(self, value):
-        return await AioClient.unwrap_binary(self, value)
 
 
 def _run(coro):
@@ -218,7 +186,7 @@ def _run(coro):
 @pytest.mark.parametrize('compact_footer', [False, True])
 def test_rich_objects_on_the_asyncio_stream_match_the_generic_async_path(compact_footer):
     """Nested objects and other fallback fields must not run a sync parse on an async stream."""
-    sync_registry = _Registry(compact_footer)          # objects are written with the sync writer
+    sync_registry = BinaryRegistryStub(compact_footer)  # objects are written with the sync writer
     objects = [rich(6), Article(vec=[2.0]), rich(7)]
     payload = b''.join((
         struct.pack('<q', 14), struct.pack('<i', len(objects)),
@@ -226,7 +194,7 @@ def test_rich_objects_on_the_asyncio_stream_match_the_generic_async_path(compact
           for i, obj in enumerate(objects)),
         b'\x00'))
     buf = frame(payload)
-    registry = _AioRegistry(compact_footer)
+    registry = AioBinaryRegistryStub(compact_footer)
     registry._classes = dict(sync_registry._classes)
 
     async def fast():
@@ -259,7 +227,7 @@ def test_embedded_nul_strings_round_trip_and_agree_on_both_paths():
     """A Java string may contain U+0000. The shared String codec used a c_char array, which stops at
     the first NUL on read and write; the direct reader is byte-exact. Both paths must now agree and
     must return the whole string, as a key and as an object field, sync and asyncio."""
-    registry = _Registry(False)
+    registry = BinaryRegistryStub(False)
     nul = 'a\x00b'
     objects = [Rich(title=nul, vec=[1.0], count=1, weight=1.0, big=1, flag=True, tags=[nul, 'x'],
                     when=(datetime(2026, 9, 7, 0, 0, 0), 0), note=nul, inner=Inner(label=nul, n=1))]
@@ -277,7 +245,7 @@ def test_embedded_nul_strings_round_trip_and_agree_on_both_paths():
     # the writer must carry the NUL too: the declared length is 3 and the payload is a \x00 b
     assert key_bytes == b'\x09' + struct.pack('<i', 3) + b'a\x00b'
 
-    aio = _AioRegistry(False)
+    aio = AioBinaryRegistryStub(False)
     aio._classes = dict(registry._classes)
 
     async def fast_async():

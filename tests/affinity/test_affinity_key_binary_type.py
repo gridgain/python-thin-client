@@ -104,6 +104,7 @@ def test_complex_key_binary_type_is_registered(client, cache, key_class):
     key = key_class(2, 'Business')
     cache.put(key, 'Abe')
 
+    assert key._buffer, 'precondition: the put must have been routed by key hashing'
     assert cache.get(key) == 'Abe'
     assert client.get_binary_type(key_class.type_id)['type_exists'], \
         f'{key_class.type_name} was stored without its binary metadata'
@@ -114,7 +115,7 @@ async def test_complex_key_binary_type_is_registered_async(async_client, async_c
     key = key_class(2, 'Business')
     await async_cache.put(key, 'Abe')
 
+    assert key._buffer, 'precondition: the put must have been routed by key hashing'
     assert await async_cache.get(key) == 'Abe'
     assert (await async_client.get_binary_type(key_class.type_id))['type_exists'], \
         f'{key_class.type_name} was stored without its binary metadata'
-

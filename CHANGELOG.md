@@ -64,6 +64,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **A partition-aware client now registers the binary type of a complex key.** Picking the
+  node for a key serializes it and keeps the bytes on the object, and the request was then
+  written from those bytes, which skipped the type registration that ordinary serialization
+  does. The cluster stored the entry under a type ID whose fields it had never been told, so
+  SQL and other clients could not read the key back. `AioClient` is partition-aware by
+  default, so asyncio code hit this without asking for it.
+  ([GG-38200](https://ggsystems.atlassian.net/browse/GG-38200))
 - **A string that contains a NUL character (U+0000) is no longer truncated.** The string
   codec used a ctypes `c_char` array, which stops at the first NUL. The client cut such a
   string on read and on write, so `'a\x00b'` went to the server as `'a'` and came back as
