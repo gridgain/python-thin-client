@@ -69,7 +69,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   written from those bytes, which skipped the type registration that ordinary serialization
   does. The cluster stored the entry under a type ID whose fields it had never been told, so
   SQL and other clients could not read the key back. `AioClient` is partition-aware by
-  default, so asyncio code hit this without asking for it.
+  default, so this affected asyncio code even when it did not ask for partition awareness.
   ([GG-38200](https://ggsystems.atlassian.net/browse/GG-38200))
 - **A string that contains a NUL character (U+0000) is no longer truncated.** The string
   codec used a ctypes `c_char` array, which stops at the first NUL. The client cut such a

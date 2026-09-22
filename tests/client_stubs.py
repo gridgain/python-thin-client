@@ -17,10 +17,10 @@
 Client stand-ins for the server-free tests.
 
 A binary stream asks its client for three things only: the compact-footer flag, the
-complex-types registry, and ``unwrap_binary``. These stubs answer all three in process, and
-keep a log of the types that were registered so a test can assert on registration without a
-cluster. ``unwrap_binary`` is the client's own method bound to the stub, so a test that uses
-it compares against the real code path.
+complex-types registry, and ``unwrap_binary``. These stubs answer all three without a real
+client or a cluster, and keep a log of the registered types so a test can check registration
+on its own. ``unwrap_binary`` is the real client method bound to the stub, so a test that
+uses it checks the real code path.
 """
 from pygridgain.aio_client import AioClient
 from pygridgain.client import Client
@@ -50,7 +50,7 @@ class BinaryRegistryStub:
 
 
 class AioBinaryRegistryStub(BinaryRegistryStub):
-    """The asyncio client's face of the same stand-in: coroutine registration and lookups."""
+    """The asyncio version of the same stand-in: coroutine registration and lookups."""
 
     async def register_binary_type(self, data_class, affinity_key_field=None):
         super().register_binary_type(data_class, affinity_key_field)

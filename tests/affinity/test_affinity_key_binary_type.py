@@ -56,7 +56,7 @@ async def async_cache(async_client):
 
 
 def __cache_fixture(client):
-    """A cache whose partition mapping is loaded, so key hashing is on the path."""
+    """A cache whose partition mapping is loaded, so the client hashes the key before routing."""
     name = f'test_affinity_key_binary_type_{uuid4().hex}'
 
     def inner():

@@ -32,7 +32,7 @@ from pygridgain.stream import AioBinaryStream, BinaryStream
 from tests.client_stubs import AioBinaryRegistryStub, BinaryRegistryStub
 
 
-# Type names of this file's own, so that nothing here shares a type ID with another test module.
+# These type names are only used in this file, so they cannot collide with type IDs from other test files.
 class FlatKey(metaclass=GenericObjectMeta, type_name='test.model.BufferedFlatKey', schema=OrderedDict([
     ('ID', IntObject),
     ('DEPT', String),
@@ -53,8 +53,8 @@ class NestedKey(metaclass=GenericObjectMeta, type_name='test.model.BufferedNeste
     pass
 
 
-# Factories, not instances: a written object caches its hashcode and its bytes, so every case
-# needs objects of its own.
+# These are factories, not instances. A written object caches its hashcode and its bytes, so
+# each test case needs its own fresh object.
 KEYS = [
     pytest.param(lambda: FlatKey(2, 'Business'), id='flat'),
     pytest.param(lambda: NestedKey(3, InnerValue('lorem')), id='nested'),
