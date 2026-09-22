@@ -35,7 +35,7 @@ class HandshakeRequest:
 
     def __init__(
         self, protocol_context: 'ProtocolContext',
-        username: Optional[str] = None, password: Optional[str] = None, timezone: str = None,
+        username: Optional[str] = None, password: Optional[str] = None, timezone: Optional[str] = None,
     ):
         fields = [
             ('length', Int),

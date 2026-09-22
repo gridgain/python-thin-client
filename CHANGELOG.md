@@ -74,3 +74,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   upwards, so a plain `pip install pygridgain` resolves to that instead of to this client.
   The README and the documentation now use `pip install "pygridgain<9"`.
   ([GG-51636](https://ggsystems.atlassian.net/browse/GG-51636))
+- **The client now reports its own time zone to the server.** The `client.timezone`
+  handshake attribute was `None` for every zone that uses DST, so the server kept its own
+  default zone and shifted every timestamp of the connection by the difference between the
+  two. The client now sends the IANA zone ID (`Europe/Berlin`), like the other thin
+  clients, and sends nothing when the machine names no zone. Versions 1.5.0 and 1.6.0 are
+  affected: the `tzlocal` update in 1.5.0 changed what `tzname(None)` returns.
+  ([GG-51543](https://ggsystems.atlassian.net/browse/GG-51543))

@@ -18,7 +18,7 @@ import logging
 from collections import OrderedDict
 import socket
 from typing import Union
-from tzlocal import get_localzone
+from tzlocal import get_localzone_name
 
 from pygridgain.constants import PROTOCOLS, DEFAULT_HOST, DEFAULT_PORT, PROTOCOL_BYTE_ORDER
 from pygridgain.exceptions import HandshakeError, SocketError, connection_errors, AuthenticationError, ParameterError
@@ -45,7 +45,9 @@ class BaseConnection:
         self.password = password
         self.uuid = None
 
-        self.timezone = get_localzone().tzname(None)
+        # The server reads this with TimeZone.getTimeZone(), which uses GMT for any name
+        # it does not know, so send an IANA zone ID or nothing.
+        self.timezone = get_localzone_name()
 
         if handshake_timeout <= 0.0:
             raise ParameterError("handshake_timeout should be positive")
