@@ -21,7 +21,7 @@ PACKAGE_NAME=pygridgain
 
 # Create source dist.
 for PYBIN in /opt/python/*/bin; do
-    if [[ $PYBIN =~ ^(.*)cp39(.*)$ ]] || [[ $PYBIN =~ ^(.*)cp31[0123](.*)$ ]]; then
+    if [[ $PYBIN =~ ^(.*)cp31[1-5](.*)$ ]]; then
         "${PYBIN}/pip" install --upgrade build
         "${PYBIN}/python" -m build --sdist --outdir /dist /$PACKAGE_NAME
         "${PYBIN}/python" /$PACKAGE_NAME/scripts/sdist_to_zip.py /dist
