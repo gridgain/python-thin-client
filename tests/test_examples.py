@@ -42,7 +42,7 @@ def server():
 @pytest.mark.examples
 @pytest.mark.parametrize(
     'example_script',
-    examples_scripts_gen()
+    list(examples_scripts_gen())
 )
 def test_examples(example_script):
     proc = subprocess.run([
