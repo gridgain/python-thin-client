@@ -29,7 +29,7 @@ SKIP_LIST = [
 
 def examples_scripts_gen():
     examples_dir = os.path.join(get_test_dir(), '..', 'examples')
-    for script in glob.glob1(examples_dir, '*.py'):
+    for script in glob.glob('*.py', root_dir=examples_dir):
         if script not in SKIP_LIST:
             yield os.path.join(examples_dir, script)
 

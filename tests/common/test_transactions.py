@@ -34,7 +34,7 @@ def connection_param():
 
 
 @pytest.fixture(params=['with-partition-awareness', 'without-partition-awareness'])
-async def async_client(request, connection_param, event_loop):
+async def async_client(request, connection_param):
     client = AioClient(partition_aware=request.param == 'with-partition-awareness')
     try:
         await client.connect(connection_param)
@@ -183,7 +183,7 @@ async def test_concurrent_pessimistic_transactions_same_key(async_client, async_
 
 
 @pytest.mark.asyncio
-async def test_concurrent_optimistic_transactions_no_deadlock(async_client, async_tx_cache, event_loop):
+async def test_concurrent_optimistic_transactions_no_deadlock(async_client, async_tx_cache):
     """
     Check that optimistic transactions are deadlock safe.
     """

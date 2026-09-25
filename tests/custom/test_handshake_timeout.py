@@ -86,10 +86,10 @@ class FakeIgniteServer:
         self.clients = []
         self.server = None
         self.do_handshake = do_handshake
-        self.loop = asyncio.get_event_loop()
 
     async def start(self):
-        self.server = await self.loop.create_server(lambda: FakeIgniteProtocol(self), DEFAULT_HOST, DEFAULT_PORT)
+        loop = asyncio.get_running_loop()
+        self.server = await loop.create_server(lambda: FakeIgniteProtocol(self), DEFAULT_HOST, DEFAULT_PORT)
 
     def add_client(self, client):
         self.clients.append(client)
@@ -132,7 +132,7 @@ async def server_with_handshake():
 
 
 @pytest.mark.asyncio
-async def test_handshake_timeout(server, event_loop):
+async def test_handshake_timeout(server):
     def sync_client_connect():
         hs_to_listener = HandshakeTimeoutListener()
         client = Client(handshake_timeout=3.0, event_listeners=[hs_to_listener])
@@ -143,7 +143,7 @@ async def test_handshake_timeout(server, event_loop):
             return time.monotonic() - start, hs_to_listener.events, e
         return time.monotonic() - start, hs_to_listener.events, None
 
-    duration, events, err = await event_loop.run_in_executor(ThreadPoolExecutor(), sync_client_connect)
+    duration, events, err = await asyncio.get_running_loop().run_in_executor(ThreadPoolExecutor(), sync_client_connect)
 
     assert isinstance(err, ReconnectError)
     assert 3.0 <= duration < 4.0
@@ -169,7 +169,7 @@ async def test_handshake_timeout_async(server):
 
 
 @pytest.mark.asyncio
-async def test_socket_timeout_applied_sync(server_with_handshake, event_loop):
+async def test_socket_timeout_applied_sync(server_with_handshake):
     def sync_client_connect():
         hs_to_listener = HandshakeTimeoutListener()
         client = Client(timeout=5.0, handshake_timeout=3.0, event_listeners=[hs_to_listener])
@@ -182,7 +182,7 @@ async def test_socket_timeout_applied_sync(server_with_handshake, event_loop):
             return time.monotonic() - start, hs_to_listener.events, e
         return time.monotonic() - start, hs_to_listener.events, None
 
-    duration, events, err = await event_loop.run_in_executor(ThreadPoolExecutor(), sync_client_connect)
+    duration, events, err = await asyncio.get_running_loop().run_in_executor(ThreadPoolExecutor(), sync_client_connect)
 
     assert isinstance(err, socket.timeout)
     assert 5.0 <= duration < 6.0

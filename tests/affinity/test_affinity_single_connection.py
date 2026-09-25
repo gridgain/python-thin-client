@@ -30,7 +30,7 @@ def client():
 
 
 @pytest.fixture
-async def async_client(event_loop):
+async def async_client():
     client = AioClient(partition_aware=True)
     try:
         await client.connect('127.0.0.1', 10801)
