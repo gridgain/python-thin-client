@@ -35,6 +35,7 @@ from pygridgain.stream import READ_BACKWARD
 
 class StatusFlagResponseHeader(ctypes.LittleEndianStructure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [
         ('length', ctypes.c_int),
         ('query_id', ctypes.c_longlong),
@@ -44,6 +45,7 @@ class StatusFlagResponseHeader(ctypes.LittleEndianStructure):
 
 class ResponseHeader(ctypes.LittleEndianStructure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [
         ('length', ctypes.c_int),
         ('query_id', ctypes.c_longlong),
@@ -217,6 +219,7 @@ class SQLResponse(Response):
             (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': row_fields,
             }
         )
@@ -229,6 +232,7 @@ class SQLResponse(Response):
             (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': data_fields,
             }
         )

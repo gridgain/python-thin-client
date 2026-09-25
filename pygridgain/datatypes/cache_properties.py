@@ -100,6 +100,7 @@ class PropBase:
             (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': [
                     ('prop_code', ctypes.c_short),
                 ],
@@ -117,6 +118,7 @@ class PropBase:
             (header_class,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': [
                     ('data', data_class),
                 ],

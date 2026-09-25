@@ -71,6 +71,7 @@ def _cached_string_c_type(cls, length: int):
         (ctypes.LittleEndianStructure,),
         {
             '_pack_': 1,
+            '_layout_': 'ms',
             '_fields_': [
                 ('type_code', ctypes.c_byte),
                 ('length', ctypes.c_int),
@@ -251,6 +252,7 @@ class UUIDObject(StandardObject):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                         ('value', ctypes.c_byte * 16),
@@ -310,6 +312,7 @@ class TimestampObject(StandardObject):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                         ('epoch', ctypes.c_longlong),
@@ -366,6 +369,7 @@ class DateObject(StandardObject):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                         ('epoch', ctypes.c_longlong),
@@ -418,6 +422,7 @@ class TimeObject(StandardObject):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                         ('value', ctypes.c_longlong),
@@ -464,6 +469,7 @@ class EnumObject(StandardObject):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                         ('type_id', ctypes.c_int),
@@ -519,6 +525,7 @@ class _StandardArrayBase:
             (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': fields,
             }
         )

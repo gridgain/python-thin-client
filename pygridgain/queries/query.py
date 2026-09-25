@@ -93,6 +93,7 @@ class Query:
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('length', ctypes.c_int),
                         ('op_code', ctypes.c_short),
@@ -282,6 +283,7 @@ class ConfigQuery(Query):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('length', ctypes.c_int),
                         ('op_code', ctypes.c_short),

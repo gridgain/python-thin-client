@@ -44,6 +44,7 @@ class Null(GridGainDataType):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                     ],

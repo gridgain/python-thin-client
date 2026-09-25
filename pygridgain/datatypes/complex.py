@@ -545,6 +545,7 @@ class BinaryObject(Nullable):
                 (ctypes.LittleEndianStructure,),
                 {
                     '_pack_': 1,
+                    '_layout_': 'ms',
                     '_fields_': [
                         ('type_code', ctypes.c_byte),
                         ('version', ctypes.c_byte),
