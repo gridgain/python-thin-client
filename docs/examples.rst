@@ -709,8 +709,8 @@ certificate chain and provide its path in the `ssl_ca_certfile` parameter.
     client.connect('gridgain-example.com', 10800)
 
 You can also provide such parameters as the set of ciphers (`ssl_ciphers`) and
-the SSL version (`ssl_version`), if the defaults
-(:py:obj:`ssl._DEFAULT_CIPHERS` and TLS 1.1) do not suit you.
+the minimum TLS version (`ssl_version`, a :py:class:`ssl.TLSVersion` member), if the
+defaults (:py:obj:`ssl._DEFAULT_CIPHERS` and TLS 1.2 or newer) do not suit you.
 
 Password authentication
 -----------------------
