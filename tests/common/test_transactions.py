@@ -16,7 +16,6 @@
 
 import asyncio
 import itertools
-import sys
 import time
 
 import pytest
@@ -41,9 +40,6 @@ async def async_client(request, connection_param, event_loop):
         await client.connect(connection_param)
         if not client.protocol_context.is_transactions_supported():
             pytest.skip(f'skipped {request.node.name}, transaction api is not supported.')
-        elif sys.version_info < (3, 7):
-            pytest.skip(f'skipped {request.node.name}, transaction api is not supported'
-                        f'for async client on python {sys.version}')
         else:
             yield client
     finally:
