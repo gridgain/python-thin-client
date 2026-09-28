@@ -23,7 +23,7 @@ build-backend = "setuptools.build_meta"
 name = 'pygridgain'
 description = 'GridGain binary client Python API'
 readme = 'README.md'
-requires-python = '>=3.9'
+requires-python = '>=3.11'
 # The GridGain Community Edition License is not an SPDX license, so it uses
 # the LicenseRef- form.
 license = 'LicenseRef-GridGain-Community-Edition'
@@ -34,11 +34,11 @@ classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Programming Language :: Python :: 3 :: Only',
     'Intended Audience :: Developers',
     'Topic :: Database :: Front-Ends',

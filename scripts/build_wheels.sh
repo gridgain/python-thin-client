@@ -18,7 +18,7 @@
 set -e -u -x
 
 PACKAGE_NAME=pygridgain
-PY_VERS="cp39 cp310 cp311 cp312 cp313"
+PY_VERS="cp311 cp312 cp313 cp314 cp315"
 
 function repair_wheel {
     wheel="$1"

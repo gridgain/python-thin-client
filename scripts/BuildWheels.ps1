@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-$PyVers="39","310","311","312","313"
+$PyVers="311","312","313","314","315"
 
 [System.Collections.ArrayList]$PyVersFull = $PyVers
 foreach ($Ver in $PyVers)

@@ -367,8 +367,10 @@ class Client(BaseClient):
         :param use_ssl: (optional) set to True if Ignite server uses SSL
          on its binary connector. Defaults to use SSL when username
          and password has been supplied, not to use SSL otherwise,
-        :param ssl_version: (optional) SSL version constant from standard
-         `ssl` module. Defaults to TLS v1.2,
+        :param ssl_version: (optional) minimum TLS version, a `ssl.TLSVersion`
+         member. Defaults to TLS 1.3. A legacy `ssl.PROTOCOL_*` constant is
+         also accepted and selects the same versions as before, for example
+         `ssl.PROTOCOL_TLSv1_2` allows TLS 1.2 only,
         :param ssl_ciphers: (optional) ciphers to use. If not provided,
          `ssl` default ciphers are used,
         :param ssl_cert_reqs: (optional) determines how the remote side

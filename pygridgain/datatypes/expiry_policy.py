@@ -64,6 +64,7 @@ class ExpiryPolicy:
 
     class _CType(ctypes.LittleEndianStructure):
         _pack_ = 1
+        _layout_ = 'ms'
         _fields_ = [
             ('not_null', ctypes.c_byte),
             ('create', ctypes.c_longlong),

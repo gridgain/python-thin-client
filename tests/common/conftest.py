@@ -45,7 +45,7 @@ def client():
 
 
 @pytest.fixture(scope='module')
-async def async_client(event_loop):
+async def async_client():
     client = AioClient()
     try:
         await client.connect('127.0.0.1', 10801)

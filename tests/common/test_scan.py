@@ -42,7 +42,6 @@ def test_objects_data():
     yield {i: SimpleObject(id=i, str=f'str_{i}') for i in range(page_size * 2)}
 
 
-@pytest.mark.asyncio
 def test_scan_objects(cache, test_objects_data):
     cache.put_all(test_objects_data)
 

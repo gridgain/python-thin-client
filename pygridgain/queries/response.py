@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import asyncio
+import inspect
 import struct
 import sys
 from io import SEEK_CUR
@@ -35,6 +36,7 @@ from pygridgain.stream import READ_BACKWARD
 
 class StatusFlagResponseHeader(ctypes.LittleEndianStructure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [
         ('length', ctypes.c_int),
         ('query_id', ctypes.c_longlong),
@@ -44,6 +46,7 @@ class StatusFlagResponseHeader(ctypes.LittleEndianStructure):
 
 class ResponseHeader(ctypes.LittleEndianStructure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [
         ('length', ctypes.c_int),
         ('query_id', ctypes.c_longlong),
@@ -217,6 +220,7 @@ class SQLResponse(Response):
             (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': row_fields,
             }
         )
@@ -229,6 +233,7 @@ class SQLResponse(Response):
             (ctypes.LittleEndianStructure,),
             {
                 '_pack_': 1,
+                '_layout_': 'ms',
                 '_fields_': data_fields,
             }
         )
@@ -293,7 +298,7 @@ _FALLBACK = object()
 
 def _is_async_stream(stream):
     """True for AioBinaryStream: its registry lookup is a coroutine, so no sync parse may run on it."""
-    return asyncio.iscoroutinefunction(getattr(stream, 'get_dataclass', None))
+    return inspect.iscoroutinefunction(getattr(stream, 'get_dataclass', None))
 
 
 # Wire type codes the direct readers understand, as integers (buf[i] indexing yields ints).
@@ -506,7 +511,7 @@ class VectorResponse(Response):
         query = getattr(client, 'query_binary_type', None)
         if query is None:
             return None
-        if asyncio.iscoroutinefunction(query):
+        if inspect.iscoroutinefunction(query):
             raise _NeedsAsync(type_id, schema_id)
         return query(type_id, schema_id)
 
@@ -554,7 +559,7 @@ class VectorResponse(Response):
         value = AnyDataObject.to_python(
             stream.read_ctype(c_type, direction=READ_BACKWARD), client=stream.client)
         unwrap = stream.client.unwrap_binary
-        if asyncio.iscoroutinefunction(unwrap):
+        if inspect.iscoroutinefunction(unwrap):
             raise _NeedsAsync(None, None)
         return unwrap(value)
 

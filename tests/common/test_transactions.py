@@ -16,7 +16,6 @@
 
 import asyncio
 import itertools
-import sys
 import time
 
 import pytest
@@ -35,15 +34,12 @@ def connection_param():
 
 
 @pytest.fixture(params=['with-partition-awareness', 'without-partition-awareness'])
-async def async_client(request, connection_param, event_loop):
+async def async_client(request, connection_param):
     client = AioClient(partition_aware=request.param == 'with-partition-awareness')
     try:
         await client.connect(connection_param)
         if not client.protocol_context.is_transactions_supported():
             pytest.skip(f'skipped {request.node.name}, transaction api is not supported.')
-        elif sys.version_info < (3, 7):
-            pytest.skip(f'skipped {request.node.name}, transaction api is not supported'
-                        f'for async client on python {sys.version}')
         else:
             yield client
     finally:
@@ -87,10 +83,10 @@ async def async_tx_cache(async_client):
 
 @pytest.mark.parametrize(
     ['iso_level', 'concurrency'],
-    itertools.product(
+    list(itertools.product(
         [iso_level for iso_level in TransactionIsolation],
         [concurrency for concurrency in TransactionConcurrency]
-    )
+    ))
 )
 def test_simple_transaction(client, tx_cache, iso_level, concurrency):
     with client.tx_start(isolation=iso_level, concurrency=concurrency) as tx:
@@ -113,10 +109,10 @@ def test_simple_transaction(client, tx_cache, iso_level, concurrency):
 
 @pytest.mark.parametrize(
     ['iso_level', 'concurrency'],
-    itertools.product(
+    list(itertools.product(
         [iso_level for iso_level in TransactionIsolation],
         [concurrency for concurrency in TransactionConcurrency]
-    )
+    ))
 )
 @pytest.mark.asyncio
 async def test_simple_transaction_async(async_client, async_tx_cache, iso_level, concurrency):
@@ -187,7 +183,7 @@ async def test_concurrent_pessimistic_transactions_same_key(async_client, async_
 
 
 @pytest.mark.asyncio
-async def test_concurrent_optimistic_transactions_no_deadlock(async_client, async_tx_cache, event_loop):
+async def test_concurrent_optimistic_transactions_no_deadlock(async_client, async_tx_cache):
     """
     Check that optimistic transactions are deadlock safe.
     """
@@ -217,10 +213,10 @@ async def test_concurrent_optimistic_transactions_no_deadlock(async_client, asyn
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ['iso_level', 'concurrency'],
-    itertools.product(
+    list(itertools.product(
         [iso_level for iso_level in TransactionIsolation],
         [concurrency for concurrency in TransactionConcurrency]
-    )
+    ))
 )
 async def test_concurrent_transactions(async_client, async_tx_cache, iso_level, concurrency):
     async def update(i):

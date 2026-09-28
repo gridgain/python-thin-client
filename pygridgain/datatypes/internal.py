@@ -235,6 +235,7 @@ def _make_struct_c_type(fields):
         (ctypes.LittleEndianStructure,),
         {
             '_pack_': 1,
+            '_layout_': 'ms',
             '_fields_': list(fields),
         },
     )
@@ -249,7 +250,7 @@ def _cached_struct_c_type(fields):
 
 @functools.lru_cache(maxsize=2048)
 def _cached_c_type(name, bases, fields):
-    return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
+    return type(name, bases, {'_pack_': 1, '_layout_': 'ms', '_fields_': list(fields)})
 
 
 #: Largest field count the shared-class cache admits. A container class carries one field per element,
@@ -277,11 +278,11 @@ def cached_c_type(name, bases, fields):
     """
     fields = tuple(fields)
     if len(fields) > CACHED_C_TYPE_MAX_FIELDS:
-        return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
+        return type(name, bases, {'_pack_': 1, '_layout_': 'ms', '_fields_': list(fields)})
     try:
         return _cached_c_type(name, bases, fields)
     except TypeError:
-        return type(name, bases, {'_pack_': 1, '_fields_': list(fields)})
+        return type(name, bases, {'_pack_': 1, '_layout_': 'ms', '_fields_': list(fields)})
 
 
 @attr.s

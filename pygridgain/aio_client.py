@@ -15,7 +15,6 @@
 #
 import asyncio
 import random
-import sys
 from itertools import chain
 from typing import Iterable, Type, Union, Any, Dict, Optional, Sequence
 
@@ -30,7 +29,7 @@ from .aio_cache import AioCache, get_cache, create_cache, get_or_create_cache
 from .connection import AioConnection
 from .constants import AFFINITY_RETRIES, AFFINITY_DELAY
 from .datatypes import BinaryObject, TransactionConcurrency, TransactionIsolation
-from .exceptions import BinaryTypeError, CacheError, ReconnectError, connection_errors, NotSupportedError
+from .exceptions import BinaryTypeError, CacheError, ReconnectError, connection_errors
 from .queries.cache_info import CacheInfo
 from .stream import AioBinaryStream, READ_BACKWARD
 from .transaction import AioTransaction
@@ -83,8 +82,10 @@ class AioClient(BaseClient):
         :param use_ssl: (optional) set to True if Ignite server uses SSL
          on its binary connector. Defaults to use SSL when username
          and password has been supplied, not to use SSL otherwise,
-        :param ssl_version: (optional) SSL version constant from standard
-         `ssl` module. Defaults to TLS v1.2,
+        :param ssl_version: (optional) minimum TLS version, a `ssl.TLSVersion`
+         member. Defaults to TLS 1.3. A legacy `ssl.PROTOCOL_*` constant is
+         also accepted and selects the same versions as before, for example
+         `ssl.PROTOCOL_TLSv1_2` allows TLS 1.2 only,
         :param ssl_ciphers: (optional) ciphers to use. If not provided,
          `ssl` default ciphers are used,
         :param ssl_cert_reqs: (optional) determines how the remote side
@@ -536,6 +537,4 @@ class AioClient(BaseClient):
         :param label: (optional) transaction label.
         :return: :py:class:`~pygridgain.transaction.AioTransaction` instance.
         """
-        if sys.version_info < (3, 7):
-            raise NotSupportedError(f"Transactions are not supported in async client on current python {sys.version}")
         return AioTransaction(self, concurrency, isolation, timeout, label)

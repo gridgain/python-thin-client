@@ -60,7 +60,7 @@ def client():
 
 
 @pytest.fixture
-async def async_client(event_loop):
+async def async_client():
     client = AioClient(partition_aware=True, event_listeners=[QueryRouteListener()])
     try:
         await client.connect(client_connection_string)
