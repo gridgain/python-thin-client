@@ -36,10 +36,10 @@ def test_no_context_without_ssl():
 
 
 @pytest.mark.parametrize('params', [{}, {'ssl_version': None}])
-def test_default_allows_tls_1_2_and_newer(params):
+def test_default_allows_tls_1_3_and_newer(params):
     ctx = _context(**params)
     assert ctx.protocol == ssl.PROTOCOL_TLS_CLIENT
-    assert (ctx.minimum_version, ctx.maximum_version) == (ssl.TLSVersion.TLSv1_2, MAX)
+    assert (ctx.minimum_version, ctx.maximum_version) == (ssl.TLSVersion.TLSv1_3, MAX)
 
 
 def test_hostname_is_not_checked():
@@ -50,8 +50,8 @@ def test_hostname_is_not_checked():
 
 
 def test_tls_version_is_the_minimum():
-    ctx = _context(ssl_version=ssl.TLSVersion.TLSv1_3)
-    assert (ctx.minimum_version, ctx.maximum_version) == (ssl.TLSVersion.TLSv1_3, MAX)
+    ctx = _context(ssl_version=ssl.TLSVersion.TLSv1_2)
+    assert (ctx.minimum_version, ctx.maximum_version) == (ssl.TLSVersion.TLSv1_2, MAX)
 
 
 def test_legacy_protocol_pins_its_version():

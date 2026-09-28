@@ -19,13 +19,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   3.11 to 3.15. The metadata said 3.7 before, so `pip` now refuses to install the client on
   an older interpreter instead of installing it where it was never tested.
   ([GG-51637](https://ggsystems.atlassian.net/browse/GG-51637))
-- **SSL connections can use TLS 1.3.** Before, the default was TLS 1.2 only. Now it is
-  TLS 1.2 or newer, so the client uses TLS 1.3 when the server supports it. `ssl_version`
-  now takes an `ssl.TLSVersion`, which is the minimum version. The `ssl.PROTOCOL_*`
-  constants still work and select the same versions as before: pass
-  `ssl_version=ssl.PROTOCOL_TLSv1_2` to keep TLS 1.2 only. Other values, such as
-  `ssl.PROTOCOL_TLS_SERVER`, raise `ParameterError` on connect. `SSL_DEFAULT_VERSION` is
-  now `ssl.TLSVersion.TLSv1_2`. The client still does not check the server host name.
+- **SSL connections use TLS 1.3 by default.** Before, the default was TLS 1.2 only. Now it
+  is TLS 1.3 or newer, so the client cannot connect to a server that supports only TLS 1.2
+  unless you pass `ssl_version=ssl.TLSVersion.TLSv1_2`. `ssl_version` now takes an
+  `ssl.TLSVersion`, which is the minimum version. The `ssl.PROTOCOL_*` constants still work
+  and select the same versions as before: pass `ssl_version=ssl.PROTOCOL_TLSv1_2` to keep
+  TLS 1.2 only. Other values, such as `ssl.PROTOCOL_TLS_SERVER`, raise `ParameterError` on
+  connect. `SSL_DEFAULT_VERSION` is now `ssl.TLSVersion.TLSv1_3`. `ssl_ciphers` does not
+  apply to TLS 1.3. The client still does not check the server host name.
   This is a **public API behaviour change**.
   ([GG-51637](https://ggsystems.atlassian.net/browse/GG-51637))
 - **The installed package no longer contains a top-level `tests` package.** The wheel put
