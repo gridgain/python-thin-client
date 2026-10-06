@@ -175,7 +175,7 @@ def test_int8_ordinal_matches_the_server_enum():
 
 #: Every vector-search feature bit the server declares, from ClientBitmaskFeature. Kept here as a
 #: literal on purpose: this client cannot read the server's enum, so the list is the contract, and
-#: a server that grows a seventh bit has to be reflected here deliberately rather than by accident.
+#: a server that grows a new bit has to be reflected here deliberately rather than by accident.
 SERVER_VECTOR_BITS = {
     33: 'QUERY_INDEX_VECTOR_SIMILARITY',
     35: 'QUERY_VECTOR_EXTENDED',
@@ -183,6 +183,7 @@ SERVER_VECTOR_BITS = {
     39: 'QUERY_INDEX_VECTOR_QUANTIZATION',
     41: 'QUERY_INDEX_VECTOR_SEGMENT_PARAMS',
     42: 'QUERY_INDEX_VECTOR_INT8_STORAGE',
+    43: 'QUERY_VECTOR_PARAMS',
 }
 
 

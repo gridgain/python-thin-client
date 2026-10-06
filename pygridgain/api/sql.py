@@ -13,13 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import Union, List
+import datetime
+import decimal
+import uuid
+from collections.abc import Mapping
+from typing import Any, Dict, Optional, Union, List
 
 from pygridgain.connection import AioConnection, Connection
+from pygridgain.constants import MAX_INT, MAX_LONG, MIN_INT, MIN_LONG, PROTOCOL_BYTE_ORDER
 from pygridgain.datatypes import AnyDataArray, AnyDataObject, Bool, Byte, Int, Long, Map, Null, String, StructArray, \
-    FloatArrayObject
+    FloatArrayObject, DecimalObject, TimestampObject
 from pygridgain.datatypes import Float as PyFloat
 from pygridgain.datatypes.sql import StatementType
+from pygridgain.datatypes.type_codes import TC_DECIMAL
 from pygridgain.exceptions import NotSupportedByClusterError
 from pygridgain.queries import Query, query_perform
 from pygridgain.queries.response import VectorResponse
@@ -38,6 +44,110 @@ VECTOR_FLAG_WITH_SCORES = 1
 
 #: Vector query flag: omit value objects from result rows (keys, and optionally scores, only).
 VECTOR_FLAG_NOCONTENT = 2
+
+#: The value types a vector query field filter accepts. Exact types, the way the client's own
+#: type mapping (AnyDataObject) matches them, so every value that passes is written as the
+#: matching GridGain object.
+VECTOR_FILTER_VALUE_TYPES = (str, int, float, bool, decimal.Decimal, uuid.UUID, datetime.datetime, datetime.date)
+
+#: The nanoseconds a Timestamp keeps beside its milliseconds: GridGain stores millis + nanos.
+MAX_TIMESTAMP_NANOS = 999_999
+
+
+def validate_vector_params(field_filter: Optional[Dict[str, Any]], oversample: int) -> Optional[Dict[str, Any]]:
+    """
+    Checks the vector query field filter and oversample by the rules the server applies, so
+    that a bad filter fails before anything is sent.
+
+    :param field_filter: map of field name to the value the field must equal, or None,
+    :param oversample: oversample, a non-negative int,
+    :return: a copy of the filter, or None when the filter is None or empty.
+    """
+    if isinstance(oversample, bool) or not isinstance(oversample, int) or oversample < 0:
+        raise ValueError(f'oversample must be a non-negative int, got {oversample!r}')
+    if oversample > MAX_INT:
+        raise ValueError(f'oversample must fit a 32-bit int, got {oversample}')
+
+    if field_filter is None:
+        return None
+    if not isinstance(field_filter, Mapping):
+        raise ValueError(f'field_filter must be a dict of field name to value, got {type(field_filter).__name__}')
+
+    for name, value in field_filter.items():
+        if not isinstance(name, str) or not name:
+            raise ValueError(f'field_filter: a field name must be a non-empty string, got {name!r}')
+        if value is None:
+            raise ValueError(f'field_filter[{name!r}]: the value must not be None')
+        if type(value) is tuple:
+            # The client's own Timestamp form. A java.sql.Timestamp field only matches a Timestamp
+            # value: a datetime goes out as a java.util.Date, whose text form never equals it.
+            if (len(value) != 2 or type(value[0]) is not datetime.datetime or type(value[1]) is not int
+                    or not 0 <= value[1] <= MAX_TIMESTAMP_NANOS):
+                raise ValueError(f'field_filter[{name!r}]: a tuple value must be (datetime, nanos) with nanos '
+                                 f'in 0..{MAX_TIMESTAMP_NANOS}, the Timestamp form, got {value!r}')
+            continue
+        if type(value) not in VECTOR_FILTER_VALUE_TYPES:
+            raise ValueError(f'field_filter[{name!r}]: a {type(value).__name__} value is not supported, '
+                             f'use str, int, float, bool, Decimal, UUID, datetime, date or (datetime, nanos)')
+        if type(value) is int and not MIN_LONG <= value <= MAX_LONG:
+            raise ValueError(f'field_filter[{name!r}]: {value} does not fit a 64-bit long')
+        if type(value) is decimal.Decimal:
+            if not value.is_finite():
+                raise ValueError(f'field_filter[{name!r}]: {value} is not a finite Decimal')
+            scale = -value.as_tuple().exponent
+            if not MIN_INT <= scale <= MAX_INT:
+                raise ValueError(f'field_filter[{name!r}]: {value} has scale {scale}, which does not fit '
+                                 f'the 32-bit scale of a Java BigDecimal')
+
+    return dict(field_filter) if field_filter else None
+
+
+class VectorFilterValue:
+    """
+    Writes a vector query field filter value: a Decimal as a Java BigDecimal with the same
+    unscaled value and scale, a (datetime, nanos) tuple as a Timestamp, everything else by
+    AnyDataObject.
+
+    The filter is a set of exact-value tests, so a Decimal must reach the server as the caller
+    wrote it. DecimalObject normalizes first: 12.50 would go out as 12.5 and 100 as 1E+2, and
+    under the active decimal context a valid value can even round or underflow to 0.
+    """
+
+    @classmethod
+    def from_python(cls, stream, value):
+        if type(value) is decimal.Decimal:
+            cls.__write_decimal(stream, value)
+        elif type(value) is tuple:
+            TimestampObject.from_python(stream, value)
+        else:
+            AnyDataObject.from_python(stream, value)
+
+    @classmethod
+    async def from_python_async(cls, stream, value):
+        if type(value) is decimal.Decimal:
+            cls.__write_decimal(stream, value)
+        elif type(value) is tuple:
+            await TimestampObject.from_python_async(stream, value)
+        else:
+            await AnyDataObject.from_python_async(stream, value)
+
+    @staticmethod
+    def __write_decimal(stream, value: decimal.Decimal):
+        # Exact and context-free: the digits and exponent as given, no normalize(), no rounding.
+        sign, digits, exponent = value.as_tuple()
+        magnitude = int(decimal.Decimal((0, digits, 0)))
+        # What Java writes for a BigDecimal: the scale, then the big-endian magnitude with room
+        # for a sign bit, set for a negative value. Java has no negative zero.
+        data = bytearray(magnitude.to_bytes(magnitude.bit_length() // 8 + 1, byteorder='big'))
+        if sign and magnitude:
+            data[0] |= 0x80
+
+        data_object = DecimalObject.build_c_type(len(data))()
+        data_object.type_code = int.from_bytes(TC_DECIMAL, byteorder=PROTOCOL_BYTE_ORDER)
+        data_object.scale = -exponent
+        data_object.length = len(data)
+        data_object.data[:] = data
+        stream.write(data_object)
 
 
 def scan(conn: 'Connection', cache_info: CacheInfo, page_size: int, partitions: int = -1,
@@ -457,7 +567,8 @@ def __post_process_sql_fields_cursor(result):
 
 def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
            type_name: str, field: str, clause_vector: List[float], k: int, threshold: float,
-           ef_search: int = 0, query_flags: int = 0) -> APIResult:
+           ef_search: int = 0, query_flags: int = 0, field_filter: Optional[Dict[str, Any]] = None,
+           oversample: int = 0) -> APIResult:
     """
     Performs vector query.
     Vector queries based on Apache Lucene engine.
@@ -474,6 +585,14 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
      Requires the QUERY_VECTOR_EXTENDED cluster feature.
     :param query_flags: (optional) combination of VECTOR_FLAG_WITH_SCORES and VECTOR_FLAG_NOCONTENT.
      Requires the QUERY_VECTOR_EXTENDED cluster feature.
+    :param field_filter: (optional) map of field name to value, applied before the k nearest
+     are chosen: a conjunction of exact-value tests on fields of the type's text index. A
+     value is a str, int, float, bool, Decimal, UUID, datetime, date or a (datetime, nanos)
+     Timestamp tuple. A Decimal keeps its own scale, like a Java BigDecimal: Decimal('12.50')
+     is sent as 12.50, not 12.5. None or an empty map means no filter. Requires the
+     QUERY_VECTOR_PARAMS cluster feature.
+    :param oversample: (optional) the vector query oversample, a non-negative int. 0 leaves it
+     unset. Requires the QUERY_VECTOR_PARAMS cluster feature.
     :return: API result data object. Contains zero status and a value
      of type dict with results on success, non-zero status and an error
      description otherwise.
@@ -488,20 +607,24 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
        ‘vector_cursor_get_page’ calls.
     """
     return __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                    ef_search, query_flags)
+                    ef_search, query_flags, field_filter, oversample)
 
 
 async def vector_async(conn: 'AioConnection', cache_info: CacheInfo, page_size: int,
                        type_name: str, field: str, clause_vector: List[float], k: int, threshold: float,
-                       ef_search: int = 0, query_flags: int = 0) -> APIResult:
+                       ef_search: int = 0, query_flags: int = 0, field_filter: Optional[Dict[str, Any]] = None,
+                       oversample: int = 0) -> APIResult:
     """
     Async version of vector.
     """
     return await __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                          ef_search, query_flags)
+                          ef_search, query_flags, field_filter, oversample)
 
 
-def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold, ef_search, query_flags):
+def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, threshold, ef_search, query_flags,
+             field_filter, oversample):
+    field_filter = validate_vector_params(field_filter, oversample)
+
     fields = [
         ('cache_info', CacheInfo),
         ('page_size', Int),
@@ -534,6 +657,20 @@ def __vector(conn, cache_info, page_size, type_name, field, clause_vector, k, th
     elif ef_search > 0 or query_flags:
         raise NotSupportedByClusterError('The cluster does not support extended vector queries '
                                          '(efSearch, scores, NOCONTENT) - QUERY_VECTOR_EXTENDED feature is absent.')
+
+    if conn.protocol_context.is_query_vector_params_supported():
+        # Mandatory on the wire once the feature is negotiated, like the extended fields:
+        # oversample 0 and an empty filter (count 0) mean neither is set.
+        fields += [
+            ('oversample', Int),
+            ('field_filter', StructArray([('name', String), ('value', VectorFilterValue)])),
+        ]
+
+        query_params['oversample'] = oversample
+        query_params['field_filter'] = [{'name': name, 'value': value} for name, value in (field_filter or {}).items()]
+    elif field_filter or oversample:
+        raise NotSupportedByClusterError('The cluster does not support the vector query field filter and oversample '
+                                         '- QUERY_VECTOR_PARAMS feature is absent.')
 
     query_struct = Query(OP_QUERY_VECTOR, fields, response_type=VectorResponse)
 

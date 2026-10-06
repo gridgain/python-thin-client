@@ -134,6 +134,13 @@ class ProtocolContext:
         """
         return self.features and BitmaskFeature.QUERY_VECTOR_EXTENDED in self.features
 
+    def is_query_vector_params_supported(self) -> bool:
+        """
+        Check whether the vector query field filter and oversample are supported by the
+        cluster.
+        """
+        return self.features and BitmaskFeature.QUERY_VECTOR_PARAMS in self.features
+
     def is_query_index_vector_hnsw_params_supported(self) -> bool:
         """
         Check whether per-index HNSW build parameters (hnswM, hnswEfConstruction) are
