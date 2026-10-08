@@ -111,6 +111,11 @@ class VectorFilterValue:
     The filter is a set of exact-value tests, so a Decimal must reach the server as the caller
     wrote it. DecimalObject normalizes first: 12.50 would go out as 12.5 and 100 as 1E+2, and
     under the active decimal context a valid value can even round or underflow to 0.
+
+    The server tests text forms, which limits date and time precision. A datetime or date goes
+    out as a java.util.Date, and its text form has whole seconds only: two values in the same
+    second match the same rows, and the milliseconds are lost. A (datetime, nanos) Timestamp
+    keeps its fraction.
     """
 
     @classmethod
@@ -589,8 +594,8 @@ def vector(conn: 'Connection', cache_info: CacheInfo, page_size: int,
      are chosen: a conjunction of exact-value tests on fields of the type's text index. A
      value is a str, int, float, bool, Decimal, UUID, datetime, date or a (datetime, nanos)
      Timestamp tuple. A Decimal keeps its own scale, like a Java BigDecimal: Decimal('12.50')
-     is sent as 12.50, not 12.5. None or an empty map means no filter. Requires the
-     QUERY_VECTOR_PARAMS cluster feature.
+     is sent as 12.50, not 12.5. A datetime or date matches at second precision only. None or
+     an empty map means no filter. Requires the QUERY_VECTOR_PARAMS cluster feature.
     :param oversample: (optional) the vector query oversample, a non-negative int. 0 leaves it
      unset. Requires the QUERY_VECTOR_PARAMS cluster feature.
     :return: API result data object. Contains zero status and a value

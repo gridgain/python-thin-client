@@ -533,8 +533,9 @@ class AioCache(BaseCache):
          (datetime, nanos) tuple; None, a list, any other tuple, a set, dict, bytes or any other
          object raises ValueError here, before anything is sent. The server compares text forms, so match the
          Java type of the stored field. A datetime or date is sent as a java.util.Date and
-         matches a Date field only; for a java.sql.Timestamp field pass the (datetime, nanos)
-         tuple, the form this client writes a Timestamp in. A Decimal keeps its own scale, like
+         matches a Date field only, and only to the second: a Date's text form has whole seconds,
+         so the milliseconds are lost. For a java.sql.Timestamp field pass the (datetime, nanos)
+         tuple, the form this client writes a Timestamp in; it keeps the fraction. A Decimal keeps its own scale, like
          a Java BigDecimal: Decimal('12.50') is sent as 12.50, not 12.5. This client's own puts
          store a Decimal normalized (12.50 as 12.5), so filter a value it wrote by its
          normalized form.
