@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import datetime
-from typing import Any, Iterable, Optional, Tuple, Union, List
+from typing import Any, Dict, Iterable, Optional, Tuple, Union, List
 
 from .api.tx_api import get_tx_connection
 from .datatypes import prop_codes, ExpiryPolicy
@@ -33,7 +33,7 @@ from .api.key_value import (
     cache_remove_if_equals, cache_replace_if_equals, cache_get_size
 )
 from .cursors import ScanCursor, SqlCursor, VectorCursor
-from .api.sql import VECTOR_FLAG_NOCONTENT, VECTOR_FLAG_WITH_SCORES
+from .api.sql import VECTOR_FLAG_NOCONTENT, VECTOR_FLAG_WITH_SCORES, validate_vector_params
 
 PROP_CODES = set([
     getattr(prop_codes, x)
@@ -661,7 +661,8 @@ class Cache(BaseCache):
 
     def vector(self, type_name: str, field: str, clause_vector: List[float],
                k: int, threshold: float, page_size: int = None, ef_search: int = 0,
-               with_scores: bool = False, no_content: bool = False) -> VectorCursor:
+               with_scores: bool = False, no_content: bool = False,
+               field_filter: Optional[Dict[str, Any]] = None, oversample: int = 0) -> VectorCursor:
         """
         Ignite supports vector queries based on Apache Lucene engine.
 
@@ -689,12 +690,33 @@ class Cache(BaseCache):
          Requires the QUERY_VECTOR_EXTENDED cluster feature.
         :param no_content: (optional) omit values from result rows - the cheapest response shape.
          Requires the QUERY_VECTOR_EXTENDED cluster feature.
+        :param field_filter: (optional) map of field name to value. The engine applies it before
+         it chooses the k nearest, so entries that fail it take no place in the result. The map
+         is a conjunction of exact-value tests: an entry matches when every named field equals
+         its value. A filter can name fields of the type's text index only; the server refuses
+         a field that is not indexed, and the query raises CacheError with the server's message.
+         A value is a str, int, float, bool, Decimal, UUID, datetime, date or a
+         (datetime, nanos) tuple; None, a list, any other tuple, a set, dict, bytes or any other
+         object raises ValueError before anything is sent. The server compares text forms, so match the
+         Java type of the stored field. A datetime or date is sent as a java.util.Date and
+         matches a Date field only, and only to the second: a Date's text form has whole seconds,
+         so the milliseconds are lost. For a java.sql.Timestamp field pass the (datetime, nanos)
+         tuple, the form this client writes a Timestamp in; it keeps the fraction. A Decimal keeps its own scale, like
+         a Java BigDecimal: Decimal('12.50') is sent as 12.50, not 12.5. This client's own puts
+         store a Decimal normalized (12.50 as 12.5), so filter a value it wrote by its
+         normalized form. None or an empty map (the
+         default) means no filter. Requires the QUERY_VECTOR_PARAMS cluster feature.
+        :param oversample: (optional) the vector query oversample, a non-negative int. 0 (the
+         default) leaves it unset. Requires the QUERY_VECTOR_PARAMS cluster feature; without
+         it, a filter or a nonzero oversample raises NotSupportedByClusterError.
         :return: Vector query cursor. Rows are shaped by the flags: `(key, value)` by default,
          `(key, value, score)` with `with_scores`, bare `key` with `no_content`, and
          `(key, score)` with both.
         """
         if k < 1:
             raise ValueError(f'k must be positive, got {k}')
+
+        field_filter = validate_vector_params(field_filter, oversample)
 
         if page_size is None:
             page_size = k
@@ -703,4 +725,4 @@ class Cache(BaseCache):
                        | (VECTOR_FLAG_NOCONTENT if no_content else 0))
 
         return VectorCursor(self.client, self.cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                            ef_search, query_flags)
+                            ef_search, query_flags, field_filter, oversample)

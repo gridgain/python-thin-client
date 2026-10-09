@@ -28,6 +28,7 @@ class BitmaskFeature(IntFlag):
     QUERY_INDEX_VECTOR_QUANTIZATION = 1 << 39
     QUERY_INDEX_VECTOR_SEGMENT_PARAMS = 1 << 41
     QUERY_INDEX_VECTOR_INT8_STORAGE = 1 << 42
+    QUERY_VECTOR_PARAMS = 1 << 43
 
     def __bytes__(self) -> bytes:
         """

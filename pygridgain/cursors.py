@@ -391,7 +391,7 @@ class AioSqlFieldsCursor(AbstractSqlFieldsCursor, AioCursorMixin):
 
 class AbstractVectorCursor:
     def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                 ef_search=0, query_flags=0):
+                 ef_search=0, query_flags=0, field_filter=None, oversample=0):
         self.client = client
         self.cache_info = cache_info
         self._page_size = page_size
@@ -402,6 +402,8 @@ class AbstractVectorCursor:
         self._threshold = threshold
         self._ef_search = ef_search
         self._query_flags = query_flags
+        self._field_filter = field_filter
+        self._oversample = oversample
 
     def _finalize_init(self, result):
         if result.status != 0:
@@ -426,7 +428,7 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
     Synchronous vector cursor.
     """
     def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                 ef_search=0, query_flags=0):
+                 ef_search=0, query_flags=0, field_filter=None, oversample=0):
         """
         :param client: Synchronous client.
         :param cache_info: Cache meta info.
@@ -437,14 +439,16 @@ class VectorCursor(AbstractVectorCursor, CursorMixin):
         :param k: [K]NN, how many vectors to return.
         :param ef_search: search beam width, 0 or negative means the engine default.
         :param query_flags: combination of VECTOR_FLAG_WITH_SCORES and VECTOR_FLAG_NOCONTENT.
+        :param field_filter: map of field name to value, None or empty for no filter.
+        :param oversample: the vector query oversample, 0 leaves it unset.
         """
         super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                         ef_search, query_flags)
+                         ef_search, query_flags, field_filter, oversample)
 
         self.connection = self.client.random_node
         result = vector(self.connection, self.cache_info, self._page_size,
                         self._type_name, self._field, self._clause_vector, self._k, self._threshold,
-                        self._ef_search, self._query_flags)
+                        self._ef_search, self._query_flags, self._field_filter, self._oversample)
         self._finalize_init(result)
 
     def __next__(self):
@@ -467,7 +471,7 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
     Asynchronous vector query cursor.
     """
     def __init__(self, client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                 ef_search=0, query_flags=0):
+                 ef_search=0, query_flags=0, field_filter=None, oversample=0):
         """
         :param client: Asynchronous client.
         :param cache_info: Cache meta info.
@@ -478,16 +482,19 @@ class AioVectorCursor(AbstractVectorCursor, AioCursorMixin):
         :param k: [K]NN, how many vectors to return.
         :param ef_search: search beam width, 0 or negative means the engine default.
         :param query_flags: combination of VECTOR_FLAG_WITH_SCORES and VECTOR_FLAG_NOCONTENT.
+        :param field_filter: map of field name to value, None or empty for no filter.
+        :param oversample: the vector query oversample, 0 leaves it unset.
         """
         super().__init__(client, cache_info, page_size, type_name, field, clause_vector, k, threshold,
-                         ef_search, query_flags)
+                         ef_search, query_flags, field_filter, oversample)
 
     async def __aenter__(self):
         if not self.connection:
             self.connection = await self.client.random_node()
             result = await vector_async(self.connection, self.cache_info, self._page_size,
                                         self._type_name, self._field, self._clause_vector, self._k, self._threshold,
-                                        self._ef_search, self._query_flags)
+                                        self._ef_search, self._query_flags, self._field_filter,
+                                        self._oversample)
             self._finalize_init(result)
         return self
 

@@ -11,6 +11,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **The client ships a PEP 561 `py.typed` marker.**
+- **`Cache.vector()` and `AioCache.vector()` take `field_filter` and `oversample`.**
+  `field_filter` maps field names to values. The engine applies it before it chooses the
+  `k` nearest, so a filtered query no longer comes back short the way a filter applied
+  after the query does. The filter is a conjunction of exact-value tests on fields of the
+  type's text index; the server refuses a field that is not indexed. The client checks the
+  filter before it sends anything and raises `ValueError` for an empty field name, a `None`
+  value, or a value that is not a `str`, `int`, `float`, `bool`, `Decimal`, `UUID`,
+  `datetime`, `date` or a `(datetime, nanos)` tuple. The server compares text forms, so a
+  value must match the Java type of the stored field: a `datetime` or `date` matches a
+  `java.util.Date` field, and a `java.sql.Timestamp` field needs the `(datetime, nanos)`
+  Timestamp form. Both parameters need a cluster with the `QUERY_VECTOR_PARAMS`
+  feature. Against an older cluster, a filter or a nonzero `oversample` raises
+  `NotSupportedByClusterError`; the client does not drop the filter. A query without them
+  sends the same request as before.
+  ([GG-51945](https://ggsystems.atlassian.net/browse/GG-51945))
 
 ### Changed
 
